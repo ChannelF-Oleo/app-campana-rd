@@ -40,6 +40,7 @@ yarn-debug.log*
 .env.test.local
 .env.production.local
 .env.*
+firabase.js
 
 # Firebase/Backend Service Keys (Crucial for security)
 # This file contains credentials and MUST NOT be committed

@@ -1,22 +1,17 @@
 /* eslint-disable no-restricted-globals */
 
-// Asegúrate de que todas estas funciones se importan desde 'workbox-precache'
-// Reemplaza: import { precacheAndRoute } from 'workbox-precache';
-// Con:
-import { precacheAndRoute } from "workbox-precaching"; // <-- Nombre de módulo más común
-import { clientsClaim } from "workbox-core";
-// ... y otras importaciones que hayas añadido
+// Importaciones de Workbox (CRUCIALES para el build)
+// Se usa workbox-precaching y workbox-core (que contiene clientsClaim, aunque se usa nativo).
+import { precacheAndRoute } from "workbox-precaching";
 
-// ... el resto del código (incluyendo precacheAndRoute(self.__WB_MANIFEST); )
-
-/* eslint-disable no-restricted-globals */
-// ^ ESTO DESACTIVA LA REGLA SOLO PARA ESTE ARCHIVO, anulando el conflicto de 'google'.
-precacheAndRoute(self.__WB_MANIFEST);
+// 🌟 PUNTO DE INYECCIÓN DE MANIFIESTO 🌟
+// El Webpack plugin inyectará aquí la lista de archivos estáticos.
+precacheAndRoute(self.__WB_MANIFEST || []);
 
 // Nombre de la caché estática
 const CACHE_NAME = "campaign-cache-v1";
 
-// Recursos esenciales que se precachean (la base de tu app)
+// Recursos esenciales para precache manual (la base de tu app)
 const urlsToCache = [
   "/", // Importante para la navegación de la raíz
   "/index.html",
@@ -46,7 +41,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activación: Limpiar cachés antiguas
+// Activación: Limpiar cachés antiguas y reclamar clientes (resuelve array-callback-return)
 self.addEventListener("activate", (event) => {
   console.log(
     "Service Worker: Activate event triggered. Cleaning up old caches."
@@ -57,11 +52,15 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((cacheNames) => {
         return Promise.all(
+          // CORRECCIÓN: Se asegura que el .map siempre devuelve algo (sea un Promise o null)
           cacheNames.map((cacheName) => {
             if (cacheWhitelist.indexOf(cacheName) === -1) {
               console.log("Service Worker: Deleting old cache: " + cacheName);
+              // AÑADIR RETURN: Lógica de eliminación
               return caches.delete(cacheName);
             }
+            // RETURN: Caso en que el nombre está en la whitelist (no se hace nada)
+            return null;
           })
         );
       })
@@ -71,7 +70,7 @@ self.addEventListener("activate", (event) => {
 
 // Fetch: Estrategia de Cache-First para recursos en caché (modo offline)
 self.addEventListener("fetch", (event) => {
-  // Solo interceptamos peticiones GET (para evitar problemas con POST/PUT)
+  // Solo interceptamos peticiones GET
   if (event.request.method !== "GET") {
     return;
   }
@@ -92,14 +91,10 @@ self.addEventListener("fetch", (event) => {
       // Si no está en caché, ir a la red
       console.log("[Network] Fetching:", event.request.url);
       return fetch(event.request).catch((error) => {
-        // Si la red falla Y estamos offline, podemos devolver una página de fallback
-        // Aquí solo devolveremos un error genérico, se podría añadir un cache.match('/offline.html')
         console.error(
           "Fetch failed: Network error during fetch. App may be offline.",
           error
         );
-        // Si la petición es para un documento HTML (ej: la ruta principal), devuelve la página offline de fallback si existiera.
-        // Para un manejo offline completo, se recomienda usar una biblioteca como Workbox (ver nota).
       });
     })
   );

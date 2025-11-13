@@ -215,7 +215,7 @@ export const MAPA_PADRON_POR_CENTRO = {
     "00546 - LICEO PEDRO APONTE": ["1243.pdf", "1243A.pdf", "1243B.pdf", "1243C.pdf", "1243D.pdf", "1245B.pdf", "1246.pdf", "1246A.pdf", "1310B.pdf", "1362.pdf", "1362A.pdf", "1641.pdf", "1749.pdf"],
     // --- ZONA L ---
     "00369 - ESCUELA DE EDUCACION BASICA SAN MIGUEL": ["1631.pdf", "1701.pdf", "1741.pdf", "1760.pdf", "1819.pdf", "1859.pdf", "1904.pdf"],
-    "00435 - LICEO SECUNDARIO LAS AMERICAS": ["1216.pdf", "1216A.pdf", "1216B.pdf", "1216C.pdf", "1223.pdf", "1223A.pdf", "1223B.pdf", "1223C.pdf", "1223D.pdf", "1762.pdf", "1785.pdf", "1863.pdf"],
+
     "00490 - ESCUELA BASICA JAPON": ["1703.pdf", "1734.pdf", "1744.pdf", "1771.pdf", "1811.pdf", "1841.pdf", "1874.pdf", "1907.pdf"],
     // --- ZONA M ---
     "00365 - ESCUELA BASICA JAMAICA": ["1215.pdf", "1215A.pdf", "1630.pdf", "1902.pdf"],
@@ -235,7 +235,7 @@ export const MAPA_PADRON_POR_CENTRO = {
     // --- ZONA P ---
     "00001 - COLEGIO EL ANGEL": ["0001.pdf", "1748.pdf", "1806.pdf", "1847.pdf", "1899.pdf"],
     "00356 - COLEGIO JUAN 23": ["1234.pdf", "1234A.pdf", "1235.pdf", "1235A.pdf", "1235B.pdf", "1384.pdf", "1384A.pdf", "1485.pdf", "1485A.pdf", "1485B.pdf"],
-    "00358 - ESCUELA PRIMARIA EMMA BALAGUER DE VALLEJO": ["1306.pdf", "1306A.pdf", "1307.pdf", "1307A.pdf", "1333.pdf", "1333A.pdf", "1333B.pdf", "1357.pdf", "1357A.pdf", "1357B.pdf", "1391.pdf", "1391A.pdf", "1418.pdf", "1418A.pdf", "1418B.pdf", "1635.pdf", "1635A.pdf", "1636.pdf", "1636A.pdf", "1637.pdf"],
+   
     // --- ZONA Q ---
     "00425 - ESCUELA BASICA LAS PALMAS #1": ["1403.pdf", "1403A.pdf", "1403B.pdf", "1483.pdf", "1483A.pdf", "1483B.pdf", "1484.pdf", "1484A.pdf", "1484B.pdf"],
     "00487 - ESCUELA VEDRUNA": ["1231.pdf", "1231A.pdf", "1231B.pdf", "1231C.pdf", "1262.pdf", "1262A.pdf"],

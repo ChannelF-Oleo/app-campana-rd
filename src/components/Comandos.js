@@ -1,6 +1,6 @@
 // Componente accesible solo por el rol 'admin' para organizar el organigrama (Comandos).
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase";
 import {
   collection,
@@ -12,19 +12,18 @@ import {
 import * as XLSX from "xlsx"; // IMPORTAR XLSX
 import {
   FaEdit,
-  FaFileExcel, 
+  FaFileExcel,
   FaSave,
   FaTimes,
   FaPlus,
   FaAngleDown,
   FaTrashAlt,
   FaFilter,
-} from "react-icons/fa"; 
+} from "react-icons/fa";
 import "./Comandos.css";
 
 // 1. IMPORTAR LA ESTRUCTURA ZONAL COMPLETA
 import { ZONAS_DISPONIBLES, MAPA_CENTROS_POR_ZONA } from "./ZonasElectorales";
-
 
 // Estructura de datos predefinida para la jerarquía de comandos
 const JERARQUIA = ["Municipal", "Zonal", "Sectorial"];
@@ -193,9 +192,9 @@ function Comandos() {
   const handleFilterChange = (field, value) => {
     // Si cambia la zona, reseteamos el sector para forzar el filtrado en cascada
     if (field === "zona") {
-        setFiltros((prev) => ({ ...prev, zona: value, sector: "" }));
+      setFiltros((prev) => ({ ...prev, zona: value, sector: "" }));
     } else {
-        setFiltros((prev) => ({ ...prev, [field]: value }));
+      setFiltros((prev) => ({ ...prev, [field]: value }));
     }
   };
 
@@ -225,7 +224,7 @@ function Comandos() {
 
     const fileName = `Organigrama_${nivel}_Filtrado.xlsx`;
     XLSX.writeFile(workbook, fileName);
-    
+
     setNotification({
       message: `Exportado ${dataToExport.length} renglones del Comando ${nivel}.`,
       type: "success",
@@ -263,7 +262,6 @@ function Comandos() {
             >
               <h3>Comando {nivel}</h3>
               <div className="header-actions">
-                
                 {/* BOTÓN DE EXPORTAR */}
                 {organigrama[nivel] && organigrama[nivel].length > 0 && (
                   <button
@@ -271,7 +269,7 @@ function Comandos() {
                     title={`Exportar Comando ${nivel} (Filtrado)`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleExport(nivel); 
+                      handleExport(nivel);
                     }}
                   >
                     <FaFileExcel />
@@ -290,7 +288,7 @@ function Comandos() {
                 >
                   <FaEdit />
                 </button>
-                
+
                 <FaAngleDown
                   className={`expand-icon ${
                     expandedSection === nivel ? "rotate" : ""
@@ -317,7 +315,9 @@ function Comandos() {
                   {nivel === "Zonal" && (
                     <select
                       value={filtros.zona}
-                      onChange={(e) => handleFilterChange("zona", e.target.value)}
+                      onChange={(e) =>
+                        handleFilterChange("zona", e.target.value)
+                      }
                       className="filter-select"
                     >
                       <option value="">Todas las Zonas</option>
@@ -332,33 +332,38 @@ function Comandos() {
                   {/* FILTRO SECTORIAL: USA LA LÓGICA DE CENTROS */}
                   {nivel === "Sectorial" && (
                     <>
-                        {/* Se recomienda filtrar primero por Zona si el Sectorial es largo */}
-                        <select
-                            value={filtros.zona}
-                            onChange={(e) => handleFilterChange("zona", e.target.value)}
-                            className="filter-select"
-                        >
-                            <option value="">Filtrar por Zona...</option>
-                            {ZONAS_DISPONIBLES.map((z) => (
-                                <option key={z} value={z}>
-                                    {z}
-                                </option>
-                            ))}
-                        </select>
+                      {/* Se recomienda filtrar primero por Zona si el Sectorial es largo */}
+                      <select
+                        value={filtros.zona}
+                        onChange={(e) =>
+                          handleFilterChange("zona", e.target.value)
+                        }
+                        className="filter-select"
+                      >
+                        <option value="">Filtrar por Zona...</option>
+                        {ZONAS_DISPONIBLES.map((z) => (
+                          <option key={z} value={z}>
+                            {z}
+                          </option>
+                        ))}
+                      </select>
 
-                        <select
-                            value={filtros.sector}
-                            onChange={(e) => handleFilterChange("sector", e.target.value)}
-                            className="filter-select"
-                            disabled={!filtros.zona} // Deshabilitar si no hay zona seleccionada
-                        >
-                            <option value="">Todos los Sectores/Centros</option>
-                            {filtros.zona && getSectoresDisponibles(filtros.zona).map((s) => (
-                                <option key={s} value={s}>
-                                    {s}
-                                </option>
-                            ))}
-                        </select>
+                      <select
+                        value={filtros.sector}
+                        onChange={(e) =>
+                          handleFilterChange("sector", e.target.value)
+                        }
+                        className="filter-select"
+                        disabled={!filtros.zona} // Deshabilitar si no hay zona seleccionada
+                      >
+                        <option value="">Todos los Sectores/Centros</option>
+                        {filtros.zona &&
+                          getSectoresDisponibles(filtros.zona).map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                      </select>
                     </>
                   )}
                 </div>
@@ -366,7 +371,7 @@ function Comandos() {
                 <div className="renglones-list">
                   {filteredRenglones(nivel).map((renglon, index) => (
                     <div
-                      key={index} 
+                      key={index}
                       className={`renglon-item ${
                         isEditing ? "editing" : "viewing"
                       }`}
@@ -381,7 +386,9 @@ function Comandos() {
                             onChange={(e) =>
                               handleChange(
                                 nivel,
-                                organigrama[nivel].findIndex((r) => r === renglon),
+                                organigrama[nivel].findIndex(
+                                  (r) => r === renglon
+                                ),
                                 "rol",
                                 e.target.value
                               )
@@ -396,7 +403,9 @@ function Comandos() {
                               onChange={(e) =>
                                 handleChange(
                                   nivel,
-                                  organigrama[nivel].findIndex((r) => r === renglon),
+                                  organigrama[nivel].findIndex(
+                                    (r) => r === renglon
+                                  ),
                                   "zona",
                                   e.target.value
                                 )
@@ -418,12 +427,14 @@ function Comandos() {
                               <select
                                 value={renglon.zona || ""}
                                 onChange={(e) =>
-                                    handleChange(
-                                      nivel,
-                                      organigrama[nivel].findIndex((r) => r === renglon),
-                                      "zona",
-                                      e.target.value
-                                    )
+                                  handleChange(
+                                    nivel,
+                                    organigrama[nivel].findIndex(
+                                      (r) => r === renglon
+                                    ),
+                                    "zona",
+                                    e.target.value
+                                  )
                                 }
                                 className="zona-select"
                               >
@@ -440,7 +451,9 @@ function Comandos() {
                                 onChange={(e) =>
                                   handleChange(
                                     nivel,
-                                    organigrama[nivel].findIndex((r) => r === renglon),
+                                    organigrama[nivel].findIndex(
+                                      (r) => r === renglon
+                                    ),
                                     "sector",
                                     e.target.value
                                   )
@@ -448,12 +461,17 @@ function Comandos() {
                                 className="sector-select"
                                 disabled={!renglon.zona}
                               >
-                                <option value="">-- Asignar Sector/Centro --</option>
-                                {renglon.zona && MAPA_CENTROS_POR_ZONA[renglon.zona].map((s) => (
-                                  <option key={s} value={s}>
-                                    {s}
-                                  </option>
-                                ))}
+                                <option value="">
+                                  -- Asignar Sector/Centro --
+                                </option>
+                                {renglon.zona &&
+                                  MAPA_CENTROS_POR_ZONA[renglon.zona].map(
+                                    (s) => (
+                                      <option key={s} value={s}>
+                                        {s}
+                                      </option>
+                                    )
+                                  )}
                               </select>
                             </>
                           )}
@@ -464,7 +482,9 @@ function Comandos() {
                             onChange={(e) =>
                               handleChange(
                                 nivel,
-                                organigrama[nivel].findIndex((r) => r === renglon),
+                                organigrama[nivel].findIndex(
+                                  (r) => r === renglon
+                                ),
                                 "usuarioId",
                                 e.target.value
                               )
@@ -484,7 +504,9 @@ function Comandos() {
                             onClick={() =>
                               handleRemoveField(
                                 nivel,
-                                organigrama[nivel].findIndex((r) => r === renglon)
+                                organigrama[nivel].findIndex(
+                                  (r) => r === renglon
+                                )
                               )
                             }
                             className="remove-field-button"
@@ -530,7 +552,8 @@ function Comandos() {
                         className="save-changes-button"
                         disabled={loading}
                       >
-                        <FaSave /> {loading ? "Guardando..." : "Guardar Comando"}
+                        <FaSave />{" "}
+                        {loading ? "Guardando..." : "Guardar Comando"}
                       </button>
                       <button
                         onClick={() => setIsEditing(false)}
