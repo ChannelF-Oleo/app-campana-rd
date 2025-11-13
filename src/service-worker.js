@@ -1,13 +1,11 @@
 /* eslint-disable no-restricted-globals */
 
 // Asegúrate de que todas estas funciones se importan desde 'workbox-precache'
-import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precache';
-import { clientsClaim } from 'workbox-core';
-
-// Si usaste mis ejemplos, asegúrate de que estas también están:
-import { ExpirationPlugin } from 'workbox-expiration';
-import { registerRoute } from 'workbox-routing'; // ¡Esta línea faltaba o estaba incompleta!
-import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+// Reemplaza: import { precacheAndRoute } from 'workbox-precache';
+// Con:
+import { precacheAndRoute } from "workbox-precaching"; // <-- Nombre de módulo más común
+import { clientsClaim } from "workbox-core";
+// ... y otras importaciones que hayas añadido
 
 // ... el resto del código (incluyendo precacheAndRoute(self.__WB_MANIFEST); )
 
