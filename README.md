@@ -15,13 +15,13 @@ Esta plataforma resuelve la necesidad de una gestión de campaña moderna y basa
 
 El proyecto está construido con un stack moderno, priorizando la **rapidez de implementación** y el **bajo estrés en el desarrollo**.
 
-| Componente         | Tecnología                                                       | Propósito Principal                                                                                    |
-| :----------------- | :--------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| **Frontend (PWA)** | **React.js** (Create React App)          | Interfaz de usuario intuitiva, móvil-first y con capacidad **offline básica**. |
-| **Backend/DB**     | **Firebase** (Firestore, Auth, Hosting) | Backend sin servidor para autenticación, **DB en tiempo real** y hosting.                              |
-| **Estilos/UI**     | **Material-UI o Tailwind**               | Componentes UI y diseño responsivo.                                                                    |
-| **Navegación**     | **React Router**                         | Gestión de rutas para páginas públicas y paneles privados.                                             |
-| **Gráficos**       | **Chart.js** o Recharts           | Visualización de métricas y progreso.                                                                  |
+| Componente         | Tecnología                              | Propósito Principal                                                            |
+| :----------------- | :-------------------------------------- | :----------------------------------------------------------------------------- |
+| **Frontend (PWA)** | **React.js** (Create React App)         | Interfaz de usuario intuitiva, móvil-first y con capacidad **offline básica**. |
+| **Backend/DB**     | **Firebase** (Firestore, Auth, Hosting) | Backend sin servidor para autenticación, **DB en tiempo real** y hosting.      |
+| **Estilos/UI**     | **Material-UI o Tailwind**              | Componentes UI y diseño responsivo.                                            |
+| **Navegación**     | **React Router**                        | Gestión de rutas para páginas públicas y paneles privados.                     |
+| **Gráficos**       | **Chart.js** o Recharts                 | Visualización de métricas y progreso.                                          |
 
 ## 🛠️ Instalación y Ejecución Local
 
@@ -44,7 +44,7 @@ El proyecto está construido con un stack moderno, priorizando la **rapidez de i
     # o si usas Yarn: yarn install
     ```
 3.  **Configurar Firebase:**
-    Asegúrate de tener un archivo `.env` o variables de entorno configuradas con tus credenciales de Firebase. 
+    Asegúrate de tener un archivo `.env` o variables de entorno configuradas con tus credenciales de Firebase.
 
 4.  **Iniciar el servidor de desarrollo:**
     ```bash
@@ -56,12 +56,10 @@ El proyecto está construido con un stack moderno, priorizando la **rapidez de i
 
 La base de datos se organiza en colecciones para soportar las funcionalidades de la aplicación:
 
-| Colección                               | Propósito                                                                 | Campos Clave                                                    |
-| :-------------------------------------- | :------------------------------------------------------------------------ | :-------------------------------------------------------------- |
-| `users`       | Perfiles de Multiplicadores/Administradores.                              | `uid`, `role`, `district`, `goals`, `registeredCount`.          |
-| `sympathizers` | Datos de los simpatizantes registrados.                                   | `id` (cédula), `name`, `district`, `registeredBy`, `timestamp`. |
-| `padron`        | [cite_start]Datos del padrón electoral (importado desde CSV). | `id` (cédula), `name`, `district`, `isSympathizer` (boolean).   |
+| Colección      | Propósito                                                     | Campos Clave                                                    |
+| :------------- | :------------------------------------------------------------ | :-------------------------------------------------------------- |
+| `users`        | Perfiles de Multiplicadores/Administradores.                  | `uid`, `role`, `district`, `goals`, `registeredCount`.          |
+| `sympathizers` | Datos de los simpatizantes registrados.                       | `id` (cédula), `name`, `district`, `registeredBy`, `timestamp`. |
+| `padron`       | [cite_start]Datos del padrón electoral (importado desde CSV). | `id` (cédula), `name`, `district`, `isSympathizer` (boolean).   |
 
 ## 🤝 Contribuciones
-
-Si deseas contribuir al proyecto, por favor, sigue el ciclo de desarrollo Ágil descrito en la especificación: MVP, Iteración 1 (Multiplicadores), e Iteración 2 (Administración/Padrón).

@@ -44,7 +44,7 @@ yarn-debug.log*
 
 # Firebase/Backend Service Keys (Crucial for security)
 # This file contains credentials and MUST NOT be committed
-politicard-cfd-firebase-adminsdk-fb-*.json
+
 politicard-cfd-firebase-adminsdk-fbsvc-0dfcb72afa.json
 *.p12
 
