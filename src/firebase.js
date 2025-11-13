@@ -6,7 +6,15 @@ import { getFirestore } from "firebase/firestore";
 
 // TODO: Agrega la configuración de tu SDK de Firebase
 // La configuración de tu app web de Firebase
-
+const firebaseConfig = {
+  apiKey: "AIzaSyBE3sclY-MUR_ynZ5dOKlwhiWWFuhWoU48",
+  authDomain: "politicard-cfd.firebaseapp.com",
+  projectId: "politicard-cfd",
+  storageBucket: "politicard-cfd.firebasestorage.app",
+  messagingSenderId: "268987029077",
+  appId: "1:268987029077:web:c7b800a18e9ea234a9e6dc",
+  measurementId: "G-EB27HNVEQY"
+};
 // Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 
