@@ -1,4 +1,17 @@
 /* eslint-disable no-restricted-globals */
+
+// Asegúrate de que todas estas funciones se importan desde 'workbox-precache'
+import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precache';
+import { clientsClaim } from 'workbox-core';
+
+// Si usaste mis ejemplos, asegúrate de que estas también están:
+import { ExpirationPlugin } from 'workbox-expiration';
+import { registerRoute } from 'workbox-routing'; // ¡Esta línea faltaba o estaba incompleta!
+import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+
+// ... el resto del código (incluyendo precacheAndRoute(self.__WB_MANIFEST); )
+
+/* eslint-disable no-restricted-globals */
 // ^ ESTO DESACTIVA LA REGLA SOLO PARA ESTE ARCHIVO, anulando el conflicto de 'google'.
 precacheAndRoute(self.__WB_MANIFEST);
 
