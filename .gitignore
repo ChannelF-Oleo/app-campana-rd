@@ -47,7 +47,7 @@ yarn-debug.log*
 politicard-cfd-firebase-adminsdk-fb-*.json
 politicard-cfd-firebase-adminsdk-fbsvc-0dfcb72afa.json
 *.p12
-firabaseconfig.js
+
 firebase.js
 # ---------------------------------------------------------------------- #
 # Testing / Coverage
