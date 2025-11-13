@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-globals */
 // ^ ESTO DESACTIVA LA REGLA SOLO PARA ESTE ARCHIVO, anulando el conflicto de 'google'.
+precacheAndRoute(self.__WB_MANIFEST);
 
 // Nombre de la caché estática
 const CACHE_NAME = "campaign-cache-v1";
