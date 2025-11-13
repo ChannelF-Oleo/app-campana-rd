@@ -1,0 +1,121 @@
+/* ===============================================================
+   MY REGISTERED SIMPATIZANTES CSS - FINAL
+   =============================================================== */
+
+.my-registrations-container {
+  padding: 1rem;
+  background-color: var(--page-bg, #f4f7f9);
+  color: var(--primary-text, #333);
+}
+
+/* --- Alineación del Título y el Botón --- */
+
+/* Contenedor que alinea el título del dashboard con el botón de exportar */
+.page-title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Nota: Si el título no está en este componente, este div alineará el botón con el borde izquierdo. */
+
+/* --- Barra de Acciones (Botón de Exportar) --- */
+.registration-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Eliminamos bordes aquí; se gestiona mejor con page-title-bar si se usa */
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.export-registros-button {
+  background-color: #21a366; /* Verde Excel */
+  color: white;
+
+  /* HACE EL BOTÓN MÁS PEQUEÑO Y COMPACTO */
+  padding: 6px 10px;
+  font-size: 0.9rem;
+
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.export-registros-button:hover:not(:disabled) {
+  background-color: #1a7e4e;
+}
+
+.export-registros-button:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+/* --- Tabla de Registros --- */
+
+.table-wrapper {
+  /* Wrapper para manejar el scroll horizontal en pantallas pequeñas */
+  overflow-x: auto;
+  background-color: var(--element-bg, white);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px var(--shadow-color, rgba(0, 0, 0, 0.08));
+}
+
+.registrations-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+}
+
+/* CORRECCIÓN CLAVE: Asegurar alineación izquierda para datos y encabezados */
+.registrations-table th,
+.registrations-table td {
+  padding: 10px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color, #eee);
+  color: var(--primary-text);
+}
+
+.registrations-table thead th {
+  background-color: var(--header-bg, #f7f7f7);
+  color: var(--secondary-text, #666);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  text-align: left; /* RE-ASEGURAR alineación */
+}
+
+.registrations-table tbody tr:hover {
+  background-color: var(--hover-bg, #f9f9f9);
+}
+
+.empty-state {
+  padding: 2rem;
+  color: var(--secondary-text);
+  font-style: italic;
+  text-align: center;
+}
+
+/* --- Responsividad --- */
+@media (max-width: 600px) {
+  .my-registrations-container {
+    padding: 1rem;
+  }
+  /* Asegura que los elementos se apilen en lugar de desbordarse */
+  .page-title-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .registration-actions-bar {
+    justify-content: flex-start;
+    width: 100%; /* El botón ocupa todo el ancho disponible */
+  }
+}

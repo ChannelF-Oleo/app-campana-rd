@@ -1,0 +1,92 @@
+:root {
+  --footer-bg: #022340; /* Azul Marino Oscuro */
+  --footer-text: #cccccc;
+  --footer-accent: #007bff;
+}
+
+.main-footer {
+  background-color: var(--footer-bg);
+  color: var(--footer-text);
+  padding: 40px 0;
+  margin-top: auto; /* Asegura que el footer se mantenga al final de la página */
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap; /* Permite que las columnas se apilen en móvil */
+}
+
+.footer-section {
+  flex: 1;
+  min-width: 200px; /* Ancho mínimo para cada sección antes de apilar */
+}
+
+.footer-section h3 {
+  color: var(--footer-accent);
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 5px;
+}
+
+/* --- Estilos de Descarga --- */
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.download-button:hover {
+  color: var(--footer-accent);
+}
+
+.download-button svg {
+  font-size: 1.2rem;
+}
+
+/* --- Estilos de Redes Sociales --- */
+.social-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.social-icons a {
+  color: var(--footer-text);
+  font-size: 1.5rem;
+  transition: color 0.2s;
+}
+
+.social-icons a:hover {
+  color: var(--footer-accent);
+}
+
+/* --- Responsividad --- */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-section {
+    margin-bottom: 20px;
+    min-width: 100%;
+  }
+
+  .footer-section h3 {
+    text-align: center;
+  }
+
+  .social-icons {
+    justify-content: center;
+  }
+}

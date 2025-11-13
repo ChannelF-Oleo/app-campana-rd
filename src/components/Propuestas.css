@@ -1,0 +1,203 @@
+/* -------------------------------------- */
+/* 0. VARIABLES (Alineación con HomePage) */
+/* -------------------------------------- */
+:root {
+  /* Paleta */
+  --primary-blue: #004d99; /* Azul fuerte institucional */
+  --secondary-blue: #007bff; /* Azul de acento */
+  --accent-green: #28a745; /* Verde de acción */
+
+  /* Colores Funcionales */
+  --color-bg-light: #f4f7f9; /* Cambiado a convención clara */
+  --color-white: #ffffff; /* Cambiado a convención clara */
+  --color-text-dark: #333333;
+  --color-text-light: #555555;
+
+  /* Espaciado (Nuevo para consistencia) */
+  --spacing-sm: 30px;
+  --spacing-md: 30px;
+  --spacing-lg: 60px;
+  --spacing-xl: 60px;
+}
+
+/* -------------------------- */
+/* 1. CONTENEDOR Y ENCABEZADOS */
+/* -------------------------- */
+.propuestas-container {
+  padding: var(--spacing-lg) 0 var(--spacing-xl);
+  margin-bottom: 30px;
+}
+
+
+
+.page-header {
+  color: var(--primary-blue);
+  /* Uso de clamp para responsividad tipográfica */
+  font-size: clamp(2rem, 3.5vw, 2.5rem);
+  border-bottom: 3px solid var(--secondary-blue);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  font-weight: 800;
+}
+
+.prop-section {
+  margin-bottom: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+}
+
+.prop-section h2 {
+  /* Eliminado el margin-bottom duplicado */
+  font-size: clamp(1.5rem, 2.5vw, 1.8rem);
+  color: var(--primary-blue);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  /* Estilo del ícono y texto */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-align: left; /* Asegura alineación izquierda si se usa en un contenedor centrado */
+}
+
+.prop-section h2 svg {
+  color: var(--accent-green);
+  /* Ajuste de margen para centrar verticalmente sin romper el flujo */
+  font-size: 1.2em;
+  margin: 0;
+  margin-top: 40px;
+  margin-bottom: 30px;
+}
+
+/* Subtítulos dentro de secciones (Posicionamiento Clave) */
+.prop-section h3 {
+  color: var(--primary-blue); /* Se cambió a Primary Blue para jerarquía */
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+
+}
+
+/* -------------------------- */
+/* 2. GRID Y TARJETAS (CARDS) */
+/* -------------------------- */
+.grid-2,
+.grid-3 {
+  display: grid;
+  /* Optimización de gap: usar variable */
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* Card Styling (Usamos .prop-card para el componente reutilizable) */
+.prop-card {
+  background-color: var(--color-white);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out,
+    border 0.3s;
+  height: 100%;
+  display: flex;
+  flex-direction: column; /* Para asegurar que el contenido se comporte bien con height: 100% */
+  text-align: justify;
+  border-bottom: 3px solid transparent; /* Línea inferior para efecto hover */
+  margin-bottom:30px;
+}
+
+.prop-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transform: translateY(
+    -5px
+  ); /* Añadir efecto de elevación al pasar el mouse */
+  /* Corrección y simplificación de border-bottom */
+  border-bottom: 5px solid var(--primary-blue);
+}
+
+.prop-card h3 {
+  /* Resetear el margin-top/bottom heredado de .prop-section h3 */
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary-blue); /* Títulos de tarjeta en azul primario */
+  text-align: center;
+}
+
+.prop-card p {
+  font-size: 1rem; /* Ligeramente más grande para mejor lectura */
+  color: var(--color-text-dark); /* Color más oscuro para accesibilidad */
+  flex-grow: 1; /* Permite que el párrafo se estire si hay card-detail */
+}
+
+.card-detail {
+  margin-top: var(--spacing-sm);
+  font-style: italic;
+  font-size: 0.9rem !important;
+  color: var(--accent-green); /* Color de acento para la importancia */
+  font-weight: 600;
+}
+
+/* -------------------------- */
+/* 3. ETIQUETAS (TAGS) */
+/* -------------------------- */
+.tag {
+  display: inline-block;
+  color: var(--color-white);
+  padding: 4px 12px; /* Ligeramente más de padding horizontal */
+  border-radius: 4px; /* Ligeramente más de radio */
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+}
+
+/* Colores de Tags por Categoría */
+.tag-infra {
+  background-color: #e07f24; /* Naranja más oscuro para mejor contraste */
+}
+.tag-salud {
+  background-color: #c0392b; /* Rojo más profundo */
+}
+.tag-infancia {
+  background-color: #0070a8; /* Azul más oscuro */
+}
+.tag-comision {
+  background-color: #5d666d; /* Gris más oscuro */
+}
+.tag-politica {
+  background-color: var(--primary-blue);
+}
+
+/* -------------------------- */
+/* 4. RESPONSIVIDAD */
+/* -------------------------- */
+@media (max-width: 900px) {
+  .grid-2 {
+    /* Permite que el grid use el minmax de 300px o 1fr, haciendo que se apile si no hay espacio */
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .propuestas-container {
+    padding: var(--spacing-md) 0;
+  }
+  .page-header {
+    font-size: 1.8rem;
+    margin-bottom: var(--spacing-md);
+  }
+  .prop-section h2 {
+    font-size: 1.3rem;
+    text-align: center;
+  }
+  .prop-section h2 svg {
+    font-size: 1.1em;
+  }
+}

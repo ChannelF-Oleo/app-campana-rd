@@ -1,0 +1,362 @@
+/* -------------------------------------- */
+/* 0. VARIABLES Y RESET BÁSICO */
+/* -------------------------------------- */
+:root {
+  /* Paleta */
+  --primary-blue: #004d99; /* Azul fuerte institucional */
+  --secondary-blue: #007bff; /* Azul de acento */
+  --accent-green: #28a745; /* Verde de acción */
+  --dark-navy: #022340; /* Azul Marino para degradado */
+
+  /* Colores Funcionales */
+  --color-bg-light: #f4f7f9;
+  --color-white: #ffffff;
+  --color-text-dark: #333333;
+  --color-text-light: #555555;
+
+  /* Tipografía y Espaciado */
+  --font-primary: "Montserrat", sans-serif;
+  --spacing-xs: 5px;
+  --spacing-sm: 10px;
+  --spacing-md: 20px;
+  --spacing-lg: 40px;
+  --spacing-xl: 60px;
+}
+
+.home-container {
+  font-family: var(--font-primary);
+  background-color: var(--color-bg-light);
+  color: var(--color-text-dark);
+  line-height: 1.6;
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* -------------------------- */
+/* 1. SECCIÓN HÉROE (Invertida) */
+/* -------------------------- */
+.hero-section {
+  background: linear-gradient(
+    145deg,
+    var(--dark-navy) 0%,
+    var(--primary-blue) 100%
+  );
+  color: var(--color-white);
+  padding: var(--spacing-xl) 0;
+  min-height: 350px;
+  overflow: hidden;
+  height: fit-content;
+}
+
+.hero-content {
+  z-index: 10;
+  position: relative;
+  height: fit-content;
+}
+
+/* Contenedor FLEX: Imagen a la derecha, Texto a la izquierda */
+.hero-main-content {
+  display: flex;
+  flex-direction: row-reverse; /* ¡INVERSIÓN! */
+  align-items: flex-end;
+  justify-content: space-between;
+  min-height: 250px;
+  width: 100%;
+  height: min-content;
+}
+
+/* IMAGEN DEL DIPUTADO (DERECHA) */
+.hero-image-left {
+  flex: 0 0 auto; /* El contenedor se ajusta al tamaño de la imagen */
+  max-width: 400px;
+  padding-right: 0;
+  padding-left: var(--spacing-md);
+  margin-right: -35px;
+  margin-top: -100px;
+}
+
+.hero-image-left img {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: calc(var(--spacing-lg) + 10px);
+  transform: translateZ(0);
+}
+
+/* TEXTO PRINCIPAL (IZQUIERDA) */
+.hero-text-right {
+  flex: 1 1 auto; /* Ocupa el espacio restante */
+  text-align: left; /* Alineación a la izquierda */
+  padding-left: 0;
+  padding-right: var(--spacing-md);
+}
+
+.hero-tag {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  color: #a0c0e0;
+}
+
+.hero-text-right h1 {
+  font-size: clamp(2.5rem, 4vw, 3.2rem);
+  margin-bottom: var(--spacing-md);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+/* -------------------------- */
+/* 2. BOTONES CTA */
+/* -------------------------- */
+.cta-button {
+  padding: 12px 30px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 700;
+  transition: background-color 0.2s ease-in-out, transform 0.1s;
+  display: inline-block;
+  border: none;
+  cursor: pointer;
+  margin-top: -50px;
+}
+
+.primary-cta {
+  background-color: var(--accent-green);
+  color: var(--color-white);
+}
+
+.primary-cta:hover {
+  background-color: #1e7e34;
+  transform: translateY(-1px);
+}
+
+.secondary-cta {
+  margin-top: var(--spacing-lg);
+  background-color: var(--secondary-blue);
+  color: var(--color-white);
+  padding: 10px 20px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.secondary-cta:hover {
+  background-color: #0069d9;
+  transform: translateY(-1px);
+}
+
+/* -------------------------- */
+/* 3. SECCIONES SECUNDARIAS */
+/* -------------------------- */
+.gestion-section,
+.accion-section,
+.biografia-section {
+  padding: var(--spacing-xl) 0;
+  text-align: center;
+}
+
+.gestion-section h2,
+.accion-section h2,
+.biografia-section h2 {
+  color: var(--primary-blue);
+  font-size: 2rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.accion-section h2 {
+  color: var(--accent-green);
+}
+
+.accion-desc {
+  max-width: 800px;
+  margin: 0 auto var(--spacing-lg);
+  color: var(--color-text-light);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* Estilos de Card */
+.card {
+  background-color: var(--color-white);
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card svg {
+  font-size: 3rem;
+  color: var(--secondary-blue);
+  margin-bottom: var(--spacing-sm);
+}
+
+.card h3 {
+  font-size: 1.25rem;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 700;
+}
+
+/* -------------------------- */
+/* 4. LÍNEA DE TIEMPO */
+/* -------------------------- */
+.biografia-section {
+  background-color: var(--color-white);
+}
+
+.timeline {
+  width: 90%;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  padding: var(--spacing-md) 0;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 100%;
+  background-color: var(--secondary-blue);
+  transform: translateX(-50%);
+}
+
+.timeline-item {
+  padding: var(--spacing-sm) 0;
+  position: relative;
+  width: 50%;
+}
+
+.timeline-item:nth-child(odd) {
+  left: 0;
+  padding-right: var(--spacing-lg);
+  text-align: right;
+}
+
+.timeline-item:nth-child(even) {
+  left: 50%;
+  padding-left: var(--spacing-lg);
+  text-align: left;
+}
+
+.timeline-item::after {
+  content: "";
+  position: absolute;
+  top: 20px;
+  width: 14px;
+  height: 14px;
+  background-color: var(--accent-green);
+  border: 3px solid var(--color-white);
+  border-radius: 50%;
+  z-index: 10;
+}
+
+.timeline-item:nth-child(odd)::after {
+  right: -8px;
+  transform: translateX(0);
+}
+
+.timeline-item:nth-child(even)::after {
+  left: -8px;
+  transform: translateX(0);
+}
+
+.timeline-year {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  margin-bottom: var(--spacing-xs);
+}
+
+.timeline-description {
+  background-color: var(--color-bg-light);
+  padding: var(--spacing-sm);
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* -------------------------- */
+/* 5. RESPONSIVIDAD */
+/* -------------------------- */
+@media (max-width: 992px) {
+  /* HÉROE: Volver a apilar verticalmente y centrar */
+  .hero-section {
+    padding: var(--spacing-lg) 0;
+  }
+  .hero-main-content {
+    flex-direction: column;
+    align-items: center;
+    min-height: unset;
+  }
+
+  .hero-image-left {
+    display: none; /* Ocultar imagen en móvil */
+  }
+
+  .hero-text-right {
+    flex: 0 0 100%;
+    padding: 0;
+    text-align: center; /* Centrar todo el texto */
+  }
+
+  .hero-text-right h1 {
+    font-size: 2.2rem;
+  }
+
+  /* LÍNEA DE TIEMPO: Apilar a la izquierda */
+  .timeline {
+    width: 100%;
+    padding: 0 var(--spacing-sm);
+  }
+  .timeline::before {
+    left: 15px;
+    transform: none;
+  }
+  .timeline-item {
+    width: 100%;
+    left: 0;
+    padding-right: 0;
+    padding-left: var(--spacing-lg);
+    text-align: left;
+  }
+  .timeline-item:nth-child(odd) {
+    padding-right: 0;
+    text-align: left;
+  }
+  .timeline-item:nth-child(odd)::after,
+  .timeline-item:nth-child(even)::after {
+    left: 10px;
+    right: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .gestion-section,
+  .accion-section,
+  .biografia-section {
+    padding: var(--spacing-lg) 0;
+  }
+  .grid-3 {
+    grid-template-columns: 1fr; /* Apilar tarjetas en pantallas pequeñas */
+  }
+}

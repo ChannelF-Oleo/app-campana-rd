@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- REGLAS PARA LA COLECCIÓN 'users' ---
+    match /users/{userId} {
+
+      // --- Funciones Auxiliares ---
+      // ¿Es el usuario dueño de este perfil?
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // ¿Tiene el usuario el rol de Admin?
+      function isAdmin() {
+        // Verifica si el usuario está autenticado Y lee su propio documento para ver el rol.
+        return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+      }
+      
+      // ¿Está el usuario logueado?
+      function isSignedIn() {
+       return request.auth != null;
+      }
+
+      // ¿El usuario que pide leer (request.auth.uid) es el líder asignado 
+      // al perfil que se está intentando leer (resource.data)?
+      function isMyAssignedLeader() {
+        // Verifica que esté logueado y que el campo 'liderAsignado' del documento coincida con el uid del solicitante.
+        return isSignedIn() && resource.data.liderAsignado == request.auth.uid;
+      }
+      // --- Fin Funciones Auxiliares ---
+
+
+      // LEER (get): Permitir si es dueño, admin, o si es su líder asignado.
+      allow get: if isOwner() || isAdmin() || isMyAssignedLeader();
+      
+      // LEER LISTA (list): Solo los admins pueden listar todos los usuarios.
+      allow list: if isAdmin();
+
+      // CREAR (create): Nadie puede crear usuarios desde la app.
+      allow create: if false;
+
+      // ACTUALIZAR (update):
+      // - El dueño puede actualizar SOLO el campo 'goal'.
+      // - Un admin puede actualizar CUALQUIER campo.
+      allow update: if (isOwner() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['goal']))
+                     || isAdmin();
+
+      // BORRAR (delete): Nadie puede borrar usuarios desde la app.
+      allow delete: if false;
+    }
+
+
+    // --- REGLAS PARA LA COLECCIÓN 'simpatizantes' ---
+    match /simpatizantes/{simpatizanteId} {
+    
+       // Función auxiliar (Repetida por claridad)
+       function isSignedIn() {
+         return request.auth != null;
+       }
+       
+       // Función auxiliar (Repetida por claridad)
+       function isAdmin() {
+         return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+       }
+
+      // CREAR (create): Permitido a cualquiera (para formulario público y callable function).
+      // Idealmente, se refinaría para validar datos o requerir autenticación para la callable function.
+      allow create: if true; 
+
+      // LEER (get, list): Permitido solo a usuarios logueados (multiplicadores, líderes, admins).
+      allow read: if isSignedIn();
+
+      // ACTUALIZAR (update): No permitido desde la app.
+      allow update: if false;
+
+      // BORRAR (delete): No permitido desde la app.
+      allow delete: if false;
+    }
+  }
+}

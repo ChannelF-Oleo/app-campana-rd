@@ -1,0 +1,345 @@
+/* ===============================================================
+   COMANDOS CSS - UNIFICADO Y COMPLETO
+   =============================================================== */
+
+.comandos-container {
+  padding: 2rem;
+  background-color: var(--page-bg);
+  color: var(--primary-text);
+}
+
+.comandos-container h2 {
+  color: var(--primary-text);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle-comandos {
+  color: var(--secondary-text);
+  margin-bottom: 2rem;
+}
+
+/* --- Estilos del Acordeón --- */
+.accordion-comandos {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  overflow: hidden;
+}
+
+.comando-section {
+  background-color: var(--element-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+.comando-section:last-child {
+  border-bottom: none;
+}
+
+.comando-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.comando-header:hover:not(.expanded) {
+  background-color: var(--hover-bg);
+}
+
+.comando-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Estilo Base para Iconos de Acción (Editar, Exportar, etc.) */
+.icon-button {
+  background: none;
+  border: none;
+  color: var(--secondary-text);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+/* Estilo de Hover General para iconos pequeños */
+.icon-button:hover {
+  color: var(--accent-color);
+  background-color: var(--hover-bg);
+}
+
+/* --- ESTILOS ESPECÍFICOS PARA BOTONES DE ACCIÓN VISIBLE --- */
+
+/* Edición */
+.header-actions .edit-button {
+  color: var(--accent-color); /* Color que lo hace visible */
+}
+.header-actions .edit-button:hover {
+  color: white;
+  background-color: var(--accent-color);
+}
+
+/* Exportar (Excel) */
+.header-actions .export-button {
+  color: #21a366; /* Verde de Excel */
+}
+.header-actions .export-button:hover {
+  color: white;
+  background-color: #21a366;
+}
+/* ---------------------------------------------------- */
+
+.expand-icon {
+  margin-left: 0.5rem;
+  transition: transform 0.3s ease;
+}
+.expand-icon.rotate {
+  transform: rotate(180deg);
+}
+
+/* --- Contenido y Filtrado --- */
+.comando-content {
+  padding: 1rem 1.5rem 1.5rem;
+  background-color: var(--element-bg);
+}
+
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.filter-icon {
+  color: var(--accent-color);
+  font-size: 1.2rem;
+}
+
+.filter-input,
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--page-bg);
+  color: var(--primary-text);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+.filter-input {
+  flex-grow: 1;
+  min-width: 150px;
+}
+
+.filter-select {
+  min-width: 120px;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  border-color: var(--accent-color);
+  outline: none;
+}
+
+/* --- Estilos de Renglones (Lista) --- */
+.renglones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.renglon-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--page-bg);
+  transition: background-color 0.2s;
+}
+.renglon-item.viewing:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Vista de Lectura */
+.view-mode {
+  display: flex;
+  gap: 0.5rem;
+  flex-grow: 1;
+  flex-wrap: wrap;
+}
+.view-rol {
+  color: var(--accent-color);
+  min-width: 200px;
+}
+.view-separator,
+.view-zona,
+.view-sector {
+  color: var(--secondary-text);
+  font-size: 0.9em;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.view-zona,
+.view-sector {
+  color: var(--accent-color);
+  font-weight: 600;
+  font-style: normal;
+}
+.view-user {
+  color: var(--primary-text);
+  font-weight: 500;
+}
+
+/* Vista de Edición */
+.renglon-item.editing {
+  background-color: var(--hover-bg);
+  padding: 10px;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.rol-input,
+.usuario-select,
+.zona-select,
+.sector-select {
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--element-bg);
+  color: var(--primary-text);
+}
+
+.rol-input {
+  flex-grow: 2;
+  min-width: 150px;
+}
+.usuario-select {
+  flex-grow: 3;
+}
+.zona-select,
+.sector-select {
+  flex-grow: 1;
+  min-width: 100px;
+}
+
+.remove-field-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-size: 0.8rem;
+}
+.remove-field-button:hover {
+  opacity: 0.8;
+}
+
+/* Acciones de Edición (Guardar/Añadir/Cancelar) */
+.editing-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.add-field-button,
+.save-changes-button,
+.cancel-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-field-button {
+  background-color: #0d6efd;
+  color: white;
+}
+.add-field-button:hover {
+  background-color: #0b5ed7;
+}
+
+.save-changes-button {
+  background-color: #28a745;
+  color: white;
+}
+.save-changes-button:hover {
+  background-color: #218838;
+}
+
+.cancel-button {
+  background-color: var(--secondary-text);
+  color: white;
+}
+.cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.empty-state,
+.loading-state {
+  padding: 1rem;
+  color: var(--secondary-text);
+  font-style: italic;
+  text-align: center;
+}
+
+/* --- MEDIA QUERIES PARA RESPONSIVE --- */
+
+@media (max-width: 768px) {
+  .renglon-item.editing {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rol-input,
+  .usuario-select,
+  .zona-select,
+  .sector-select,
+  .remove-field-button {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .view-mode {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .view-rol {
+    min-width: unset;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .filter-icon {
+    margin-bottom: 0.5rem;
+  }
+  .filter-input,
+  .filter-select {
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+}

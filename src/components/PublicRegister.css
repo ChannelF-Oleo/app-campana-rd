@@ -1,0 +1,211 @@
+/* === Contenedor Principal === */
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Alinea arriba para formularios largos */
+  min-height: 100vh;
+  background-color: #f4f7f6; /* Un gris muy suave */
+  padding: 40px,30px;
+  margin: 40px,30px;
+  box-sizing: border-box; /* Asegura que el padding no desborde */
+}
+
+:root {
+  /* Paleta */
+  --primary-blue: #004d99; /* Azul fuerte institucional */
+  --secondary-blue: #007bff; /* Azul de acento */
+  --accent-green: #28a745; /* Verde de acción */
+  --dark-navy: #022340; /* Azul Marino para degradado */
+
+  /* Colores Funcionales */
+  --color-bg-light: #f4f7f9;
+  --color-white: #ffffff;
+  --color-text-dark: #333333;
+  --color-text-light: #555555;
+
+  /* Tipografía y Espaciado */
+  --font-primary: "Montserrat", sans-serif;
+  --spacing-xs: 5px;
+  --spacing-sm: 10px;
+  --spacing-md: 20px;
+  --spacing-lg: 40px;
+  --spacing-xl: 60px;
+}
+
+/* === Estructura del Formulario === */
+.register-form {
+  width: 100%;
+  max-width: 600px; /* Ancho máximo para legibilidad */
+  padding: 2.5rem; /* Más espacio interno */
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08); /* Sombra más sutil */
+  border-top: 5px solid #0056b3; /* Un acento de color de la campaña */
+}
+
+/* === Encabezado y Textos === */
+.register-form h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #2c3e50; /* Un azul oscuro, más profesional */
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.register-form p {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #7f8c8d; /* Gris para texto secundario */
+  font-size: 1rem;
+}
+
+/* === Grupos de Campos (Label + Input) === */
+.input-group {
+  margin-bottom: 1.5rem;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #34495e; /* Un color de texto más oscuro para las etiquetas */
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* === Estilo de los Campos de Entrada === */
+.input-group input[type="text"],
+.input-group input[type="email"],
+.input-group input[type="tel"] {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #bdc3c7; /* Borde gris claro */
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #333;
+  transition: border-color 0.3s, box-shadow 0.3s; /* Transición suave */
+}
+
+/* Efecto de 'glow' al seleccionar el campo para mejor feedback */
+.input-group input:focus {
+  outline: none; /* Quitamos el borde por defecto del navegador */
+  border-color: #007bff; /* Borde azul al seleccionar */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+/* === Checkbox de Términos y Condiciones === */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  margin-top: 1rem;
+}
+
+.checkbox-group input {
+  width: auto;
+  margin-right: 10px;
+  transform: scale(1.2); /* Hacemos el checkbox un poco más grande */
+}
+
+.checkbox-group label {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+}
+
+/* === Botón Principal === */
+button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff; /* Azul primario */
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover {
+  background-color: #0056b3; /* Un azul más oscuro al pasar el mouse */
+  transform: translateY(-2px); /* Un ligero efecto de levantamiento */
+}
+
+/* Estilo para el botón cuando está deshabilitado (cargando) */
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.register-logo {
+  display: block;
+  margin: 0 auto 1.5rem auto;
+  max-width: 100%;
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(
+    145deg,
+    var(--dark-navy) 0%,
+    var(--primary-blue) 100%
+  );
+  width: 100%;
+  margin: 0;
+  padding:0;
+
+}
+
+/* === Responsividad para Móviles === */
+@media (max-width: 640px) {
+  .register-form {
+    padding: 1.5rem;
+  }
+  .register-form h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* ... (estilos existentes) ... */
+
+.referrer-info {
+  background-color: #e7f3ff; /* Fondo azul claro */
+  border-left: 5px solid #007bff; /* Borde izquierdo azul */
+  padding: 10px 15px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: #004085; /* Texto azul oscuro */
+  border-radius: 0 4px 4px 0; /* Bordes redondeados a la derecha */
+}
+
+/* ... (otros estilos del formulario) ... */
+
+/* --- Estilos para Notificaciones Inline --- */
+.notification {
+  padding: 12px 15px;
+  margin-top: 1.5rem; /* Espacio arriba */
+  border-radius: 5px;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid transparent; /* Base border */
+}
+
+.notification.success {
+  background-color: #d1e7dd; /* Fondo verde Bootstrap */
+  color: #0f5132; /* Texto verde Bootstrap */
+  border-color: #badbcc; /* Borde verde Bootstrap */
+}
+
+.notification.error {
+  background-color: #f8d7da; /* Fondo rojo Bootstrap */
+  color: #842029; /* Texto rojo Bootstrap */
+  border-color: #f5c2c7; /* Borde rojo Bootstrap */
+}
+
+/* Opcional: Estilo para el input de cédula con error */
+input:invalid {
+  border-color: #dc3545; /* Borde rojo si el input es inválido (requiere pattern) */
+}

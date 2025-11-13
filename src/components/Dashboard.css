@@ -1,0 +1,38 @@
+/* Styling for the main welcome area */
+.dashboard-section-title {
+  margin: 10px;
+}
+.metrics-grid {
+  margin: 10px;
+}
+.dashboard-welcome {
+  padding: 2rem; /* Consistent spacing */
+  margin: 10px;
+}
+
+.dashboard-welcome h1 {
+  font-size: 2rem; /* Large heading */
+  color: #333; /* Dark grey text - Consider using CSS variables if available */
+  margin-bottom: 1rem; /* Space below heading - Added for better flow */
+}
+
+/* Grid layout for metric cards/charts */
+.metrics-grid {
+  display: grid;
+  /* Responsive columns: fit as many columns >= 300px as possible, distribute extra space */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem; /* Increased gap slightly for better separation */
+  margin-bottom: 2rem; /* Space below the grid */
+  padding: 2rem;
+}
+
+/* Title style for sections within the dashboard */
+.dashboard-section-title {
+  font-size: 1.5rem;
+  font-weight: 600; /* Bold weight */
+  color: #0b4a8a; /* Specific blue color - Consider CSS variable */
+  margin: 2rem 0 1rem; /* Combined top/bottom margin */
+  padding-bottom: 0.5rem; /* Space below text, above border */
+  border-bottom: 2px solid #ecf0f1; /* Light grey bottom border */
+  padding: 2rem;
+}

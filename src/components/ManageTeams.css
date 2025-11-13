@@ -1,0 +1,233 @@
+/* ===============================================================
+   MANAGE TEAMS CSS - CORREGIDO
+   - Utiliza Flexbox para alinear correctamente el nombre y el botón.
+   - Estilos consistentes con el resto de la aplicación.
+   - Soporte para tema claro y oscuro a través de variables.
+   =============================================================== */
+
+/* --- Contenedor Principal --- */
+.manage-teams-container {
+  padding: 2rem;
+}
+
+.manage-teams-container h2 {
+  color: var(--primary-text);
+  margin-bottom: 2rem;
+}
+
+/* --- Acordeón de Líderes --- */
+.leaders-accordion {
+  background-color: var(--element-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  overflow: hidden;
+}
+
+/* Item individual del líder */
+.leader-item {
+  border-bottom: 1px solid var(--border-color);
+}
+.leader-item:last-child {
+  border-bottom: none;
+}
+
+/* Cabecera clickeable del acordeón */
+.leader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.leader-header:hover {
+  background-color: var(--hover-bg);
+}
+.leader-item.expanded .leader-header {
+  background-color: color-mix(
+    in srgb,
+    var(--accent-color) 10%,
+    var(--element-bg)
+  );
+}
+
+.leader-header h3 {
+  margin: 0;
+  color: var(--primary-text);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.team-count-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background-color: var(--page-bg);
+  color: var(--secondary-text);
+}
+
+.expand-icon {
+  color: var(--secondary-text);
+  transition: transform 0.3s ease;
+}
+.leader-item.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Contenido desplegable del acordeón */
+.leader-content {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+  .leader-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Secciones de Asignados y Disponibles */
+.team-section h4,
+.available-section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--secondary-text);
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Listas de Multiplicadores */
+.multiplicadores-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+/* === LA SOLUCIÓN CLAVE ESTÁ AQUÍ === */
+.multiplicador-item {
+  display: flex; /* 1. Activa Flexbox */
+  justify-content: space-between; /* 2. Separa los elementos a los extremos */
+  align-items: center; /* 3. Los alinea verticalmente */
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.multiplicador-item:last-child {
+  border-bottom: none;
+}
+
+/* Nombre del multiplicador */
+.multiplicador-name {
+  flex-grow: 1; /* 4. Permite que el nombre ocupe todo el espacio disponible */
+  margin-right: 1rem; /* 5. Añade un espacio antes del botón */
+  font-weight: 500;
+  /* Evita que el texto se desborde si es muy largo */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  list-style: none;
+}
+
+/* Botón de Asignar/Quitar */
+.assign-button {
+  padding: 6px 12px;
+  width: auto;
+  margin: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+  flex-shrink: 0; /* 6. Evita que el botón se encoja */
+}
+.assign-button:hover {
+  opacity: 0.85;
+}
+.assign-button.add {
+  background-color: #28a745;
+  color: white;
+}
+.assign-button.remove {
+  background-color: #dc3545;
+  color: white;
+}
+/* === FIN DE LA SOLUCIÓN === */
+
+/* Mensajes de estado vacío */
+.empty-state {
+  padding: 1rem;
+  text-align: center;
+  font-style: italic;
+  color: var(--secondary-text);
+}
+
+/* --- Estilos para la barra de exportación global --- */
+.global-actions-bar {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.export-teams-button {
+  background-color: #21a366; /* Verde Excel */
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+ 
+}
+
+.export-teams-button:hover:not(:disabled) {
+  background-color: #1a7e4e;
+}
+
+.export-teams-button:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+/* --- Estilos para el botón de exportación individual (icono) --- */
+.leader-header .export-individual-button {
+  /* Reutilizar estilos de icono */
+  background: none;
+  border: none;
+  color: #21a366; /* Color de Excel */
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: color 0.2s, background-color 0.2s;
+  margin-left: auto; /* Mover el botón entre el nombre y el expand-icon */
+  width:100px
+}
+
+.leader-header .export-individual-button:hover:not(:disabled) {
+  color: white;
+  background-color: #21a366;
+}
+
+.leader-header .export-individual-button:disabled {
+  color: var(--secondary-text);
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: none;
+}
+
+

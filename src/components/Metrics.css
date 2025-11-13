@@ -1,0 +1,116 @@
+/* ===============================================================
+   MÉTRICAS CSS - (Corregido y Unificado)
+   =============================================================== */
+
+/* --- Estilo Base de la Tarjeta --- */
+.metric-card {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-radius: 12px; /* Usar el radio más grande del segundo bloque */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* Ya no usamos text-align: center; para que el encabezado funcione */
+}
+
+/* --- Encabezado de la Tarjeta (NECESARIO para alinear Título y Botón) --- */
+.metric-card-header {
+    display: flex;
+    justify-content: space-between; /* Mueve el título a la izquierda y el botón a la derecha */
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.metric-card-header h3 {
+    /* Estilo tomado del segundo bloque */
+    margin: 0;
+    color: #34495e;
+    font-size: 1.2rem; /* Mantener la consistencia del primer bloque */
+}
+
+/* --- Valores de Métrica --- */
+.metric-card .metric-value {
+    /* Mantener el estilo del primer bloque, pero asegurar que no tenga margen superior excesivo */
+    font-size: 3rem;
+    font-weight: 700;
+    color: #007bff;
+    margin: 1rem 0 0 0; 
+}
+
+/* --- Estilo del Botón de Exportar (Implementado) --- */
+.export-metric-button {
+    background-color: #21a366; /* Verde de Excel */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    display: flex; /* Para centrar el icono */
+    align-items: center;
+}
+
+.export-metric-button:hover:not(:disabled) {
+    background-color: #1a7e4e;
+}
+
+.export-metric-button:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
+}
+
+/* --- Estilos Adicionales (Objetivos/Gráficos) --- */
+
+.chart-card {
+    padding: 2rem;
+}
+
+.goal-card .metric-value {
+    font-size: 2.5rem; 
+}
+
+.progress-bar-container {
+    height: 20px;
+    width: 100%;
+    background-color: #e0e0de;
+    border-radius: 10px;
+    margin-top: 1rem;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: #28a745;
+    border-radius: 10px;
+    transition: width 0.5s ease-in-out;
+}
+
+.progress-text {
+    margin-top: 0.5rem;
+    font-weight: bold;
+    color: #555;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.goal-header h3 {
+    margin: 0;
+}
+
+.edit-goal-button {
+    background: none;
+    border: 1px solid #007bff;
+    color: #007bff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.edit-goal-button:hover {
+    background-color: #007bff;
+    color: white;
+}
