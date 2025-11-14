@@ -1,12 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../firebase"; // db needed for getDoc
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { doc, getDoc } from "firebase/firestore";
+import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api"; // Nuevo: Importar componentes de Google Maps
 import { ubicacionesData } from "../data/ubicaciones.js";
 import "./PublicRegister.css";
 import logo from "../Felix/Inscribete.png";
 
+// ⚠️ DEBES REEMPLAZAR 'TU_GOOGLE_MAPS_API_KEY' CON TU CLAVE REAL DE LA API
+const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+
+// Configuración del Mapa
+const mapContainerStyle = {
+  width: "100%",
+  height: "300px",
+  marginBottom: "20px",
+  borderRadius: "8px",
+};
+// Centro inicial: Santo Domingo
+const initialCenter = {
+  lat: 18.4861,
+  lng: -69.9309,
+};
+const defaultZoom = 12;
+const libraries = ["places"]; // Librería de places
 
 // Function to get URL parameters
 function useQuery() {
@@ -50,12 +68,29 @@ function PublicRegister() {
   const [selectedSector, setSelectedSector] = useState("");
   const [municipios, setMunicipios] = useState([]);
   const [sectores, setSectores] = useState([]);
+  // NUEVO: Estado para las coordenadas (ubicación pineada)
+  const [coordinates, setCoordinates] = useState(initialCenter);
+
   // Notification state
   const [notification, setNotification] = useState({ message: "", type: "" }); // type: 'success' or 'error'
 
   const queryParams = useQuery();
   const referrerId = queryParams.get("ref");
   const navigate = useNavigate();
+
+  // Cargar script de Google Maps
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: googleMapsApiKey,
+    libraries,
+  });
+
+  // Función para manejar el movimiento del marcador (Marker)
+  const onMarkerDragEnd = useCallback((event) => {
+    setCoordinates({
+      lat: event.latLng.lat(),
+      lng: event.latLng.lng(),
+    });
+  }, []);
 
   // Effect for provincia -> municipio cascade
   useEffect(() => {
@@ -141,6 +176,20 @@ function PublicRegister() {
       });
       return;
     }
+    // Opcional: Validar que el pin esté ubicado (puedes decidir si es obligatorio)
+    if (
+      !coordinates ||
+      (coordinates.lat === initialCenter.lat &&
+        coordinates.lng === initialCenter.lng)
+    ) {
+      setNotification({
+        message:
+          "Por favor, arrastra el pin en el mapa para especificar tu ubicación exacta.",
+        type: "error",
+      });
+      // Si quieres que sea obligatorio, descomenta el return:
+      // return;
+    }
 
     setLoading(true);
 
@@ -190,6 +239,9 @@ function PublicRegister() {
         provincia: selectedProvincia,
         municipio: selectedMunicipio,
         sector: selectedSector,
+        // NUEVO: Coordenadas
+        lat: coordinates.lat,
+        lng: coordinates.lng,
         ...registeredByData,
       });
 
@@ -206,6 +258,7 @@ function PublicRegister() {
         setSelectedProvincia("");
         setSelectedMunicipio("");
         setSelectedSector("");
+        setCoordinates(initialCenter); // Restablecer coordenadas
       } else {
         setNotification({ message: result.data.message, type: "error" });
       }
@@ -220,18 +273,36 @@ function PublicRegister() {
     }
   };
 
+  // Renderizado condicional si hay error o está cargando el mapa
+  if (loadError)
+    return (
+      <div className="register-container">
+        <p className="notification error">
+          Error al cargar el mapa de Google Maps. Por favor, verifica la clave
+          API.
+        </p>
+      </div>
+    );
+  if (!isLoaded)
+    return (
+      <div className="register-container">
+        <p className="notification success">Cargando formulario y mapa...</p>
+      </div>
+    );
+
   return (
     <div className="register-container">
       <form className="register-form" onSubmit={handleSubmit}>
         {referrerId && (
           <p className="referrer-info">Registro referido por un activista.</p>
         )}
-       <div className="logo-container"><img src={logo} alt="Inscríbete" className="register-logo" /></div> 
-        <h2>Registrate como simpatizante</h2>
+        <div className="logo-container">
+          <img src={logo} alt="Inscríbete" className="register-logo" />
+        </div>
+        <h2>Regístrate como simpatizante</h2>
         <p>¡Quiero ser parte!</p>
 
-        {/* Form Fields */}
-
+        {/* Cédula */}
         <div className="input-group">
           <label htmlFor="cedula">Cédula de Identidad</label>
           <input
@@ -243,6 +314,7 @@ function PublicRegister() {
             required
           />
         </div>
+        {/* Nombre */}
         <div className="input-group">
           <label htmlFor="nombre">Nombre Completo</label>
           <input
@@ -254,6 +326,7 @@ function PublicRegister() {
           />
         </div>
 
+        {/* Email */}
         <div className="input-group">
           <label htmlFor="email">Correo Electrónico</label>
           <input
@@ -264,6 +337,7 @@ function PublicRegister() {
             required
           />
         </div>
+        {/* Teléfono */}
         <div className="input-group">
           <label htmlFor="telefono">Teléfono / Celular</label>
           <input
@@ -274,6 +348,7 @@ function PublicRegister() {
           />
         </div>
 
+        {/* Provincia */}
         <div className="input-group">
           <label htmlFor="provincia">Provincia</label>
           <select
@@ -290,6 +365,7 @@ function PublicRegister() {
             ))}
           </select>
         </div>
+        {/* Municipio */}
         <div className="input-group">
           <label htmlFor="municipio">Municipio</label>
           <select
@@ -307,6 +383,7 @@ function PublicRegister() {
             ))}
           </select>
         </div>
+        {/* Sector */}
         <div className="input-group">
           <label htmlFor="sector">Sector o Barrio</label>
           <select
@@ -326,6 +403,7 @@ function PublicRegister() {
           </select>
         </div>
 
+        {/* Dirección */}
         <div className="input-group">
           <label htmlFor="direccion">Dirección</label>
           <input
@@ -335,6 +413,7 @@ function PublicRegister() {
             onChange={(e) => setDireccion(e.target.value)}
           />
         </div>
+        {/* Colegio Electoral */}
         <div className="input-group">
           <label htmlFor="colegio">Colegio Electoral (Opcional)</label>
           <input
@@ -344,6 +423,37 @@ function PublicRegister() {
             onChange={(e) => setColegioElectoral(e.target.value)}
           />
         </div>
+
+        {/* ---------------------------------------------------- */}
+        {/* NUEVO: Contenedor del Mapa de Google Maps */}
+        {/* ---------------------------------------------------- */}
+        <div className="map-group input-group">
+          <label className="map-label">
+            📍 Ubicación Exacta (Arrastra el Pin)
+          </label>
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            zoom={defaultZoom}
+            center={coordinates}
+            // Puedes añadir onClick para permitir pinchar en el mapa
+          >
+            {/* Marcador Movible */}
+            <Marker
+              position={coordinates}
+              draggable={true} // Permitir arrastrar el marcador
+              onDragEnd={onMarkerDragEnd} // Capturar las nuevas coordenadas
+            />
+          </GoogleMap>
+          <p className="coords-display">
+            Coordenadas: Lat: {coordinates.lat.toFixed(6)}, Lng:{" "}
+            {coordinates.lng.toFixed(6)}
+          </p>
+        </div>
+        {/* ---------------------------------------------------- */}
+        {/* FIN del Contenedor del Mapa */}
+        {/* ---------------------------------------------------- */}
+
+        {/* Checkbox de Términos */}
         <div className="checkbox-group">
           <input
             type="checkbox"

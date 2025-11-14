@@ -1,10 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { getFunctions, httpsCallable } from "firebase/functions";
-// No need for db or getDoc here unless verifying referrer (which isn't needed here)
+import {
+  GoogleMap,
+  useLoadScript,
+  Marker,
+} from "@react-google-maps/api"; // Cambiado: Marker -> AdvancedMarkerElement
+ 
 import { ubicacionesData } from "../data/ubicaciones.js";
 import "./PublicRegister.css"; // Reusing styles
 
-// Validation Functions
+const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY; // Corregido: Prefijo de la variable de entorno
+
+// Opciones del mapa
+const mapContainerStyle = {
+  width: "100%",
+  height: "400px",
+  marginBottom: "15px",
+};
+// Centro inicial: Por ejemplo, Santo Domingo, República Dominicana
+const initialCenter = {
+  lat: 18.4861,
+  lng: -69.9309,
+};
+const defaultZoom = 12;
+const libraries = ["places", "marker"]; // Añadido: Cargar la librería 'marker'
+
+// Validation Functions (Mantenemos las tuyas)
 const validarCedula = (cedula) => {
   const cedulaRegex = /^\d{3}-?\d{7}-?\d{1}$/;
   return cedulaRegex.test(cedula);
@@ -37,10 +58,61 @@ function RegisterByActivist({ user }) {
   const [selectedSector, setSelectedSector] = useState("");
   const [municipios, setMunicipios] = useState([]);
   const [sectores, setSectores] = useState([]);
+
+  // NUEVO: Estado para las coordenadas (ubicación pineada)
+  const [coordinates, setCoordinates] = useState(initialCenter);
+  // Estado para el mapa (referencia)
+  const [map, setMap] = useState(null);
+
+  // Cargar script de Google Maps
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: googleMapsApiKey,
+    libraries,
+  });
+
+  // Función para manejar el movimiento del marcador
+  const onMarkerDragEnd = useCallback((event) => {
+    setCoordinates({
+      lat: event.latLng.lat(),
+      lng: event.latLng.lng(),
+    });
+  }, []);
+
+  // Guardar la referencia del mapa
+  const onLoad = useCallback((map) => {
+    setMap(map);
+  }, []);
+
+  // Limpiar la referencia del mapa
+  const onUnmount = useCallback(() => {
+    setMap(null);
+  }, []);
+
+  // NUEVO: Función para geocodificar una dirección y centrar el mapa
+  const geocodeAddress = useCallback(
+    (address) => {
+      if (!isLoaded || !map) return;
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode(
+        { address: `${address}, República Dominicana` },
+        (results, status) => {
+          if (status === "OK" && results[0]) {
+            const location = results[0].geometry.location;
+            map.panTo(location);
+          } else {
+            console.error(
+              `La geocodificación falló por la siguiente razón: ${status}`
+            );
+          }
+        }
+      );
+    },
+    [isLoaded, map]
+  );
   // Notification state
   const [notification, setNotification] = useState({ message: "", type: "" });
 
-  // Effect for provincia -> municipio cascade
+  // Effects for location cascades (Mantenemos los tuyos)
   useEffect(() => {
     if (selectedProvincia) {
       const provinciaEncontrada = ubicacionesData.find(
@@ -48,14 +120,14 @@ function RegisterByActivist({ user }) {
       );
       setMunicipios(provinciaEncontrada ? provinciaEncontrada.municipios : []);
       setSelectedMunicipio("");
+      geocodeAddress(selectedProvincia); // Centrar el mapa en la provincia
       setSectores([]);
     } else {
       setMunicipios([]);
       setSectores([]);
     }
-  }, [selectedProvincia]);
+  }, [selectedProvincia, geocodeAddress]);
 
-  // Effect for municipio -> sector cascade
   useEffect(() => {
     if (selectedMunicipio) {
       const provinciaActual = ubicacionesData.find(
@@ -73,13 +145,13 @@ function RegisterByActivist({ user }) {
     } else {
       setSectores([]);
     }
-  }, [selectedMunicipio, selectedProvincia]); // Corrected dependency
+  }, [selectedMunicipio, selectedProvincia]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setNotification({ message: "", type: "" }); // Clear previous notification
 
-    // Validations
+    // Validations (Mantenemos las tuyas)
     const cedulaNormalizada = cedula.replace(/-/g, "");
     if (cedulaNormalizada.length !== 11) {
       setNotification({
@@ -117,6 +189,20 @@ function RegisterByActivist({ user }) {
       return;
     }
 
+    // Opcional: Validar que el pin esté ubicado
+    if (
+      !coordinates ||
+      (coordinates.lat === initialCenter.lat &&
+        coordinates.lng === initialCenter.lng)
+    ) {
+      setNotification({
+        message:
+          "Por favor, arrastra el pin en el mapa para especificar la ubicación.",
+        type: "error",
+      });
+      // return; // Decide si quieres que la ubicación sea obligatoria
+    }
+
     setLoading(true);
 
     // Call the Callable Function
@@ -132,6 +218,9 @@ function RegisterByActivist({ user }) {
         provincia: selectedProvincia,
         municipio: selectedMunicipio,
         sector: selectedSector,
+        // NUEVO: Enviar las coordenadas
+        lat: coordinates.lat,
+        lng: coordinates.lng,
         // Pass activist's data
         registradoPor: user.uid,
         registradoPorEmail: user.email,
@@ -149,6 +238,7 @@ function RegisterByActivist({ user }) {
         setSelectedProvincia("");
         setSelectedMunicipio("");
         setSelectedSector("");
+        setCoordinates(initialCenter); // Resetear coordenadas
       } else {
         setNotification({ message: result.data.message, type: "error" });
       }
@@ -163,13 +253,17 @@ function RegisterByActivist({ user }) {
     }
   };
 
+  if (loadError) return <div>Error al cargar Google Maps.</div>;
+  if (!isLoaded) return <div>Cargando Mapa...</div>;
+
   return (
     <div className="register-container">
       <form className="register-form" onSubmit={handleSubmit}>
         <h2>Registrar Nuevo Simpatizante</h2>
         <p>Los datos se asociarán a tu perfil.</p>
 
-        {/* Form Fields */}
+        {/* Form Fields... (Mantenemos los tuyos) */}
+
         <div className="input-group">
           <label htmlFor="nombre">Nombre Completo</label>
           <input
@@ -281,6 +375,35 @@ function RegisterByActivist({ user }) {
             onChange={(e) => setColegioElectoral(e.target.value)}
           />
         </div>
+
+        {/* ---------------------------------------------------- */}
+        {/* NUEVO: Contenedor del Mapa de Google Maps */}
+        {/* ---------------------------------------------------- */}
+        <div className="map-group">
+          <label>📍 Ubicación Exacta (Arrastra el Pin)</label>
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            zoom={defaultZoom}
+            center={coordinates} // Centrar en la ubicación seleccionada
+            onLoad={onLoad}
+            onUnmount={onUnmount}
+          >
+            {/* Marcador Movible */}
+
+            <Marker
+              position={coordinates}
+              draggable={true} // Permitir arrastrar el marcador
+              onDragEnd={onMarkerDragEnd} // Capturar las nuevas coordenadas
+            />
+          </GoogleMap>
+          <p className="coords-display">
+            Coordenadas: Lat: {coordinates.lat.toFixed(6)}, Lng:{" "}
+            {coordinates.lng.toFixed(6)}
+          </p>
+        </div>
+        {/* ---------------------------------------------------- */}
+        {/* FIN del Contenedor del Mapa */}
+        {/* ---------------------------------------------------- */}
 
         <button type="submit" disabled={loading}>
           {loading ? "Registrando..." : "Registrar Simpatizante"}

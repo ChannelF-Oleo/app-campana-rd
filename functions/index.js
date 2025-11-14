@@ -19,7 +19,7 @@ exports.createUserAdmin = onCall(
   async (request) => {
     // 1. Verificar que quien llama es un Administrador
     // if (!request.auth || !request.auth.token.admin) { // Necesitarás configurar custom claims para esto
-    //   throw new HttpsError('permission-denied', 'Solo los administradores pueden crear usuarios.');
+    //   throw new HttpsError('permission-denied', 'Solo los administradores pueden crear usuarios.');
     // }
 
     // Incluir 'cedula' en la desestructuración de request.data
@@ -88,6 +88,12 @@ exports.createUserAdmin = onCall(
           sector: "N/A (Usuario Interno)",
           direccion: "N/A (Usuario Interno)",
           colegioElectoral: null,
+          // ----------------------------------------------------------------------
+          // Por defecto, ubicación de Santo Domingo (o la que consideres central)
+          ubicacion: new admin.firestore.GeoPoint(18.4861, -69.9309),
+          lat: 18.4861,
+          lng: -69.9309,
+          // ----------------------------------------------------------------------
           fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
           registradoPor: "Creación Admin",
           // Usamos el UID o email del usuario administrador que ejecuta la función (si request.auth está configurado)
@@ -127,25 +133,48 @@ exports.createUserAdmin = onCall(
   }
 );
 
-// --- Nueva Callable Function para Registrar Simpatizante (sin cambios) ---
+// --- Callable Function para Registrar Simpatizante (MODIFICADA) ---
 exports.registerSimpatizante = onCall(async (request) => {
   // Obtenemos los datos enviados desde el frontend (React)
   const data = request.data;
   const cedula = data.cedula; // Asumimos que viene formateada 000-0000000-0
 
+  // ----------------------------------------------------------------------
+  // MODIFICACIÓN: Desestructurar lat y lng
+  const {
+    nombre,
+    email,
+    telefono,
+    direccion,
+    colegioElectoral,
+    provincia,
+    municipio,
+    sector,
+    registradoPor,
+    registradoPorEmail,
+    lat, // NUEVO
+    lng, // NUEVO
+  } = data;
+
   // Validaciones básicas de entrada
   if (
     !cedula ||
-    !data.nombre ||
-    !data.email ||
-    !data.provincia ||
-    !data.municipio ||
-    !data.sector
+    !nombre ||
+    !email ||
+    !provincia ||
+    !municipio ||
+    !sector ||
+    // Validar coordenadas si vienen. Si no vienen, se puede usar un valor por defecto.
+    (lat !== 0 && !lat) ||
+    (lng !== 0 && !lng)
   ) {
-    logger.error("registerSimpatizante: Faltan datos requeridos.", data);
+    logger.error(
+      "registerSimpatizante: Faltan datos requeridos (lat/lng pueden faltar si no son obligatorios).",
+      data
+    );
     throw new HttpsError(
       "invalid-argument",
-      "Faltan datos requeridos (nombre, email, cédula, provincia, municipio, sector)."
+      "Faltan datos requeridos (nombre, email, cédula, provincia, municipio, sector, y coordenadas de ubicación)."
     );
   }
 
@@ -170,19 +199,31 @@ exports.registerSimpatizante = onCall(async (request) => {
 
     // --- Si la Cédula es Única, Creamos el Documento ---
     logger.log(`registerSimpatizante: Registrando nueva cédula ${cedula}.`);
+
+    // Crear el objeto GeoPoint. Usamos lat/lng directamente.
+    const ubicacionGeoPoint = new admin.firestore.GeoPoint(lat, lng);
+
     const docRef = await simpatizantesRef.add({
-      nombre: data.nombre,
-      cedula: data.cedula, // Guardamos la cédula formateada
-      email: data.email,
-      telefono: data.telefono || null, // Guardar null si está vacío
-      provincia: data.provincia,
-      municipio: data.municipio,
-      sector: data.sector,
-      direccion: data.direccion || null,
-      colegioElectoral: data.colegioElectoral || null,
+      nombre: nombre,
+      cedula: cedula, // Guardamos la cédula formateada
+      email: email,
+      telefono: telefono || null, // Guardar null si está vacío
+      provincia: provincia,
+      municipio: municipio,
+      sector: sector,
+      direccion: direccion || null,
+      colegioElectoral: colegioElectoral || null,
+
+      // ----------------------------------------------------------------------
+      // NUEVOS CAMPOS DE UBICACIÓN
+      ubicacion: ubicacionGeoPoint,
+      lat: lat, // Guardar latitud como número
+      lng: lng, // Guardar longitud como número
+      // ----------------------------------------------------------------------
+
       fechaRegistro: admin.firestore.FieldValue.serverTimestamp(), // Usar fecha del servidor
-      registradoPor: data.registradoPor || "Página Pública", // Usar datos pasados o por defecto
-      registradoPorEmail: data.registradoPorEmail || null,
+      registradoPor: registradoPor || "Página Pública", // Usar datos pasados o por defecto
+      registradoPorEmail: registradoPorEmail || null,
     });
 
     logger.log(
