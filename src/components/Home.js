@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react"; 
 // Importar solo los hooks necesarios, aunque no hay en este componente,
 // es buena práctica para escalabilidad (ej. useState, useEffect si fueran necesarios)
 import {
@@ -6,6 +6,7 @@ import {
   FaHandHoldingMedical,
   FaChild,
   FaArrowRight,
+
 } from "react-icons/fa";
 // Importar un componente de enrutamiento como Link de 'react-router-dom'
 // para evitar recargas completas de página (Asumiendo que estás usando React Router)
@@ -14,6 +15,15 @@ import { Link } from "react-router-dom";
 // import "./ProposalsPage.js";
 import "./Home.css";
 import FelixPortrait from "../Felix/Felix.png";
+import Felix1 from "../Felix/Felix1.png";
+import Felix2 from "../Felix/Felix2.png";
+import Felix3 from "../Felix/Felix3.png";
+import Felix4 from "../Felix/Felix4.png";
+import Felix5 from "../Felix/Felix5.png";
+import Felix6 from "../Felix/Felix6.png";
+import Felix7 from "../Felix/Felix7.jpg";
+import Felix8 from "../Felix/Felix8.jpg";
+import Felixmobil from "../Felix/FelixMobil.png"; 
 
 // 1. Componente de tarjeta reutilizable (Mejora de Mantenibilidad)
 const FeatureCard = ({ icon: Icon, title, description }) => (
@@ -116,6 +126,62 @@ function Home() {
     },
   ];
 
+  // *** DATOS NUEVOS: Galería (Rutas de imágenes reales importadas) ***
+  const galleryData = [
+    {
+      id: 1,
+      image: Felix1, 
+      caption:
+        "UN AÑO ACOMPAÑANDO EL DESARROLLO Entre los Legislativo y lo Comunitario | 2024-2028",
+    },
+    {
+      id: 2,
+      image: Felix2,
+      caption:
+        "Legislando por un Estado Democrático de Derecho que escucha, acompaña y transforma la vida en los barrios de SDO.",
+    },
+    {
+      id: 3,
+      image: Felix3,
+      caption:
+        "Proyecto de resolución de la cámara de diputados que solicita al presidente la asignación de una partida económica en el presupuesto general destinada a la construcción y ha faltado de las calles en los sectores de Hato Nuevo, Caballona, Bienvenido, Juan Guzmán y Palavé.",
+    },
+    {
+      id: 4,
+      image: Felix4,
+      caption:
+        "Proyecto de resolución mediante el cual la cámara de diputados solicita al Ministerio de Educación implementar los cursos de primeros auxilios para que sea impartida como materia en la escuela de jornada extendida",
+    },
+    {
+      id: 5,
+      image: Felix5,
+      caption:
+        "Proyecto de resolución mediante el cual se le solicita al señor presidente a través del INAIPI la instalación de un centro de atención integral a la primera infancia (CAIPI) en los sectores de Las Caobas, Hato Nuevo y Palavé.",
+    },
+    {
+      id: 6,
+      image: Felix6,
+      caption:
+        "Sembrando ciudadanía: recorrido legislativo con los jóvenes de Palavé",
+    },
+    {
+      id: 7,
+      image: Felix7,
+      caption:
+        "Las grandes transformaciones comienzan en pequeños encuentros llenos de compromiso y esperanza. Escuchar, aprender y actuar: ese es el camino.",
+    },
+    {
+      id: 8,
+      image: Felix8,
+      caption:
+        "Educación y solidaridad para un futuro brillante. Acompañando a los niños y niñas de SDO en su camino hacia el éxito académico.",
+    },
+  ];
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+ 
+
   return (
     <div className="home-container">
       {/* SECCIÓN HÉROE */}
@@ -124,7 +190,18 @@ function Home() {
           <div className="hero-main-content">
             {/* Contenedor de la Imagen (Izquierda) */}
             <div className="hero-image-left">
-              <img src={FelixPortrait} alt="Diputado Félix Encarnación" />
+              {/* 1. Imagen para Desktop (la actual) */}
+              <img 
+                src={FelixPortrait} 
+                alt="Diputado Félix Encarnación" 
+                className="desktop-portrait" 
+              />
+              {/* 2. Imagen para Móvil */}
+              <img 
+                src={Felixmobil} 
+                alt="Diputado Félix Encarnación Móvil" 
+                className="mobile-portrait" 
+              />
             </div>
 
             {/* Contenedor del Texto y CTA (Derecha) */}
@@ -162,7 +239,7 @@ function Home() {
         </div>
       </section>
 
-      {/* SECCIÓN BIOGRAFÍA (Línea de Tiempo) */}
+      {/* SECCIÓN BIOGRAFÍA (Línea de Tiempo) - Ajustado en CSS para móvil */}
       <section id="biografia" className="biografia-section">
         <div className="container">
           <h2>Trayectoria de Servicio</h2>
@@ -209,8 +286,67 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* *** NUEVA SECCIÓN: GALERÍA DE FOTOS (Estilo Carrusel IG) *** */}
+      <section id="galeria" className="gallery-section">
+        <div className="container">
+          <h2>Galería Comunitaria</h2>
+          <p className="gallery-desc">
+            Momentos clave de nuestra labor legislativa y compromiso en las
+            calles de Santo Domingo Oeste.
+          </p>
+
+          {/* Wrapper para el posicionamiento de botones en desktop */}
+          <div className="carousel-wrapper">
+            
+            {/* Contenedor que maneja el desplazamiento y contiene los botones en móvil */}
+            <div className="carousel-container">
+              
+             
+              
+              {/* Contenedor de las Slides: Habilitamos el desplazamiento (swipe) con CSS */}
+              <div
+                className="gallery-carousel"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {galleryData.map((item, index) => (
+                  <div
+                    className="gallery-item"
+                    key={item.id}
+                    id={`slide-${item.id}`}
+                  >
+                    <div className="gallery-image-wrapper">
+                      {/* Reemplazar con rutas de imágenes reales */}
+                      <img src={item.image} alt={`Galeria ${index + 1}`} />
+                    </div>
+                    <div className="gallery-caption">
+                      <p>{item.caption}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+             
+            </div>
+          </div>
+
+          {/* Puntos de navegación (Fuera del wrapper para centrado independiente) */}
+          <div className="carousel-dots">
+            {galleryData.map((_, index) => (
+              <button
+                key={index}
+                className={`dot ${index === currentSlide ? "active" : ""}`}
+                onClick={() => setCurrentSlide(index)}
+                aria-label={`Ir a la diapositiva ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
 export default Home;
+
+

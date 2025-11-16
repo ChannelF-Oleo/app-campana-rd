@@ -23,6 +23,11 @@
   --spacing-xl: 60px;
 }
 
+/* Aplicar box-sizing globalmente para evitar desbordes */
+* {
+  box-sizing: border-box;
+}
+
 .home-container {
   font-family: var(--font-primary);
   background-color: var(--color-bg-light);
@@ -37,7 +42,7 @@
 }
 
 /* -------------------------- */
-/* 1. SECCIÓN HÉROE (Invertida) */
+/* 1. SECCIÓN HÉROE (Doble Imagen) */
 /* -------------------------- */
 .hero-section {
   background: linear-gradient(
@@ -58,10 +63,9 @@
   height: fit-content;
 }
 
-/* Contenedor FLEX: Imagen a la derecha, Texto a la izquierda */
 .hero-main-content {
   display: flex;
-  flex-direction: row-reverse; /* ¡INVERSIÓN! */
+  flex-direction: row-reverse;
   align-items: flex-end;
   justify-content: space-between;
   min-height: 250px;
@@ -69,9 +73,9 @@
   height: min-content;
 }
 
-/* IMAGEN DEL DIPUTADO (DERECHA) */
+/* IMAGEN DEL DIPUTADO (DERECHA) - Base */
 .hero-image-left {
-  flex: 0 0 auto; /* El contenedor se ajusta al tamaño de la imagen */
+  flex: 0 0 auto;
   max-width: 400px;
   padding-right: 0;
   padding-left: var(--spacing-md);
@@ -79,7 +83,8 @@
   margin-top: -100px;
 }
 
-.hero-image-left img {
+/* Imagen de Desktop - visible por defecto */
+.desktop-portrait {
   width: 100%;
   height: auto;
   display: block;
@@ -87,10 +92,17 @@
   transform: translateZ(0);
 }
 
+/* Imagen de Móvil - oculta por defecto */
+.mobile-portrait {
+  display: none;
+  width: 100%;
+  height: auto;
+}
+
 /* TEXTO PRINCIPAL (IZQUIERDA) */
 .hero-text-right {
-  flex: 1 1 auto; /* Ocupa el espacio restante */
-  text-align: left; /* Alineación a la izquierda */
+  flex: 1 1 auto;
+  text-align: left;
   padding-left: 0;
   padding-right: var(--spacing-md);
 }
@@ -160,14 +172,16 @@
 /* -------------------------- */
 .gestion-section,
 .accion-section,
-.biografia-section {
+.biografia-section,
+.gallery-section {
   padding: var(--spacing-xl) 0;
   text-align: center;
 }
 
 .gestion-section h2,
 .accion-section h2,
-.biografia-section h2 {
+.biografia-section h2,
+.gallery-section h2 {
   color: var(--primary-blue);
   font-size: 2rem;
   margin-bottom: var(--spacing-lg);
@@ -177,7 +191,8 @@
   color: var(--accent-green);
 }
 
-.accion-desc {
+.accion-desc,
+.gallery-desc {
   max-width: 800px;
   margin: 0 auto var(--spacing-lg);
   color: var(--color-text-light);
@@ -296,10 +311,120 @@
 }
 
 /* -------------------------- */
-/* 5. RESPONSIVIDAD */
+/* 5. GALERÍA DE FOTOS (Carrusel) - Solución Final */
+/* -------------------------- */
+.gallery-section {
+  padding: var(--spacing-xl) 0;
+  text-align: center;
+  background-color: var(--color-bg-light);
+}
+
+.gallery-section h2 {
+  color: var(--primary-blue);
+  font-size: 2rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.gallery-desc {
+  max-width: 800px;
+  margin: 0 auto var(--spacing-lg);
+  color: var(--color-text-light);
+}
+
+/* Contenedor principal: Envuelve el carrusel y botones. Eliminamos el flex para desktop */
+.carousel-wrapper {
+  /* No se necesita flex en desktop, se centra solo */
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.carousel-container {
+  position: relative; /* CRUCIAL: Referencia para los botones absolutos */
+  max-width: 100%; /* Ocupa todo el ancho del wrapper (700px) */
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  background-color: var(--color-white);
+  border-color: 3px var(--primary-blue);
+}
+
+/* FIX FUNCIONAL: Desactivar scroll-snap en Desktop para usar transform: translateX */
+.gallery-carousel {
+  display: flex;
+  transition: transform 0.4s ease-in-out;
+  width: 100%;
+
+  /* Desactivamos propiedades de Swipe en Desktop */
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.gallery-item {
+  flex: 0 0 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+}
+
+.gallery-image-wrapper {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.gallery-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-caption {
+  padding: var(--spacing-md);
+  text-align: left;
+  min-height: 100px;
+}
+
+/* Botones de navegación (Flechas) - UNIFICADO PARA DESKTOP Y MÓVIL */
+
+
+/* Puntos de navegación */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
+  margin-top: var(--spacing-sm);
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ccc;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  padding: 0;
+}
+
+.dot.active {
+  background-color: var(--primary-blue);
+  width: 12px;
+  height: 12px;
+}
+
+/* -------------------------- */
+/* 6. RESPONSIVIDAD */
 /* -------------------------- */
 @media (max-width: 992px) {
-  /* HÉROE: Volver a apilar verticalmente y centrar */
+  /* HÉROE: IMAGEN DUAL Y ALINEACIÓN */
   .hero-section {
     padding: var(--spacing-lg) 0;
   }
@@ -309,21 +434,26 @@
     min-height: unset;
   }
 
+  .desktop-portrait {
+    display: none;
+  }
+  .mobile-portrait {
+    display: block;
+    max-width: 250px;
+    margin: 0 auto;
+    border-radius: 8px;
+  }
   .hero-image-left {
-    display: none; /* Ocultar imagen en móvil */
-  }
-
-  .hero-text-right {
-    flex: 0 0 100%;
+    display: block;
+    max-width: 250px;
     padding: 0;
-    text-align: center; /* Centrar todo el texto */
+    margin: 0 0 var(--spacing-md) 0;
+  }
+  .hero-text-right {
+    text-align: center;
   }
 
-  .hero-text-right h1 {
-    font-size: 2.2rem;
-  }
-
-  /* LÍNEA DE TIEMPO: Apilar a la izquierda */
+  /* LÍNEA DE TIEMPO: FIX DE OVERFLOW FINAL */
   .timeline {
     width: 100%;
     padding: 0 var(--spacing-sm);
@@ -348,15 +478,48 @@
     left: 10px;
     right: auto;
   }
+
+  /* GALERÍA EN MÓVIL: RE-INTRODUCIR SWIPE */
+  .carousel-wrapper {
+    max-width: 100%;
+    padding: 0;
+    gap: 0;
+  }
+  .carousel-container {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+  }
+
+  /* *** HABILITAR SWIPE EN MÓVIL *** */
+  .gallery-carousel {
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .gallery-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  .gallery-item {
+    scroll-snap-align: start;
+  }
+
+  /* BOTONES DE LA GALERÍA EN MÓVIL (Ajuste de tamaño final) */
+
 }
 
 @media (max-width: 768px) {
   .gestion-section,
   .accion-section,
-  .biografia-section {
+  .biografia-section,
+  .gallery-section {
     padding: var(--spacing-lg) 0;
   }
   .grid-3 {
-    grid-template-columns: 1fr; /* Apilar tarjetas en pantallas pequeñas */
+    grid-template-columns: 1fr;
+  }
+  .gallery-image-wrapper {
+    aspect-ratio: 4 / 3;
   }
 }
