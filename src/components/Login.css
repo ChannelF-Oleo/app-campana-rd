@@ -1,65 +1,223 @@
-.login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f0f2f5;
-  }
-  
-  .login-form {
-    padding: 2rem;
-    border-radius: 8px;
-    background-color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .login-form h2 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: #333;
-  }
-  
-  .input-group {
-    margin-bottom: 1rem;
-  }
-  
-  .input-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #555;
-  }
-  
-  .input-group input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  button {
-    width: 100%;
-    padding: 0.75rem;
-    border: none;
-    border-radius: 4px;
-    background-color: #007bff;
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  button:hover {
-    background-color: #0056b3;
-  }
+/*
+|===============================================================
+| ESTILOS DE LOGIN - Módulo Limpio y Estructurado
+|===============================================================
+*/
 
-  .error-message {
-    color: #c0392b;
-    background-color: #fbeae5;
-    border: 1px solid #e74c3c;
-    padding: 10px;
-    border-radius: 5px;
-    text-align: center;
-    margin-bottom: 1rem;
-  }
+/**
+ * 1. Definición de Variables CSS (Custom Properties)
+ * - Centralizamos la paleta de colores para un theming eficiente.
+ */
+:root {
+  /* Colores de Marca y Acciones */
+  --color-primary: #007bff;
+  --color-primary-hover: #0056b3;
+  --color-google: #4285f4;
+  --color-google-hover: #3367d6;
+
+  /* Fondos y Superficies */
+  --page-bg: #f0f2f5;
+  --form-bg: white;
+
+  /* Tipografía */
+  --text-primary: #333;
+  --text-secondary: #555;
+  --text-placeholder: #999;
+  
+  /* Bordes y Líneas */
+  --border-light: #ddd;
+  --border-medium: #ccc;
+
+  /* Feedback (Errores) */
+  --color-error: #c0392b;
+  --bg-error: #fbeae5;
+  
+  /* ♿ Accesibilidad: Sombra de enfoque (WCAG) */
+  --focus-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4); 
+}
+
+/*
+|===============================================================
+| 2. ESTRUCTURA Y LAYOUT
+|===============================================================
+*/
+
+.login-container {
+  /* Usamos Flexbox para centrar en el viewport */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  /* Importante para centrar verticalmente en toda la pantalla */
+  height: 100vh;
+  background-color: var(--page-bg);
+}
+
+.login-form {
+  padding: 2rem;
+  border-radius: 8px;
+  background-color: var(--form-bg);
+  /* Sombra sutil para darle profundidad al formulario */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-form h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+/*
+|===============================================================
+| 3. FORMULARIOS E INPUTS
+|===============================================================
+*/
+
+.input-group {
+  margin-bottom: 1rem;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-medium);
+  border-radius: 4px;
+  /* Transición para una mejor experiencia de usuario (UX) */
+  transition: border-color 0.2s, box-shadow 0.2s; 
+}
+
+/* ♿ Mejor Práctica: Estado de Focus (Accesibilidad) */
+.input-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-shadow);
+}
+
+/*
+|===============================================================
+| 4. BOTONES (General y Específicos)
+|===============================================================
+*/
+
+/* Estilos base para todos los <button> */
+button {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--color-primary);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Clase de utilidad, aunque el selector `button` ya aplica el estilo principal. */
+.btn-primary {
+  background-color: var(--color-primary);
+}
+
+/* Estado Hover: Aplica al botón primario y a todos los botones que no estén deshabilitados */
+.btn-primary:hover,
+button:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+/* Estilos de Deshabilitado */
+button:disabled {
+  background-color: var(--border-medium); /* Gris neutral */
+  opacity: 0.7;
+  cursor: not-allowed;
+  /* Anulamos los eventos del ratón para evitar el cambio de hover en navegadores antiguos */
+  pointer-events: none; 
+}
+
+/* Botón de Google (OAuth) */
+.btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background-color: var(--color-google);
+  border-radius: 8px; /* Radio un poco mayor para distinguirlo */
+  font-weight: 600;
+  margin-bottom: 0;
+  margin-top:10px;
+}
+
+.btn-google:hover {
+  background-color: var(--color-google-hover);
+}
+
+.google-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+  
+}
+
+/*
+|===============================================================
+| 5. COMPONENTES AUXILIARES
+|===============================================================
+*/
+
+/* Divisor "O usa tu Email/Cédula" (Patrón común en formularios) */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: var(--text-placeholder);
+  font-size: 0.9rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.divider:not(:empty)::before {
+  margin-right: .5em;
+}
+
+.divider:not(:empty)::after {
+  margin-left: .5em;
+}
+
+/* Mensaje de Error (Feedback al usuario) */
+.error-message {
+  color: var(--color-error);
+  background-color: var(--bg-error);
+  border: 1px solid var(--color-error); 
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* Enlaces adicionales (Registro, Olvidé Contraseña) */
+.extra-links {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.extra-links a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.extra-links a:hover {
+  text-decoration: underline;
+}

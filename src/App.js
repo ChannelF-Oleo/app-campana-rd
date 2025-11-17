@@ -15,6 +15,7 @@ import { db } from "./firebase";
 // --- 1. IMPORTACIONES DE COMPONENTES ---
 import HomePage from "./components/Home";
 import Login from "./components/Login";
+import SignUp from "./components/SignUp";
 import Dashboard from "./components/Dashboard";
 import CreateUser from "./components/CreateUser";
 import ManageUsers from "./components/ManageUsers";
@@ -163,6 +164,7 @@ function AppLogic() {
             <Route element={<PublicOnlyRoute />}>
               <Route path="/login" element={<Login />} />
               <Route path="/registro" element={<PublicRegister />} />
+              <Route path="/signUp" element={<SignUp />} />
             </Route>
           </Route>
 

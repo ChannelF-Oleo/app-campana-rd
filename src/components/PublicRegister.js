@@ -299,7 +299,7 @@ function PublicRegister() {
         <div className="logo-container">
           <img src={logo} alt="Inscríbete" className="register-logo" />
         </div>
-        <h2>Regístrate como simpatizante</h2>
+        <h2>Regístrate como simpatizante de Felix Encarnacion</h2>
         <p>¡Quiero ser parte!</p>
 
         {/* Cédula */}

@@ -1,38 +1,68 @@
-/* Styling for the main welcome area */
-.dashboard-section-title {
-  margin: 10px;
-}
-.metrics-grid {
-  margin: 10px;
-}
+/*
+|===============================================================
+| ESTILOS DASHBOARD PRINCIPAL (Dashboard.css)
+| Adaptado para Modo Claro/Oscuro mediante Variables CSS
+|===============================================================
+*/
+
+/**
+ * Contenedor Principal de la Bienvenida/Sección Superior
+ * - Utiliza la variable de fondo para superficies (tarjetas, contenedores)
+ */
 .dashboard-welcome {
-  padding: 2rem; /* Consistent spacing */
-  margin: 10px;
+  /* Fondo de la sección, cambia a gris oscuro en modo oscuro */
+  background-color: var(--color-surface-background);
+  
+  padding: 2rem; /* Espaciado interno consistente */
+  margin: 10px;  /* Margen externo, si es necesario para separación de los bordes del layout */
+  
+  /* Buena práctica: Añadir esquinas redondeadas si es un bloque de contenido */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .dashboard-welcome h1 {
-  font-size: 2rem; /* Large heading */
-  color: #333; /* Dark grey text - Consider using CSS variables if available */
-  margin-bottom: 1rem; /* Space below heading - Added for better flow */
+  font-size: 2rem; 
+  /* CAMBIO CLAVE: Usa la variable de texto principal que se invierte en dark mode */
+  color: var(--color-text-primary); 
+  margin-bottom: 1rem;
 }
 
-/* Grid layout for metric cards/charts */
+/**
+ * Layout de la Malla de Métricas (Tarjetas y Gráficos)
+ * - Solo define la estructura de grid y el espaciado
+ */
 .metrics-grid {
   display: grid;
-  /* Responsive columns: fit as many columns >= 300px as possible, distribute extra space */
+  /* Responsive: ajusta las columnas para que quepan >= 300px */
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem; /* Increased gap slightly for better separation */
-  margin-bottom: 2rem; /* Space below the grid */
-  padding: 2rem;
+  gap: 1.5rem; 
+  
+  /* Limpiamos padding y margin redundante: 
+     Si ya está dentro de un contenedor con padding, solo necesitamos el margen inferior. */
+  margin: 10px 0 2rem 0; 
+  padding: 0 10px; /* Aseguramos que el contenido de la grilla tenga el mismo margen horizontal */
 }
 
-/* Title style for sections within the dashboard */
+/**
+ * Estilo de Título de Sección
+ * - Utiliza variables para color de texto y color de borde de separación
+ */
 .dashboard-section-title {
   font-size: 1.5rem;
-  font-weight: 600; /* Bold weight */
-  color: #0b4a8a; /* Specific blue color - Consider CSS variable */
-  margin: 2rem 0 1rem; /* Combined top/bottom margin */
-  padding-bottom: 0.5rem; /* Space below text, above border */
-  border-bottom: 2px solid #ecf0f1; /* Light grey bottom border */
-  padding: 2rem;
+  font-weight: 600;
+  
+  /* CAMBIO CLAVE: Usa la variable de texto de énfasis/títulos */
+  color: var(--color-text-secondary); 
+  
+  /* Margen superior/inferior para separarlo del contenido anterior/posterior */
+  margin: 2rem 0 1rem; 
+  padding-bottom: 0.5rem;
+  padding-left: 10px; /* Alineación con el margen de 10px */
+  
+  /* CAMBIO CLAVE: Usa la variable de borde sutil */
+  border-bottom: 2px solid var(--color-border-subtle); 
 }
+
+/* Nota: Las clases .dashboard-section-title y .metrics-grid tienen un 
+   'margin: 10px;' en el código original que ahora hemos consolidado para evitar conflictos. */

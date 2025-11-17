@@ -1,5 +1,5 @@
 import React from "react";
-import { FaFacebook, FaInstagram, FaTwitter, FaFilePdf } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaTimes, FaFilePdf } from "react-icons/fa";
 import "./Footer.css";
 import pdfPath from "./Rendicion de cuenta Felix Encarnacion COPIA 2.pdf";
 
@@ -9,8 +9,8 @@ function Footer() {
   // Enlaces a las redes sociales de Félix Encarnación (ejemplos)
   const socialLinks = {
     facebook: "https://www.facebook.com/felixencarnacion",
-    instagram: "https://www.instagram.com/felixencarnacion",
-    twitter: "https://twitter.com/felixencarnacion",
+    instagram: "https://www.instagram.com/felixencarnacionsdo/?hl=es",
+    X: "https://x.com/FelixM2024",
   };
 
   return (
@@ -59,12 +59,12 @@ function Footer() {
               <FaInstagram />
             </a>
             <a
-              href={socialLinks.twitter}
+              href={socialLinks.X}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Twitter"
+              aria-label="X"
             >
-              <FaTwitter />
+              <FaTimes />
             </a>
           </div>
         </div>

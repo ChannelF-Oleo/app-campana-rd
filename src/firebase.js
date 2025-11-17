@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions"; 
 
 // Configuración de Firebase usando las variables de entorno
 const firebaseConfig = {
@@ -33,6 +34,7 @@ const app = initializeApp(firebaseConfig);
 // Aquí es donde obtendrás el error de 'auth/invalid-api-key' si la clave está mal.
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const functions = getFunctions(app);
 
 // Exporta la app de firebase
 export default app;

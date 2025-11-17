@@ -1,10 +1,38 @@
 /* ===============================================================
-   MANAGE USERS CSS - UNIFICADO Y COMPLETO
+   MANAGE USERS CSS - UNIFICADO, COMPLETO Y CORREGIDO
    =============================================================== */
 
+/* Definiciones de color basadas en variables del tema (asumidas) */
+:root {
+    --primary-text: #333;
+    --secondary-text: #777;
+    --accent-color: #007bff; /* Azul primario */
+    --accent-hover: #0056b3;
+    --accent-focus-shadow: rgba(0, 123, 255, 0.25);
+    --element-bg: #ffffff;
+    --page-bg: #f4f4f9;
+    --header-bg: #f0f0f5;
+    --hover-bg: #f9f9fc;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.08); /* Sombra ligeramente más marcada */
+    --warning-bg: #fff3cd;
+    --warning-text: #856404;
+    --warning-border: #ffeeba;
+    --delete-color: #dc3545; /* Color para Eliminar */
+    --delete-hover: #a71d2a;
+    --success-color: #21a366; /* Color para Exportar a Excel */
+    --success-hover: #1a7e4e;
+}
+
+/* Contenedor Principal: Aplica el fondo de página y el padding */
 .manage-users-container {
+    background-color: var(--page-bg); /* Fondo gris claro */
     padding: 2rem;
-    color: var(--primary-text); /* Asegurar color de texto principal */
+    color: var(--primary-text);
+    min-height: 100vh;
+    box-sizing: border-box;
+    /* Ajuste para ignorar la barra lateral izquierda (asumiendo que ocupa espacio) */
+    margin-left: 60px; /* Ajusta según el ancho real de tu sidebar */
 }
 
 /* --- Encabezado y Botón Crear --- */
@@ -12,102 +40,130 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
+
 .manage-users-header h2 {
     margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
     color: var(--primary-text);
 }
+
 .create-user-button {
     background-color: var(--accent-color);
     color: #ffffff;
     border: none;
-    width: auto;
     border-radius: 8px;
-    padding: 12px 20px;
+    padding: 10px 18px; /* Ajuste de padding */
     font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+    width: fit-content;
+}
+
+.create-user-button:hover {
+    background-color: var(--accent-hover);
+    box-shadow: 0 4px 12px var(--accent-focus-shadow);
+}
+
+/* --- Sección de Filtros y Búsqueda --- */
+/* ===============================================================
+   AJUSTE FINAL DE ALINEACIÓN Y COLOR
+   =============================================================== */
+
+:root {
+    /* Asegúrate de que esta variable exista en tu :root */
+    --success-color: #21a366; /* Verde para exportar */
+    --success-hover: #1a7e4e;
+    --accent-color: #007bff; /* Azul para otros botones */
+    --border-color: #e0e0e0;
+    --element-bg: white;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+}
+
+/* 1. Contenedor principal de la barra de control (Blanco) */
+.filters-bar-wrapper {
+    display: flex; 
+    align-items: center;
+    gap: 1rem; 
+    
+    /* Estilos de apariencia de la barra */
+    background-color: var(--element-bg); 
+    padding: 10px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 5px var(--shadow-color);
+    margin-bottom: 1.5rem; 
+    width: 100%; 
+}
+
+/* 2. Campo de Búsqueda (Input) - Debe crecer */
+.filters-bar-wrapper .search-input {
+    flex-grow: 1; 
+    flex-shrink: 1;
+    min-width: 150px;
+    
+    padding: 10px 15px; 
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+/* 3. Filtro de Roles (Select) - No debe crecer */
+.filters-bar-wrapper .role-filter-select {
+    flex-shrink: 0; 
+    flex-grow: 0;
+    width: auto;
+    
+    /* Estilos para que se vea consistente con el input */
+    padding: 10px 35px 10px 15px; /* Incluye espacio para el icono de la flecha */
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: white;
+}
+
+/* 4. Botón de Exportar (Verde) - No debe crecer */
+.filters-bar-wrapper .export-excel-button {
+    flex-shrink: 0; 
+    flex-grow: 0;
+    width: auto;
+    
+    /* Aplicar el color verde y padding correcto */
+    background-color: var(--success-color); 
+    color: white;
+    border: none;
+    padding: 10px 15px; 
+    border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s;
 }
-.create-user-button:hover {
-    background-color: var(--accent-hover);
+
+.filters-bar-wrapper .export-excel-button:hover:not(:disabled) {
+    background-color: var(--success-hover); 
 }
 
-/* --- Sección de Filtros y Búsqueda --- */
-.filters-section {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-    align-items: center; /* Alinear verticalmente inputs y botón de exportar */
-}
-.search-input,
-.role-filter-select,
-.export-excel-button { /* Incluir el botón en la alineación de componentes */
-    background-color: var(--element-bg);
-    color: var(--primary-text);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 12px 15px;
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-.search-input {
-    flex-grow: 1;
-    min-width: 250px;
-}
-.role-filter-select {
-    flex-grow: 0;
-    min-width: 200px;
-}
-.search-input::placeholder {
-    color: var(--secondary-text);
-}
-.search-input:focus,
-.role-filter-select:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px var(--accent-focus-shadow);
-}
-
-/* --- Botón de Exportar a Excel (NUEVO) --- */
-.export-excel-button {
-    background-color: #21a366; /* Verde Excel (color fijo atractivo) */
-    color: white;
-    border: none;
-    padding: 12px 15px; /* Consistente con inputs */
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap; 
-}
-.export-excel-button:hover:not(:disabled) {
-    background-color: #1a7e4e;
-}
-.export-excel-button:disabled {
-    background-color: var(--secondary-text); /* Usar el color secundario del tema */
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* --- Tabla de Usuarios --- */
+/* --- Tabla de Usuarios (Card-like) --- */
 .table-wrapper {
-    overflow-x: auto; 
+    overflow-x: auto;
     background-color: var(--element-bg);
     border-radius: 12px;
-    box-shadow: 0 4px 20px var(--shadow-color);
+    box-shadow: 0 8px 30px var(--shadow-color); /* Sombra más agradable */
 }
+
 .users-table {
     width: 100%;
     border-collapse: collapse;
 }
+
 .users-table th,
 .users-table td {
     padding: 16px 24px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
-    white-space: nowrap;
 }
+
 .users-table thead th {
     background-color: var(--header-bg);
     color: var(--secondary-text);
@@ -115,29 +171,71 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    position: sticky; /* Fija los encabezados al hacer scroll horizontal */
+    top: 0;
+    z-index: 10;
 }
+
 .users-table tbody tr {
     transition: background-color 0.2s;
 }
+
 .users-table tbody tr:hover {
     background-color: var(--hover-bg);
 }
+
 .users-table tbody tr:last-child td {
     border-bottom: none;
 }
-.users-table .edit-button {
-    background-color: #007bff; /* Color primario para acciones */
-    color: white; /* Usar color fijo para asegurar visibilidad */
-    border: none;
+
+/* Estilo para el email/cédula en negrita */
+.users-table td[data-label="Email"] strong {
+    font-weight: 700;
+    color: var(--primary-text);
+}
+
+/* Contenedor de Acciones (para asegurar que los botones estén juntos) */
+.users-table td[data-label="Acciones"] {
+    white-space: nowrap; /* Evita que los botones se envuelvan */
+    min-width: 150px; /* Asegura espacio mínimo para los botones */
+}
+.users-table td[data-label="Acciones"] button {
+    margin-right: 8px; /* Espacio entre botones */
+    padding: 8px 12px;
     border-radius: 6px;
-    padding: 8px 16px;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, opacity 0.2s;
 }
+
+/* --- Estilos de Botones de Acción --- */
+.users-table .edit-button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+}
+
 .users-table .edit-button:hover {
-    background-color: #0056b3; /* Usar color fijo para hover */
+    background-color: var(--accent-hover);
 }
+
+.users-table .delete-button {
+    background-color: var(--delete-color);
+    color: white;
+    border: none;
+}
+
+.users-table .delete-button:hover {
+    background-color: var(--delete-hover);
+}
+
+.users-table .delete-button:disabled {
+    background-color: var(--secondary-text);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .empty-state {
     text-align: center;
     font-style: italic;
@@ -145,131 +243,130 @@
     padding: 2rem;
 }
 
-/* --- Modal de Edición de Rol (UNIFICADO) --- */
+/* --- Modal de Edición de Rol --- */
 .modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7); /* Ligeramente más oscuro para énfasis */
+    background-color: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
+
 .modal-content {
-    background-color: var(--element-bg); /* Usa variable de tema */
-    color: var(--primary-text); /* Usa variable de tema */
+    background-color: var(--element-bg);
+    color: var(--primary-text);
     padding: 2rem;
     border-radius: 12px;
     width: 90%;
     max-width: 450px;
-    box-shadow: 0 5px 25px var(--shadow-color); /* Usa variable de tema */
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
 }
 
 .modal-content h3 {
     margin-top: 0;
-    color: var(--accent-color); /* Usar color de acento */
-    border-bottom: 1px solid var(--border-color); /* Usar variable de tema */
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.5rem;
 }
 
-.form-group {
-    margin: 1.5rem 0;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.role-select-modal {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-color); /* Usar variable de tema */
-    border-radius: 5px;
-    font-size: 1rem;
-    background-color: var(--page-bg); /* Fondo más claro para inputs */
-    color: var(--primary-text); /* Usar variable de tema */
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
-
-.save-button {
-    background-color: #007bff; /* Azul primario */
-    color: white; 
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.2s;
-}
-
-.save-button:disabled {
-    background-color: var(--border-color); /* Color de tema sutil */
-    color: var(--secondary-text);
-    cursor: not-allowed;
-}
-.save-button:hover:not(:disabled) {
-    background-color: #0056b3;
-}
+/* Estilos de formulario y botones del modal... (se mantienen) */
+.form-group { margin: 1.5rem 0; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+.role-select-modal { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; background-color: var(--page-bg); color: var(--primary-text); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+.save-button { background-color: var(--accent-color); color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: background-color 0.2s; }
+.save-button:disabled { background-color: var(--border-color); color: var(--secondary-text); cursor: not-allowed; }
+.save-button:hover:not(:disabled) { background-color: var(--accent-hover); }
+.cancel-button { background-color: var(--secondary-text); color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
+.cancel-button:hover { background-color: #5a6268; }
+.note-warning { background-color: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); padding: 0.75rem; border-radius: 8px; margin-top: 1rem; font-size: 0.9em; }
 
 
-.cancel-button {
-    background-color: var(--secondary-text); /* Color secundario para cancelar */
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.cancel-button:hover {
-    background-color: #5a6268;
-}
+/* --- Media Queries (Responsiveness Perfecta) --- */
+@media (max-width: 768px) {
+    .manage-users-container {
+        padding: 1rem;
+        margin-left: 0; /* Ocupa todo el ancho en móvil */
+    }
 
-.note-warning {
-    background-color: var(--warning-bg, #fff3cd); /* Usar variables si existen */
-    color: var(--warning-text, #856404);
-    border: 1px solid var(--warning-border, #ffeeba);
-    padding: 0.75rem;
-    border-radius: 4px;
-    margin-top: 1rem;
-    font-size: 0.9em;
-}
-
-/* --- Media Queries (Responsiveness) --- */
-@media (max-width: 600px) {
+    /* Encabezado: apila verticalmente */
     .manage-users-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 1rem;
     }
+
+    .manage-users-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .create-user-button {
+        width: 100%; /* Botón de creación a todo el ancho */
+    }
+
+    /* Filtros: apila verticalmente (se ajusta a .filters-section con flex-wrap: wrap) */
     .filters-section {
         flex-direction: column;
         gap: 0.75rem;
     }
+
     .search-input,
     .role-filter-select,
     .export-excel-button {
         width: 100%;
         min-width: unset;
     }
-    .modal-content {
-        padding: 1rem;
+    
+    /* Experiencia de tabla: Scroll horizontal explícito */
+    .table-wrapper {
+        box-shadow: none; /* Elimina la sombra para un look más limpio en móvil */
+        border-radius: 0;
+        border: 1px solid var(--border-color);
     }
+    
+    /* Asegurar que el contenido de la tabla no se colapse */
     .users-table th,
     .users-table td {
         padding: 12px 16px;
     }
+    
+    /* Los encabezados de tabla pueden necesitar menos espacio */
+    .users-table thead th {
+        font-size: 0.65rem;
+    }
+    
+    /* Acciones: apila verticalmente los botones para mejor tacto */
+    .users-table td[data-label="Acciones"] {
+        min-width: 120px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .users-table td[data-label="Acciones"] button {
+        width: 100%;
+        margin-right: 0;
+    }
 }
+
+/* Pequeño ajuste para pantallas de tabletas */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .manage-users-container {
+        padding: 1.5rem;
+    }
+    .filters-section {
+        /* Permite que los elementos se organicen mejor en dos filas si es necesario */
+        justify-content: space-between;
+    }
+    .search-input {
+        flex-basis: 100%; /* El input de búsqueda ocupa toda la primera fila */
+    }
+}
+
+
 
 
