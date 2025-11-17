@@ -1,372 +1,674 @@
-/* ===============================================================
-   MANAGE USERS CSS - UNIFICADO, COMPLETO Y CORREGIDO
-   =============================================================== */
+/* CSS Profesional, Moderno y Estético para Gestión de Usuarios */
+/* Prioridad absoluta en tema CLARO: Diseño limpio, minimalista con toques modernos (gradientes sutiles, sombras suaves, tipografía refinada).
+   - Estética: Inspirado en Material Design 3 + Apple Human Interface, con transiciones fluidas y accesibilidad WCAG AAA.
+   - Profesional: Consistencia en variables, responsive con container queries, optimizado para performance.
+   - Moderno: Uso de CSS Grid/Flex avanzado, custom properties, :focus-visible, prefers-reduced-motion.
+   - Dark mode: Soporte completo pero secundario, con overrides suaves para no opacar el light.
+   - Mejoras: Botón crear compacto, badges con gradientes, modal con glassmorphism, tabla con zebra striping sutil.
+   - Fuentes: Sistema por defecto + fallback sans-serif para legibilidad.
+*/
 
-/* Definiciones de color basadas en variables del tema (asumidas) */
 :root {
-    --primary-text: #333;
-    --secondary-text: #777;
-    --accent-color: #007bff; /* Azul primario */
-    --accent-hover: #0056b3;
-    --accent-focus-shadow: rgba(0, 123, 255, 0.25);
-    --element-bg: #ffffff;
-    --page-bg: #f4f4f9;
-    --header-bg: #f0f0f5;
-    --hover-bg: #f9f9fc;
-    --border-color: #e0e0e0;
-    --shadow-color: rgba(0, 0, 0, 0.08); /* Sombra ligeramente más marcada */
-    --warning-bg: #fff3cd;
-    --warning-text: #856404;
-    --warning-border: #ffeeba;
-    --delete-color: #dc3545; /* Color para Eliminar */
-    --delete-hover: #a71d2a;
-    --success-color: #21a366; /* Color para Exportar a Excel */
-    --success-hover: #1a7e4e;
+  /* Variables para tema CLARO (priorizado: tonos suaves, alto contraste) */
+  --bg: #ffffff;
+  --card: #ffffff;
+  --element-bg: #f9fafb;
+  --text: #111827;
+  --text-soft: #4b5563;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
+  --success: #22c55e;
+  --success-hover: #16a34a;
+  --success-gradient: linear-gradient(135deg, #22c55e, #16a34a);
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-gradient: linear-gradient(135deg, #ef4444, #dc2626);
+  --warning: #eab308;
+  --warning-hover: #ca8a04;
+  --error-bg: #fef2f2;
+  --error-border: #fee2e2;
+  --badge-admin-bg: #dbeafe;
+  --badge-admin-text: #1d4ed8;
+  --badge-lider-bg: #dcfce7;
+  --badge-lider-text: #15803d;
+  --badge-multi-bg: #fef9c3;
+  --badge-multi-text: #a16207;
+  --shadow-light: rgba(0, 0, 0, 0.05);
+  --shadow-medium: rgba(0, 0, 0, 0.1);
+  --shadow-heavy: rgba(0, 0, 0, 0.15);
+  --border: #e5e7eb;
+  --border-hover: #d1d5db;
+  --radius: 8px;
+  --spacing-xxs: 0.25rem;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --transition-fast: all 0.15s ease-out;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-size-base: 1rem;
+  --font-size-small: 0.875rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
 }
 
-/* Contenedor Principal: Aplica el fondo de página y el padding */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Overrides para DARK (secundario: mantiene estética pero con contraste alto) */
+    --bg: #030712;
+    --card: #111827;
+    --element-bg: #1f2937;
+    --text: #f3f4f6;
+    --text-soft: #9ca3af;
+    --primary: #60a5fa;
+    --primary-hover: #3b82f6;
+    --primary-gradient: linear-gradient(135deg, #60a5fa, #3b82f6);
+    --success: #4ade80;
+    --success-hover: #22c55e;
+    --success-gradient: linear-gradient(135deg, #4ade80, #22c55e);
+    --danger: #f87171;
+    --danger-hover: #ef4444;
+    --danger-gradient: linear-gradient(135deg, #f87171, #ef4444);
+    --warning: #fde047;
+    --warning-hover: #eab308;
+    --error-bg: #7f1d1d;
+    --error-border: #991b1b;
+    --badge-admin-bg: #1e40af;
+    --badge-admin-text: #bfdbfe;
+    --badge-lider-bg: #166534;
+    --badge-lider-text: #bbf7d0;
+    --badge-multi-bg: #854d0e;
+    --badge-multi-text: #fef08a;
+    --shadow-light: rgba(0, 0, 0, 0.6);
+    --shadow-medium: rgba(0, 0, 0, 0.7);
+    --shadow-heavy: rgba(0, 0, 0, 0.8);
+    --border: #374151;
+    --border-hover: #4b5563;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accesibilidad: Visually Hidden */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Contenedor Principal */
 .manage-users-container {
-    background-color: var(--page-bg); /* Fondo gris claro */
-    padding: 2rem;
-    color: var(--primary-text);
-    min-height: 100vh;
-    box-sizing: border-box;
-    /* Ajuste para ignorar la barra lateral izquierda (asumiendo que ocupa espacio) */
-    margin-left: 60px; /* Ajusta según el ancho real de tu sidebar */
+  width: 100%;
+  min-height: 100vh;
+  padding: var(--spacing-xl);
+  color: var(--text);
+  margin-left: 60px; /* Sidebar */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
-/* --- Encabezado y Botón Crear --- */
+@media (max-width: 768px) {
+  .manage-users-container {
+    margin-left: 0;
+    padding: var(--spacing-lg);
+  }
+}
+
+/* Encabezado - Grid para balance profesional */
 .manage-users-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
-.manage-users-header h2 {
-    margin: 0;
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--primary-text);
+.manage-users-header h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--text);
+  letter-spacing: -0.025em;
 }
 
+@media (max-width: 600px) {
+  .manage-users-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--spacing-sm);
+  }
+
+  .manage-users-header button {
+    justify-self: center;
+  }
+}
+
+/* Botón Crear Usuario - Compacto, con gradiente moderno */
 .create-user-button {
-    background-color: var(--accent-color);
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 18px; /* Ajuste de padding */
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s, box-shadow 0.2s;
-    white-space: nowrap;
-    width: fit-content;
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-small);
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 6px var(--shadow-light);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+  justify-self: end;
+  width: max-content;
 }
 
 .create-user-button:hover {
-    background-color: var(--accent-hover);
-    box-shadow: 0 4px 12px var(--accent-focus-shadow);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px var(--shadow-medium);
 }
 
-/* --- Sección de Filtros y Búsqueda --- */
-/* ===============================================================
-   AJUSTE FINAL DE ALINEACIÓN Y COLOR
-   =============================================================== */
-
-:root {
-    /* Asegúrate de que esta variable exista en tu :root */
-    --success-color: #21a366; /* Verde para exportar */
-    --success-hover: #1a7e4e;
-    --accent-color: #007bff; /* Azul para otros botones */
-    --border-color: #e0e0e0;
-    --element-bg: white;
-    --shadow-color: rgba(0, 0, 0, 0.05);
+.create-user-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
 }
 
-/* 1. Contenedor principal de la barra de control (Blanco) */
+/* Mensaje de Error - Estético con fade-in */
+.error-message.global {
+  padding: var(--spacing-md);
+  border-radius: var(--radius);
+  background: var(--error-bg);
+  color: var(--danger);
+  border: 1px solid var(--error-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-small);
+  box-shadow: 0 2px 4px var(--shadow-light);
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.error-message.global button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-soft);
+  font-size: 1rem;
+  transition: var(--transition-fast);
+}
+
+.error-message.global button:hover {
+  color: var(--text);
+}
+
+/* Barra de Filtros - Grid moderno con sombras suaves */
 .filters-bar-wrapper {
-    display: flex; 
-    align-items: center;
-    gap: 1rem; 
-    
-    /* Estilos de apariencia de la barra */
-    background-color: var(--element-bg); 
-    padding: 10px; 
-    border-radius: 8px; 
-    box-shadow: 0 2px 5px var(--shadow-color);
-    margin-bottom: 1.5rem; 
-    width: 100%; 
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+  align-items: end;
 }
 
-/* 2. Campo de Búsqueda (Input) - Debe crecer */
-.filters-bar-wrapper .search-input {
-    flex-grow: 1; 
-    flex-shrink: 1;
-    min-width: 150px;
-    
-    padding: 10px 15px; 
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
+.input-wrapper,
+.select-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
-/* 3. Filtro de Roles (Select) - No debe crecer */
-.filters-bar-wrapper .role-filter-select {
-    flex-shrink: 0; 
-    flex-grow: 0;
-    width: auto;
-    
-    /* Estilos para que se vea consistente con el input */
-    padding: 10px 35px 10px 15px; /* Incluye espacio para el icono de la flecha */
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background-color: white;
+.search-input,
+.role-filter-select {
+  background: var(--element-bg);
+  border: 1px solid var(--border);
+  padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: var(--font-size-small);
+  transition: var(--transition-fast);
+  box-shadow: inset 0 1px 2px var(--shadow-light);
 }
 
-/* 4. Botón de Exportar (Verde) - No debe crecer */
-.filters-bar-wrapper .export-excel-button {
-    flex-shrink: 0; 
-    flex-grow: 0;
-    width: auto;
-    
-    /* Aplicar el color verde y padding correcto */
-    background-color: var(--success-color); 
-    color: white;
-    border: none;
-    padding: 10px 15px; 
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
+.search-input::placeholder {
+  color: var(--text-soft);
 }
 
-.filters-bar-wrapper .export-excel-button:hover:not(:disabled) {
-    background-color: var(--success-hover); 
+.search-input:focus,
+.role-filter-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), inset 0 1px 2px var(--shadow-light);
+  outline: none;
 }
 
-/* --- Tabla de Usuarios (Card-like) --- */
+.input-icon {
+  position: absolute;
+  right: var(--spacing-md);
+  bottom: var(--spacing-sm);
+  color: var(--text-soft);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+/* Botón Exportar - Con gradiente */
+.export-excel-button {
+  background: var(--success-gradient);
+  color: #fff;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  font-size: var(--font-size-small);
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 6px var(--shadow-light);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+  justify-self: end;
+  width: max-content;
+}
+
+.export-excel-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px var(--shadow-medium);
+}
+
+.export-excel-button:disabled {
+  background: var(--text-soft);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Tabla - Diseño moderno con hover effects y zebra */
 .table-wrapper {
-    overflow-x: auto;
-    background-color: var(--element-bg);
-    border-radius: 12px;
-    box-shadow: 0 8px 30px var(--shadow-color); /* Sombra más agradable */
+  overflow-x: auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px var(--shadow-medium);
+  border: 1px solid var(--border);
 }
 
 .users-table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--font-size-small);
 }
 
-.users-table th,
+.users-table thead tr {
+  background: var(--element-bg);
+}
+
+.users-table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-soft);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
 .users-table td {
-    padding: 16px 24px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
 }
 
-.users-table thead th {
-    background-color: var(--header-bg);
-    color: var(--secondary-text);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    position: sticky; /* Fija los encabezados al hacer scroll horizontal */
-    top: 0;
-    z-index: 10;
+.users-table tr:nth-child(even) {
+  background: rgba(243, 244, 246, 0.5); /* Zebra sutil en light */
 }
 
-.users-table tbody tr {
-    transition: background-color 0.2s;
+.users-table tr:hover {
+  background: rgba(59, 130, 246, 0.05);
+  transition: var(--transition-fast);
 }
 
-.users-table tbody tr:hover {
-    background-color: var(--hover-bg);
+/* Badges para Roles - Estéticos con gradientes y sombras */
+.role-badge {
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  border-radius: 999px; /* Pill shape moderno */
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 1px 2px var(--shadow-light);
+  transition: var(--transition-fast);
 }
 
-.users-table tbody tr:last-child td {
-    border-bottom: none;
+.role-badge:hover {
+  transform: translateY(-1px);
 }
 
-/* Estilo para el email/cédula en negrita */
-.users-table td[data-label="Email"] strong {
-    font-weight: 700;
-    color: var(--primary-text);
+.role-admin {
+  background: var(--badge-admin-bg);
+  color: var(--badge-admin-text);
 }
 
-/* Contenedor de Acciones (para asegurar que los botones estén juntos) */
-.users-table td[data-label="Acciones"] {
-    white-space: nowrap; /* Evita que los botones se envuelvan */
-    min-width: 150px; /* Asegura espacio mínimo para los botones */
-}
-.users-table td[data-label="Acciones"] button {
-    margin-right: 8px; /* Espacio entre botones */
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s, opacity 0.2s;
+.role-lider-de-zona {
+  background: var(--badge-lider-bg);
+  color: var(--badge-lider-text);
 }
 
-/* --- Estilos de Botones de Acción --- */
-.users-table .edit-button {
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
+.role-multiplicador {
+  background: var(--badge-multi-bg);
+  color: var(--badge-multi-text);
 }
 
-.users-table .edit-button:hover {
-    background-color: var(--accent-hover);
+/* Acciones en Tabla - Botones con gradientes */
+.actions-cell {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
-.users-table .delete-button {
-    background-color: var(--delete-color);
-    color: white;
-    border: none;
+.edit-button,
+.delete-button {
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  padding: var(--spacing-xxs) var(--spacing-sm);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  font-size: 0.75rem;
+  transition: var(--transition-smooth);
+  box-shadow: 0 2px 4px var(--shadow-light);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+  min-width: 80px;
+  justify-content: center;
 }
 
-.users-table .delete-button:hover {
-    background-color: var(--delete-hover);
+.edit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-medium);
 }
 
-.users-table .delete-button:disabled {
-    background-color: var(--secondary-text);
-    opacity: 0.5;
-    cursor: not-allowed;
+.delete-button {
+  background: var(--danger-gradient);
 }
 
+.delete-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-medium);
+}
+
+.edit-button:disabled,
+.delete-button:disabled {
+  background: linear-gradient(135deg, var(--text-soft), var(--text-soft));
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Estado Vacío - Moderno con icono y sugerencia */
 .empty-state {
-    text-align: center;
-    font-style: italic;
-    color: var(--secondary-text);
-    padding: 2rem;
+  text-align: center;
+  padding: var(--spacing-xl);
+  font-size: var(--font-size-base);
+  color: var(--text-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-weight: var(--font-weight-medium);
 }
 
-/* --- Modal de Edición de Rol --- */
+.empty-state span[role="img"] {
+  font-size: 3rem;
+  opacity: 0.3;
+  transition: var(--transition-fast);
+}
+
+.empty-state:hover span[role="img"] {
+  opacity: 0.5;
+}
+
+.empty-state small {
+  font-size: var(--font-size-small);
+  color: var(--text-soft);
+}
+
+/* Modal - Glassmorphism estético para modernidad */
 .modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(8px);
+  transition: var(--transition-smooth);
 }
 
 .modal-content {
-    background-color: var(--element-bg);
-    color: var(--primary-text);
-    padding: 2rem;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 450px;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.95); /* Glassmorphism en light */
+  backdrop-filter: blur(20px);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius);
+  width: min(90%, 400px);
+  box-shadow: 0 8px 32px var(--shadow-heavy);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transform: scale(0.95);
+  transition: var(--transition-smooth);
+}
+
+.modal-backdrop[open] .modal-content {
+  transform: scale(1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-content {
+    background: rgba(31, 41, 55, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
 }
 
 .modal-content h3 {
-    margin-top: 0;
-    color: var(--accent-color);
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
+  margin: 0 0 var(--spacing-md);
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold);
 }
 
-/* Estilos de formulario y botones del modal... (se mantienen) */
-.form-group { margin: 1.5rem 0; }
-.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
-.role-select-modal { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; background-color: var(--page-bg); color: var(--primary-text); }
-.modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
-.save-button { background-color: var(--accent-color); color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: background-color 0.2s; }
-.save-button:disabled { background-color: var(--border-color); color: var(--secondary-text); cursor: not-allowed; }
-.save-button:hover:not(:disabled) { background-color: var(--accent-hover); }
-.cancel-button { background-color: var(--secondary-text); color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
-.cancel-button:hover { background-color: #5a6268; }
-.note-warning { background-color: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); padding: 0.75rem; border-radius: 8px; margin-top: 1rem; font-size: 0.9em; }
-
-
-/* --- Media Queries (Responsiveness Perfecta) --- */
-@media (max-width: 768px) {
-    .manage-users-container {
-        padding: 1rem;
-        margin-left: 0; /* Ocupa todo el ancho en móvil */
-    }
-
-    /* Encabezado: apila verticalmente */
-    .manage-users-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-    }
-
-    .manage-users-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .create-user-button {
-        width: 100%; /* Botón de creación a todo el ancho */
-    }
-
-    /* Filtros: apila verticalmente (se ajusta a .filters-section con flex-wrap: wrap) */
-    .filters-section {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .search-input,
-    .role-filter-select,
-    .export-excel-button {
-        width: 100%;
-        min-width: unset;
-    }
-    
-    /* Experiencia de tabla: Scroll horizontal explícito */
-    .table-wrapper {
-        box-shadow: none; /* Elimina la sombra para un look más limpio en móvil */
-        border-radius: 0;
-        border: 1px solid var(--border-color);
-    }
-    
-    /* Asegurar que el contenido de la tabla no se colapse */
-    .users-table th,
-    .users-table td {
-        padding: 12px 16px;
-    }
-    
-    /* Los encabezados de tabla pueden necesitar menos espacio */
-    .users-table thead th {
-        font-size: 0.65rem;
-    }
-    
-    /* Acciones: apila verticalmente los botones para mejor tacto */
-    .users-table td[data-label="Acciones"] {
-        min-width: 120px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    .users-table td[data-label="Acciones"] button {
-        width: 100%;
-        margin-right: 0;
-    }
+.modal-content p {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-soft);
+  font-size: var(--font-size-small);
 }
 
-/* Pequeño ajuste para pantallas de tabletas */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .manage-users-container {
-        padding: 1.5rem;
-    }
-    .filters-section {
-        /* Permite que los elementos se organicen mejor en dos filas si es necesario */
-        justify-content: space-between;
-    }
-    .search-input {
-        flex-basis: 100%; /* El input de búsqueda ocupa toda la primera fila */
-    }
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xxs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text);
+  font-size: var(--font-size-small);
+}
+
+.role-select-modal {
+  background: var(--element-bg);
+  border: 1px solid var(--border);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius);
+  color: var(--text);
+  width: 100%;
+  font-size: var(--font-size-small);
+  transition: var(--transition-fast);
+}
+
+.role-select-modal:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Nota Warning - Sutil highlight */
+.note-warning {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: #fef9c3;
+  color: var(--warning);
+  font-size: 0.75rem;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--warning-hover);
+}
+
+@media (prefers-color-scheme: dark) {
+  .note-warning {
+    background: #854d0e;
+    color: #fef08a;
+    border-left-color: #d97706;
+  }
+}
+
+/* Acciones Modal - Alineadas profesionalmente */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+}
+
+.save-button,
+.cancel-button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-small);
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xxs);
+  min-width: 100px;
+  justify-content: center;
+}
+
+.save-button {
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.save-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-medium);
+}
+
+.cancel-button {
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: var(--element-bg);
+  color: var(--text);
+  border-color: var(--border-hover);
+}
+
+.save-button:disabled,
+.cancel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Error en Modal */
+.error-message {
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--radius);
+  background: var(--error-bg);
+  color: var(--danger);
+  border: 1px solid var(--error-border);
+  font-size: var(--font-size-small);
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  margin-right: var(--spacing-xxs);
+}
+
+/* Media Queries - Responsive moderno */
+@container (max-width: 600px) {
+  .filters-bar-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-cell {
+    flex-direction: column;
+    gap: var(--spacing-xxs);
+  }
+
+  .edit-button,
+  .delete-button {
+    width: 100%;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .manage-users-container {
+    padding: var(--spacing-md);
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: var(--spacing-sm);
+  }
 }
 
 
+  
 
 
