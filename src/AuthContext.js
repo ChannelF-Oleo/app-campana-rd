@@ -1,72 +1,75 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { initializeAuthAndGetUser, auth, db } from "./firebase"; // Importamos la lógica del paso 2.1 A
-import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "./firebase"; 
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 // Crear el contexto
 const AuthContext = createContext({
-  userId: null,
+  user: null, // Unificamos user (auth + db data)
   isAuthenticated: false,
   isLoading: true,
-  authInstance: auth, // Exponemos la instancia de auth si es necesaria
-  dbInstance: db, // Exponemos la instancia de db si es necesaria
+  logout: () => {},
 });
 
-// Hook personalizado para usar el contexto de autenticación fácilmente
 export const useAuth = () => useContext(AuthContext);
 
-/**
- * Proveedor de Autenticación para envolver la aplicación.
- * Inicializa la autenticación y gestiona el estado del usuario.
- */
 export const AuthProvider = ({ children }) => {
-  const [userId, setUserId] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Inicializar autenticación (maneja token o anónimo)
-    initializeAuthAndGetUser()
-      .then((initialUid) => {
-        // Configuramos el estado inicial inmediatamente después del signIn
-        if (initialUid) {
-          setUserId(initialUid);
-          setIsAuthenticated(true); // Asumimos autenticado si hay UID (anónimo o con token)
-        }
-        // setIsLoading se establece en 'false' en el listener de onAuthStateChanged para ser más robusto
-      })
-      .catch((err) => {
-        console.error("Fallo la inicialización de autenticación:", err);
-        setIsLoading(false); // Detener la carga si falla
-      });
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (firebaseUser) {
+          // 1. Usuario autenticado en Firebase Auth
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
 
-    // 2. Suscribirse a cambios de estado de autenticación (login/logout)
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Usuario logueado o token/anónimo activo
-        setUserId(user.uid);
-        setIsAuthenticated(!user.isAnonymous); // Asume autenticado solo si NO es anónimo
-      } else {
-        // Usuario no logueado (sesión cerrada)
-        setUserId(null);
-        setIsAuthenticated(false);
+          if (userDoc.exists()) {
+            // 2. Combinar datos de Auth y Firestore
+            setUser({ 
+              uid: firebaseUser.uid, 
+              email: firebaseUser.email, 
+              ...userDoc.data() 
+            });
+          } else {
+            // Si está en Auth pero no en DB, forzamos logout por seguridad
+            console.warn("Usuario sin perfil en base de datos. Cerrando sesión.");
+            await signOut(auth);
+            setUser(null);
+          }
+        } else {
+          // Usuario no autenticado
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error verificando sesión:", error);
+        setUser(null);
+      } finally {
+        // SIEMPRE desactivar carga, pase lo que pase
+        setIsLoading(false);
       }
-      setIsLoading(false); // Detener el estado de carga después del primer check
     });
 
-    // Limpieza al desmontar
     return () => unsubscribe();
   }, []);
 
+  const logout = async () => {
+    setIsLoading(true);
+    await signOut(auth);
+    setUser(null);
+    setIsLoading(false);
+  };
+
   const value = {
-    userId,
-    isAuthenticated,
+    user,
+    isAuthenticated: !!user,
     isLoading,
-    authInstance: auth,
-    dbInstance: db,
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Exportar solo el proveedor, las instancias de auth y db, y el hook.
-export { AuthContext, AuthProvider };
+export { AuthContext };
+

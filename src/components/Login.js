@@ -148,7 +148,8 @@ function Login() {
             </button>
         </div>
         <div className="extra-links">
-          <p>¿No tienes una cuenta de activista? <Link to="/signup">Regístrate aquí</Link></p>
+          <p>¿No tienes una cuenta de activista?</p> 
+          <p> <Link to="/signup">Regístrate aquí</Link></p>
         </div>
       </form>
     </div>

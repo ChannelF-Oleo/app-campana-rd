@@ -1,8 +1,9 @@
 // Importa las funciones que necesitas de los SDKs
+// Importa las funciones que necesitas de los SDKs
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth"; // Añadido onAuthStateChanged para initializeAuthAndGetUser
 import { getFirestore } from "firebase/firestore";
-import { getFunctions } from "firebase/functions"; 
+import { getFunctions } from "firebase/functions"; // Añadido getFunctions
 
 // Configuración de Firebase usando las variables de entorno
 const firebaseConfig = {
@@ -22,7 +23,6 @@ if (!firebaseConfig.apiKey) {
   console.error(
     "FIREBASE WARNING: La clave de API de Firebase no se cargó correctamente desde .env."
   );
-  // No lanzamos un error para que la aplicación no se bloquee.
 }
 
 console.log("DEBUG API Key (¿Undefined?):", firebaseConfig.apiKey);
@@ -31,10 +31,24 @@ console.log("DEBUG API Key (¿Undefined?):", firebaseConfig.apiKey);
 const app = initializeApp(firebaseConfig);
 
 // Exporta los servicios de autenticación y base de datos
-// Aquí es donde obtendrás el error de 'auth/invalid-api-key' si la clave está mal.
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(app); // Añadida exportación de functions
+
+// NUEVA FUNCIÓN: initializeAuthAndGetUser (FIX para AuthContext.js)
+// Retorna una promesa que resuelve el UID del usuario inicial (si no es anónimo)
+export const initializeAuthAndGetUser = () => {
+  return new Promise((resolve) => {
+    // Escucha el primer cambio de estado de autenticación.
+    // Esto es robusto para manejo de tokens persistentes.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe(); // Deja de escuchar después del primer evento
+      // Resuelve con el UID si el usuario está presente y NO es anónimo
+      resolve(user && !user.isAnonymous ? user.uid : null);
+    });
+  });
+};
+
 
 // Exporta la app de firebase
 export default app;

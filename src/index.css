@@ -1,62 +1,148 @@
-/* =================================================================
-   GLOBAL STYLES & THEME VARIABLES
-   ================================================================= */
+/* src/index.css - SISTEMA DE DISEÑO CENTRALIZADO & COMPATIBILIDAD TOTAL */
+
+:root {
+  /* =========================================
+     1. PALETA BASE (MODO CLARO)
+     ========================================= */
+  --color-bg: #f4f7f6;
+  --color-surface: #ffffff;
+  --color-text-main: #1f2937; /* Gris muy oscuro */
+  --color-text-muted: #6b7280; /* Gris medio */
+  --color-border: #e5e7eb;
+
+  /* Colores de Marca */
+  --primary: #004d99; /* Azul Institucional */
+  --primary-hover: #003d80;
+  --accent: #3b82f6; /* Azul Brillante */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* =========================================
+     2. EFECTO CRISTAL MATE (GLASSMORPHISM)
+     ========================================= */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-blur: blur(12px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+
+  /* =========================================
+     3. VARIABLES DE COMPATIBILIDAD (PUENTE)
+     ========================================= */
+  /* Conectamos las variables de tus componentes al sistema global */
+
+  /* Generales */
+  --page-bg: var(--color-bg);
+  --bg-color: var(--color-bg);
+  --bg: var(--color-bg); /* Para ManageUsers.css */
+
+  /* Superficies / Tarjetas */
+  --element-bg: var(--color-surface);
+  --card: var(--color-surface); /* Para ManageUsers.css */
+  --form-bg: var(--color-surface); /* Para Login.css */
+
+  /* Textos */
+  --text-primary: var(--color-text-main);
+  --text: var(--color-text-main); /* Para ManageUsers.css */
+  --text-soft: var(--color-text-muted);
+
+  /* Sidebar */
+  --sidebar-bg: var(--glass-bg);
+  --sidebar-text: var(--color-text-main);
+  --sidebar-text-hover: var(--primary);
+  --sidebar-hover-bg: rgba(0, 77, 153, 0.1);
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 88px;
+
+  /* Constantes */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =========================================
+   4. MODO OSCURO (OVERRIDES)
+   ========================================= */
+body.dark-mode {
+  /* Redefinimos la paleta base para oscuro */
+  --color-bg: #0f172a; /* Azul noche profundo */
+  --color-surface: #1e293b; /* Azul grisáceo */
+  --color-text-main: #f3f4f6; /* Blanco humo */
+  --color-text-muted: #9ca3af; /* Gris claro */
+  --color-border: #374151;
+
+  --primary: #60a5fa; /* Azul más claro para contraste */
+  --primary-hover: #93c5fd;
+
+  /* Cristal Mate Oscuro */
+  --glass-bg: rgba(30, 41, 59, 0.85);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+  /* Actualizamos compatibilidad automáticamente */
+  --page-bg: var(--color-bg);
+  --bg: var(--color-bg);
+  --card: var(--color-surface);
+  --element-bg: var(--color-surface);
+
+  --sidebar-bg: var(--glass-bg);
+  --sidebar-text: var(--color-text-main);
+  --sidebar-text-hover: var(--primary);
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+/* =========================================
+   5. ESTILOS GLOBALES
+   ========================================= */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--color-text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s, color 0.3s;
 }
 
-/* --- 1. DEFINICIÓN DE LA PALETA DE COLORES (VARIABLES) --- */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+}
+
+/* src/index.css - CORRECCIÓN DE FONDO */
+
 :root {
-  /* --- Light Mode (Default) --- */
-  --page-bg: #f8f9fa;
-  --element-bg: #ffffff;
-  --hover-bg: #f1f3f5;
-  --header-bg: #f8f9fa;
+  /* --- 1. DEFINICIÓN DE COLORES (Modo Claro por Defecto) --- */
+  --color-bg: #f4f7f6; /* Gris muy claro (NO NEGRO) */
+  --color-surface: #ffffff;
+  --color-text-main: #1f2937;
+  /* ... resto de tus variables ... */
 
-  --primary-text: #212529;
-  --secondary-text: #6c757d;
-
-  --border-color: #dee2e6;
-  --shadow-color: rgba(0, 0, 0, 0.05);
-
-  --accent-color: #0d6efd;
-  --accent-hover: #0b5ed7;
-  --accent-focus-shadow: rgba(13, 110, 253, 0.25);
-  
-  --button-secondary-bg: #6c757d;
-  --button-secondary-hover: #5a6268;
-  --button-secondary-text: #ffffff;
-
-  /* --- Sidebar specific --- */
-  --sidebar-bg: #111827;
-  --sidebar-text: #d1d5db;
-  --sidebar-text-hover: #ffffff;
-  --sidebar-hover-bg: #374151;
+  /* COMPATIBILIDAD */
+  --page-bg: var(--color-bg);
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 88px;
 }
 
-/* --- Dark Mode (cuando body tiene la clase .dark-mode) --- */
+/* --- 2. MODO OSCURO --- */
 body.dark-mode {
-  --page-bg: #111827;
-  --element-bg: #1f2937;
-  --hover-bg: #374151;
-  --header-bg: #111827;
-
-  --primary-text: #f9fafb;
-  --secondary-text: #9ca3af;
-
-  --border-color: #4b5563;
-  --shadow-color: rgba(0, 0, 0, 0.2);
-
-  --accent-color: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-focus-shadow: rgba(59, 130, 246, 0.25);
-
-  --button-secondary-bg: #4b5563;
-  --button-secondary-hover: #6b7280;
-  --button-secondary-text: #f9fafb;
+  --color-bg: #0f172a; /* Solo aquí debe ser oscuro */
+  --color-surface: #1e293b;
+  --color-text-main: #f3f4f6;
 }
 
+/* --- 3. REGLA MAESTRA DEL BODY (CRÍTICO) --- */
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+
+  /* ESTA LÍNEA ES LA CLAVE: */
+  background-color: var(
+    --color-bg
+  ) !important; /* !important fuerza el cambio si algo estorba */
+  color: var(--color-text-main);
+
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

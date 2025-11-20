@@ -1,39 +1,64 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# ---------------------------------------------------------------------- #
-# Node / Build Artifacts
-# ---------------------------------------------------------------------- #
-
-# Dependency directory
-/node_modules
+# ==============================================================================
+# DEPENDENCIES & SYSTEM
+# ==============================================================================
+# Dependency directories (Remove slash to ignore in root AND /functions)
+node_modules
+/.pnp
+.pnp.js
 
 # Logs
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 .pnpm-debug.log*
 
-# Build artifacts
+# ==============================================================================
+# BUILD OUTPUTS & GENERATED FILES
+# ==============================================================================
 /build
 /dist
 /out
+/coverage
+/.next/
 /esnext
 /lib
 /cjs
 /esm
 /temp
 
+# Testing
+/coverage
+/lcov-report
+
 # Caches
 .eslintcache
 .cache
 .npm
 .yarn
+*.tsbuildinfo
 
-# ---------------------------------------------------------------------- #
-# Environment / Private Data
-# ---------------------------------------------------------------------- #
+# ==============================================================================
+# IDE & OS FILES
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Environment variables (Crucial for security)
+# ==============================================================================
+# ENVIRONMENT & SECRETS (CRITICAL)
+# ==============================================================================
+# Local Env Files
 .env
 .env.local
 .env.development.local
@@ -41,26 +66,26 @@ yarn-debug.log*
 .env.production.local
 .env.*
 
+# Firebase specific
+.runtimeconfig.json
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
 
-# Firebase/Backend Service Keys (Crucial for security)
-# This file contains credentials and MUST NOT be committed
+# ==============================================================================
+# USER CUSTOM IGNORES
+# ==============================================================================
 
+# Backend Keys & Credentials
 politicard-cfd-firebase-adminsdk-fbsvc-0dfcb72afa.json
 *.p12
+*.pem
 
+# Data & Media
+fotos
+consolidated_data.json
+
+# Specific Files
+# Nota: Si 'firebase.js' contiene solo la config pública, no es necesario ignorarlo.
+# Si contiene credenciales de Admin SDK, mantenlo aquí.
 firebase.js
-# ---------------------------------------------------------------------- #
-# Testing / Coverage
-# ---------------------------------------------------------------------- #
-
-/coverage
-/lcov-report
-
-# ---------------------------------------------------------------------- #
-# IDE/OS Generated Files
-# ---------------------------------------------------------------------- #
-
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/

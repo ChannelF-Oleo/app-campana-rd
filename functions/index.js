@@ -6,8 +6,6 @@ const { logger } = require("firebase-functions");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
-
-// 🆕 Importar Scheduler para funciones programadas (V2)
 const { onSchedule } = require("firebase-functions/v2/scheduler"); 
 
 // Inicializa el SDK de Admin
@@ -18,14 +16,19 @@ const gmailEmail = defineSecret("GMAIL_EMAIL");
 const gmailPassword = defineSecret("GMAIL_PASSWORD");
 
 // 🆕 PARÁMETRO DE CONFIGURACIÓN DE INACTIVIDAD (8 horas en milisegundos)
-// 8 horas * 60 minutos/hora * 60 segundos/minuto * 1000 milisegundos/segundo
 const INACTIVITY_TIMEOUT_MS = 8 * 60 * 60 * 1000; 
 
+// --- CONFIGURACIÓN DE OPTIMIZACIÓN GLOBAL (B4) y FIX CORS ---
+const DEFAULT_REGION = 'us-central1'; 
+// APLICANDO CORRECCIÓN CORS: Añadimos cors: true para permitir llamadas desde localhost
+const CALLABLE_OPTS = { region: DEFAULT_REGION, memory: '512MiB', cors: true }; 
+const TRIGGER_OPTS = { region: DEFAULT_REGION };
+// ----------------------------------------------------------------------
+
 // =========================================================================
-// 🆕 FUNCIÓN PROGRAMADA: VENCIMIENTO DE SESIÓN POR INACTIVIDAD
-// Se ejecuta cada noche a la 01:00 AM (zona de la función, típicamente UTC)
+// FUNCIÓN PROGRAMADA: VENCIMIENTO DE SESIÓN POR INACTIVIDAD
 // =========================================================================
-exports.enforceInactivityTimeout = onSchedule("0 1 * * *", async (event) => {
+exports.enforceInactivityTimeout = onSchedule(TRIGGER_OPTS, "0 1 * * *", async (event) => { // Aplicando TRIGGER_OPTS
     logger.info("Iniciando revisión de inactividad de usuarios...");
     const now = Date.now();
     let usersRevoked = 0;
@@ -33,28 +36,21 @@ exports.enforceInactivityTimeout = onSchedule("0 1 * * *", async (event) => {
     try {
         let nextPageToken;
         do {
-            // Listar hasta 1000 usuarios por vez
             const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
             nextPageToken = listUsersResult.pageToken;
             
-            // Filtrar usuarios inactivos
             const inactiveUsers = listUsersResult.users.filter(user => {
-                // Obtener la última fecha de inicio de sesión
                 const lastSignIn = user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : 0;
-                
-                // Si el usuario tiene una sesión registrada Y el tiempo transcurrido excede el límite
                 return lastSignIn > 0 && (now - lastSignIn) > INACTIVITY_TIMEOUT_MS;
             });
             
-            // Revocar tokens para los inactivos
             for (const user of inactiveUsers) {
-                // Revocar el token de actualización. Esto fuerza al usuario a iniciar sesión de nuevo.
                 await admin.auth().revokeRefreshTokens(user.uid);
                 logger.log(`Tokens revocados para el usuario inactivo: ${user.email} (Última sesión: ${user.metadata.lastSignInTime})`);
                 usersRevoked++;
             }
             
-        } while (nextPageToken); // Continuar hasta recorrer todos los usuarios
+        } while (nextPageToken);
 
         logger.info(`Revisión de inactividad completada. Tokens revocados: ${usersRevoked}`);
         return null;
@@ -67,10 +63,11 @@ exports.enforceInactivityTimeout = onSchedule("0 1 * * *", async (event) => {
 
 
 // =========================================================================
-// CALLABLE FUNCTION: CREAR USUARIO (Mantenido)
+// CALLABLE FUNCTION: CREAR USUARIO
 // =========================================================================
 exports.createUserAdmin = onCall(
-    { enforceAppCheck: false },
+    // Aplicando CALLABLE_OPTS
+    { ...CALLABLE_OPTS, enforceAppCheck: false }, 
     async (request) => {
         // ... (cuerpo de la función mantenido)
         const { nombre, email, password, rol, cedula } = request.data;
@@ -156,12 +153,12 @@ exports.createUserAdmin = onCall(
 );
 
 // =========================================================================
-// CALLABLE FUNCTION: ELIMINAR USUARIO (Consolidada y Limpiada)
+// CALLABLE FUNCTION: ELIMINAR USUARIO
 // =========================================================================
-exports.deleteUserAndData = onCall(async (data, context) => { // Usamos onCall del SDKv2
+exports.deleteUserAndData = onCall(CALLABLE_OPTS, async (data, context) => { // Aplicando CALLABLE_OPTS
     const { uid } = data;
 
-    // 1. VERIFICACIÓN DE AUTENTICACIÓN (Solo permite administradores)
+    // 1. VERIFICACIÓN DE AUTENTICACIÓN
     if (!context.auth) {
         throw new HttpsError('unauthenticated', 'Solo usuarios autentados pueden realizar esta acción.');
     }
@@ -201,7 +198,6 @@ exports.deleteUserAndData = onCall(async (data, context) => { // Usamos onCall d
         logger.error("Error al eliminar el usuario y datos:", error);
 
         if (error.code === 'auth/user-not-found') {
-             // Si no existe en Auth, devolvemos éxito.
              return { success: true, message: 'El usuario de Auth no fue encontrado, se limpiaron los registros de Firestore.' };
         }
         
@@ -211,10 +207,10 @@ exports.deleteUserAndData = onCall(async (data, context) => { // Usamos onCall d
 
 
 // =========================================================================
-// CALLABLE FUNCTION: REGISTRAR SIMPATIZANTE (Mantenido)
+// CALLABLE FUNCTION: REGISTRAR SIMPATIZANTE
 // =========================================================================
-exports.registerSimpatizante = onCall(async (request) => {
-// ... (cuerpo de la función mantenido)
+exports.registerSimpatizante = onCall(CALLABLE_OPTS, async (request) => { // Aplicando CALLABLE_OPTS
+    // ... (cuerpo de la función mantenido)
     const data = request.data;
     const cedula = data.cedula; 
     
@@ -244,7 +240,7 @@ exports.registerSimpatizante = onCall(async (request) => {
         (lng !== 0 && !lng)
     ) {
         logger.error(
-            "registerSimpatizante: Faltan datos requeridos (lat/lng pueden faltar si no son obligatorios).",
+            "registerSimpatizante: Faltan datos requeridos.",
             data
         );
         throw new HttpsError(
@@ -313,15 +309,66 @@ exports.registerSimpatizante = onCall(async (request) => {
 });
 
 // =========================================================================
+// CALLABLE FUNCTION: BUSCAR VOTANTE POR CÉDULA
+// =========================================================================
+exports.searchVotanteByCedula = onCall(CALLABLE_OPTS, async (request) => { // Aplicando CALLABLE_OPTS
+    // ... (Lógica de validación y normalización de cédula) ...
+    const cedula = request.data.cedula; 
+
+    if (!cedula) {
+        throw new HttpsError('invalid-argument', 'El campo "cedula" es requerido.');
+    }
+
+    const cedulaNormalizada = cedula.replace(/-/g, "");
+    const votantesRef = admin.firestore().collection("votantes");
+    
+    try {
+        const q = votantesRef.where("cedula", "==", cedulaNormalizada).limit(1);
+        const querySnapshot = await q.get();
+
+        if (querySnapshot.empty) {
+            logger.log(`searchVotanteByCedula: Cédula ${cedulaNormalizada} no encontrada.`);
+            return { found: false, data: {} };
+        }
+
+        const doc = querySnapshot.docs[0];
+        const votanteData = doc.data();
+        
+        return {
+            found: true,
+            data: {
+                nombre: votanteData.nombre || "",
+                provincia: votanteData.provincia || "", // Se mantiene para consistencia, aunque frontend lo ignora
+                municipio: votanteData.municipio || "", // Se mantiene para consistencia, aunque frontend lo ignora
+                sector: votanteData.sector || "", 
+                colegioElectoral: votanteData.colegioElectoral || "",
+                email: "",
+                telefono: "",
+                direccion: "",
+            }
+        };
+
+    } catch (error) {
+        logger.error(`searchVotanteByCedula: Error buscando cédula ${cedulaNormalizada}:`, error);
+        throw new HttpsError(
+            "internal",
+            "Ocurrió un error inesperado al buscar en la base de datos de votantes."
+        );
+    }
+});
+
+
+// =========================================================================
 // FIRESTORE TRIGGER: ENVIAR CORREO (Mantenido)
 // =========================================================================
 exports.sendWelcomeEmail = onDocumentCreated(
     {
         document: "simpatizantes/{simpatizanteId}",
         secrets: [gmailEmail, gmailPassword],
+        ...TRIGGER_OPTS, // Aplicando TRIGGER_OPTS
     },
     (event) => {
-        // Inicialización Perezosa
+        // ... (cuerpo de la función mantenido)
         const mailTransport = nodemailer.createTransport({
             service: "gmail",
             auth: {
@@ -365,40 +412,35 @@ exports.sendWelcomeEmail = onDocumentCreated(
 );
 
 
-// functions/index.js (NUEVA FUNCIÓN)
-
-// Importa los módulos si aún no están (onDocumentCreated, admin)
-
-// 🚨 Nueva Función: Actualiza el contador del usuario (activista)
+// =========================================================================
+// FIRESTORE TRIGGER: INCREMENTAR CONTADOR DE REGISTROS
+// =========================================================================
 exports.incrementUserRegistrationCount = onDocumentCreated(
-  {
-    document: "simpatizantes/{simpatizanteId}",
-  },
-  async (event) => {
-    const simpatizanteData = event.data.data();
-    
-    // El campo 'registradoPor' debe ser el UID del activista
-    const activistUid = simpatizanteData.registradoPor; 
+    {
+        document: "simpatizantes/{simpatizanteId}",
+        ...TRIGGER_OPTS, // Aplicando TRIGGER_OPTS
+    },
+    async (event) => {
+        const simpatizanteData = event.data.data();
+        const activistUid = simpatizanteData.registradoPor; 
 
-    // Solo intentamos incrementar si el campo es un UID, no un string de origen
-    if (!activistUid || activistUid.length < 20) { // Un simple chequeo de que no es un string de origen
-      // Ignorar registros de "Creación Admin" o "Página Pública" que no son UID
-      return null;
+        if (!activistUid || activistUid.length < 20 || activistUid.includes(' ')) {
+             // Ignorar registros de "Creación Admin" o "Página Pública" que no son UID válidos
+            return null;
+        }
+
+        const userRef = admin.firestore().collection('users').doc(activistUid);
+
+        try {
+            await userRef.update({
+                registrationsCount: admin.firestore.FieldValue.increment(1)
+            });
+            logger.info(`Contador incrementado para el usuario ${activistUid}.`);
+            return null;
+        } catch (error) {
+            logger.error(`Error al incrementar el contador para ${activistUid}:`, error);
+            return null;
+        }
     }
-
-    const userRef = admin.firestore().collection('users').doc(activistUid);
-
-    try {
-      // Usa increment() para una actualización atómica y segura
-      await userRef.update({
-        registrationsCount: admin.firestore.FieldValue.increment(1)
-      });
-      logger.info(`Contador incrementado para el usuario ${activistUid}.`);
-      return null;
-    } catch (error) {
-      // El documento del usuario no existe. No es crítico, pero es bueno saberlo.
-      logger.error(`Error al incrementar el contador para ${activistUid}:`, error);
-      return null;
-    }
-  }
 );
+

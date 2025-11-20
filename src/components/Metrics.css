@@ -1,116 +1,168 @@
+/* src/components/Metrics.css - OPTIMIZADO (Sistema Cristal Mate) */
+
 /* ===============================================================
-   MÉTRICAS CSS - (Corregido y Unificado)
+   TARJETAS DE MÉTRICAS & GRÁFICOS
    =============================================================== */
 
-/* --- Estilo Base de la Tarjeta --- */
-.metric-card {
-    background-color: #ffffff;
-    padding: 1.5rem;
-    border-radius: 12px; /* Usar el radio más grande del segundo bloque */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    /* Ya no usamos text-align: center; para que el encabezado funcione */
+/* --- Estilo Base (Efecto Cristal) --- */
+.metric-card,
+.chart-card,
+.goal-card {
+  /* Aplicamos el Glassmorphism global */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  /* Para asegurar que el contenido no se rompa */
+  display: flex;
+  flex-direction: column;
 }
 
-/* --- Encabezado de la Tarjeta (NECESARIO para alinear Título y Botón) --- */
-.metric-card-header {
-    display: flex;
-    justify-content: space-between; /* Mueve el título a la izquierda y el botón a la derecha */
-    align-items: center;
-    margin-bottom: 0.5rem;
+.metric-card:hover,
+.goal-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-.metric-card-header h3 {
-    /* Estilo tomado del segundo bloque */
-    margin: 0;
-    color: #34495e;
-    font-size: 1.2rem; /* Mantener la consistencia del primer bloque */
+.chart-card {
+  /* Los gráficos necesitan más espacio */
+  min-height: 350px;
+  justify-content: center;
 }
 
-/* --- Valores de Métrica --- */
-.metric-card .metric-value {
-    /* Mantener el estilo del primer bloque, pero asegurar que no tenga margen superior excesivo */
-    font-size: 3rem;
-    font-weight: 700;
-    color: #007bff;
-    margin: 1rem 0 0 0; 
+/* --- Encabezado de Tarjeta --- */
+.metric-card-header,
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-/* --- Estilo del Botón de Exportar (Implementado) --- */
+.metric-card-header h3,
+.goal-header h3 {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- Valores Numéricos --- */
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0.5rem 0;
+
+  /* Gradiente en el texto para destacar */
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+/* Ajuste específico para la tarjeta de Objetivos */
+.goal-card .metric-value {
+  font-size: 2.2rem;
+}
+
+/* --- Botón de Exportar (Excel) --- */
 .export-metric-button {
-    background-color: #21a366; /* Verde de Excel */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 10px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-    display: flex; /* Para centrar el icono */
-    align-items: center;
+  background-color: rgba(33, 163, 102, 0.1); /* Verde transparente */
+  color: #21a366; /* Verde Excel */
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .export-metric-button:hover:not(:disabled) {
-    background-color: #1a7e4e;
+  background-color: #21a366;
+  color: white;
+  box-shadow: 0 4px 10px rgba(33, 163, 102, 0.3);
 }
 
 .export-metric-button:disabled {
-    background-color: #a0a0a0;
-    cursor: not-allowed;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-/* --- Estilos Adicionales (Objetivos/Gráficos) --- */
-
-.chart-card {
-    padding: 2rem;
-}
-
-.goal-card .metric-value {
-    font-size: 2.5rem; 
-}
-
+/* --- Barra de Progreso (Moderna) --- */
 .progress-bar-container {
-    height: 20px;
-    width: 100%;
-    background-color: #e0e0de;
-    border-radius: 10px;
-    margin-top: 1rem;
+  height: 12px; /* Más fina y elegante */
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  margin-top: 1.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+body.dark-mode .progress-bar-container {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .progress-bar-fill {
-    height: 100%;
-    background-color: #28a745;
-    border-radius: 10px;
-    transition: width 0.5s ease-in-out;
+  height: 100%;
+  /* Gradiente para la barra de progreso */
+  background: linear-gradient(90deg, var(--success) 0%, #34d399 100%);
+  border-radius: 20px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4); /* Glow effect */
 }
 
 .progress-text {
-    margin-top: 0.5rem;
-    font-weight: bold;
-    color: #555;
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  text-align: right;
 }
 
-.goal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.goal-header h3 {
-    margin: 0;
-}
-
+/* --- Botón Editar Objetivo --- */
 .edit-goal-button {
-    background: none;
-    border: 1px solid #007bff;
-    color: #007bff;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.8rem;
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .edit-goal-button:hover {
-    background-color: #007bff;
-    color: white;
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 10px rgba(0, 77, 153, 0.2);
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .metric-card,
+  .chart-card,
+  .goal-card {
+    padding: 1.2rem;
+  }
+
+  .metric-value {
+    font-size: 2rem;
+  }
 }

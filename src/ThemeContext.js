@@ -1,31 +1,47 @@
-import React, { createContext, useState, useContext, useMemo } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useMemo,
+} from "react";
 
-// 1. Crear el Contexto
 const ThemeContext = createContext();
 
-// 2. Crear el Proveedor (Provider)
 export function ThemeProvider({ children }) {
-  const [isDarkMode, setIsDarkMode] = useState(false); // Por defecto es modo claro
+  // 1. Inicializar estado leyendo de localStorage (o false por defecto)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem("darkMode");
+    return saved === "true";
+  });
+
+  // 2. EFECTO CRÍTICO: Sincronizar la clase CSS con el estado
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+    // Guardar la preferencia para la próxima vez
+    localStorage.setItem("darkMode", isDarkMode);
+  }, [isDarkMode]);
 
   const toggleDarkMode = () => {
-    setIsDarkMode(prevMode => !prevMode);
+    setIsDarkMode((prevMode) => !prevMode);
   };
 
-  // Usamos useMemo para evitar que el objeto de valor se recree en cada render
+  // Optimización de rendimiento con useMemo
   const value = useMemo(() => ({ isDarkMode, toggleDarkMode }), [isDarkMode]);
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 
-// 3. Crear un hook personalizado para usar el contexto fácilmente
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 }

@@ -1,3 +1,5 @@
+// channelf-oleo/app-campana-rd/app-campana-rd-58cc1613209dcf6e02910bff22bbcafbb7ea6ad5/firestore.rules
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -6,27 +8,21 @@ service cloud.firestore {
     // --- REGLAS PARA LA COLECCIÓN 'users' ---
     match /users/{userId} {
 
-      // --- Funciones Auxiliares ---
-      // ¿Es el usuario dueño de este perfil?
+      // ... (Funciones Auxiliares se mantienen sin cambios) ...
+
       function isOwner() {
         return request.auth != null && request.auth.uid == userId;
       }
 
-      // ¿Tiene el usuario el rol de Admin?
       function isAdmin() {
-        // Verifica si el usuario está autenticado Y lee su propio documento para ver el rol.
         return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
       }
       
-      // ¿Está el usuario logueado?
       function isSignedIn() {
        return request.auth != null;
       }
 
-      // ¿El usuario que pide leer (request.auth.uid) es el líder asignado 
-      // al perfil que se está intentando leer (resource.data)?
       function isMyAssignedLeader() {
-        // Verifica que esté logueado y que el campo 'liderAsignado' del documento coincida con el uid del solicitante.
         return isSignedIn() && resource.data.liderAsignado == request.auth.uid;
       }
       // --- Fin Funciones Auxiliares ---
@@ -40,33 +36,29 @@ service cloud.firestore {
 
       // CREAR (create): Nadie puede crear usuarios desde la app.
       allow create: if false;
-
+      
       // ACTUALIZAR (update):
-      // - El dueño puede actualizar SOLO el campo 'goal'.
-      // - Un admin puede actualizar CUALQUIER campo.
       allow update: if (isOwner() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['goal']))
                      || isAdmin();
 
-      // BORRAR (delete): Nadie puede borrar usuarios desde la app.
-      allow delete: if false;
+      // BORRAR (delete): El administrador puede borrar cualquier usuario.
+      // FIX I.3/B2: Se restringe el borrado solo a administradores.
+      allow delete: if isAdmin(); 
     }
 
 
     // --- REGLAS PARA LA COLECCIÓN 'simpatizantes' ---
     match /simpatizantes/{simpatizanteId} {
     
-       // Función auxiliar (Repetida por claridad)
        function isSignedIn() {
          return request.auth != null;
        }
        
-       // Función auxiliar (Repetida por claridad)
        function isAdmin() {
          return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
        }
 
       // CREAR (create): Permitido a cualquiera (para formulario público y callable function).
-      // Idealmente, se refinaría para validar datos o requerir autenticación para la callable function.
       allow create: if true; 
 
       // LEER (get, list): Permitido solo a usuarios logueados (multiplicadores, líderes, admins).

@@ -4,12 +4,24 @@ import {
   GoogleMap,
   useLoadScript,
   Marker,
-} from "@react-google-maps/api"; // Cambiado: Marker -> AdvancedMarkerElement
+} from "@react-google-maps/api";
  
 import { ubicacionesData } from "../data/ubicaciones.js";
 import "./PublicRegister.css"; // Reusing styles
 
-const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY; // Corregido: Prefijo de la variable de entorno
+const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY; 
+
+// [INICIO CORRECCIÓN SDO]
+const PROVINCIA_FIJA = "Santo Domingo";
+const MUNICIPIO_FIJO = "Santo Domingo Oeste";
+
+// Cargar sectores fijos de SDO una sola vez
+const provinciaSDO = ubicacionesData.find(p => p.provincia === PROVINCIA_FIJA);
+const municipioData = provinciaSDO 
+  ? provinciaSDO.municipios.find(m => m.municipio === MUNICIPIO_FIJO)
+  : null;
+const sectoresSDO = municipioData ? municipioData.sectores : [];
+// [FIN CORRECCIÓN SDO]
 
 // Opciones del mapa
 const mapContainerStyle = {
@@ -23,9 +35,9 @@ const initialCenter = {
   lng: -69.9309,
 };
 const defaultZoom = 12;
-const libraries = ["places", "marker"]; // Añadido: Cargar la librería 'marker'
+const libraries = ["places", "marker"];
 
-// Validation Functions (Mantenemos las tuyas)
+// Validation Functions
 const validarCedula = (cedula) => {
   const cedulaRegex = /^\d{3}-?\d{7}-?\d{1}$/;
   return cedulaRegex.test(cedula);
@@ -41,9 +53,12 @@ const registerSimpatizanteCallable = httpsCallable(
   functions,
   "registerSimpatizante"
 );
+const searchVotanteCallable = httpsCallable(
+  functions,
+  "searchVotanteByCedula"
+);
 
 function RegisterByActivist({ user }) {
-  // Receives the activist user object
   // Form field states
   const [nombre, setNombre] = useState("");
   const [cedula, setCedula] = useState("");
@@ -51,14 +66,15 @@ function RegisterByActivist({ user }) {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [colegioElectoral, setColegioElectoral] = useState("");
+  // Estados de carga y búsqueda
   const [loading, setLoading] = useState(false);
-  // Dropdown states
-  const [selectedProvincia, setSelectedProvincia] = useState("");
-  const [selectedMunicipio, setSelectedMunicipio] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Dropdown states: Inicializados a valores fijos
+  const [selectedProvincia, setSelectedProvincia] = useState(PROVINCIA_FIJA);
+  const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIO_FIJO);
   const [selectedSector, setSelectedSector] = useState("");
-  const [municipios, setMunicipios] = useState([]);
-  const [sectores, setSectores] = useState([]);
-
+  
   // NUEVO: Estado para las coordenadas (ubicación pineada)
   const [coordinates, setCoordinates] = useState(initialCenter);
   // Estado para el mapa (referencia)
@@ -88,7 +104,7 @@ function RegisterByActivist({ user }) {
     setMap(null);
   }, []);
 
-  // NUEVO: Función para geocodificar una dirección y centrar el mapa
+  // Función para geocodificar una dirección y centrar el mapa
   const geocodeAddress = useCallback(
     (address) => {
       if (!isLoaded || !map) return;
@@ -112,46 +128,67 @@ function RegisterByActivist({ user }) {
   // Notification state
   const [notification, setNotification] = useState({ message: "", type: "" });
 
-  // Effects for location cascades (Mantenemos los tuyos)
-  useEffect(() => {
-    if (selectedProvincia) {
-      const provinciaEncontrada = ubicacionesData.find(
-        (p) => p.provincia === selectedProvincia
-      );
-      setMunicipios(provinciaEncontrada ? provinciaEncontrada.municipios : []);
-      setSelectedMunicipio("");
-      geocodeAddress(selectedProvincia); // Centrar el mapa en la provincia
-      setSectores([]);
-    } else {
-      setMunicipios([]);
-      setSectores([]);
-    }
-  }, [selectedProvincia, geocodeAddress]);
+  // NUEVA FUNCIÓN: Buscar votante al ingresar cédula válida
+  const handleCedulaSearch = useCallback(async (inputCedula) => {
+    const cedulaNormalizada = inputCedula.replace(/-/g, "");
+    if (cedulaNormalizada.length === 11 && validarCedula(inputCedula)) {
+        setIsSearching(true);
+        setNotification({ message: "Buscando datos del votante...", type: "info" });
+        try {
+            const result = await searchVotanteCallable({ cedula: inputCedula });
+            const { found, data } = result.data;
 
-  useEffect(() => {
-    if (selectedMunicipio) {
-      const provinciaActual = ubicacionesData.find(
-        (p) => p.provincia === selectedProvincia
-      );
-      if (provinciaActual) {
-        const municipioActual = provinciaActual.municipios.find(
-          (m) => m.municipio === selectedMunicipio
-        );
-        setSectores(municipioActual ? municipioActual.sectores : []);
-      } else {
-        setSectores([]);
-      }
-      setSelectedSector("");
-    } else {
-      setSectores([]);
+            if (found) {
+                setNombre(data.nombre);
+                // No actualizamos email/telefono/direccion. Permitimos al activista rellenar/corregir
+                setColegioElectoral(data.colegioElectoral || "");
+                
+                // CRUCIAL: Solo actualizamos el sector si coincide con un sector de SDO
+                const foundSector = sectoresSDO.includes(data.sector) ? data.sector : "";
+                setSelectedSector(foundSector);
+
+                setNotification({ message: "Datos encontrados y cargados. Por favor, revisa y completa la información de contacto.", type: "success" });
+            } else {
+                // Limpiar solo campos de autocompletado si la búsqueda falla
+                setNombre("");
+                setColegioElectoral("");
+                setSelectedSector("");
+                setNotification({ message: "Cédula no encontrada en la base de votantes. Por favor, rellena los campos.", type: "error" });
+            }
+        } catch (error) {
+            console.error("Error al buscar cédula:", error);
+            setNotification({ message: "Error en la conexión al buscar la cédula.", type: "error" });
+        } finally {
+            setIsSearching(false);
+        }
     }
-  }, [selectedMunicipio, selectedProvincia]);
+  }, []);
+
+
+  const handleCedulaChange = (e) => {
+    const value = e.target.value;
+    const normalized = value.replace(/-/g, '');
+    let formatted = '';
+    if (normalized.length > 0) formatted += normalized.substring(0, 3);
+    if (normalized.length > 3) formatted += '-' + normalized.substring(3, 10);
+    if (normalized.length > 10) formatted += '-' + normalized.substring(10, 11);
+    
+    if(value !== formatted) setCedula(formatted);
+
+    // Intentar buscar automáticamente si la cédula es válida
+    if (validarCedula(formatted)) {
+        handleCedulaSearch(formatted);
+    }
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setNotification({ message: "", type: "" }); // Clear previous notification
+    setNotification({ message: "", type: "" }); 
+    
+    if (isSearching || loading) return; 
 
-    // Validations (Mantenemos las tuyas)
+    // Validations (ajustadas para el nuevo flujo fijo de ubicación)
     const cedulaNormalizada = cedula.replace(/-/g, "");
     if (cedulaNormalizada.length !== 11) {
       setNotification({
@@ -181,9 +218,10 @@ function RegisterByActivist({ user }) {
       });
       return;
     }
-    if (!selectedProvincia || !selectedMunicipio || !selectedSector) {
+    // VALIDACIÓN SIMPLIFICADA: Solo se revisa el Sector
+    if (!selectedSector) { 
       setNotification({
-        message: "Por favor, selecciona Provincia, Municipio y Sector.",
+        message: "Por favor, selecciona un Sector.",
         type: "error",
       });
       return;
@@ -200,7 +238,6 @@ function RegisterByActivist({ user }) {
           "Por favor, arrastra el pin en el mapa para especificar la ubicación.",
         type: "error",
       });
-      // return; // Decide si quieres que la ubicación sea obligatoria
     }
 
     setLoading(true);
@@ -215,8 +252,8 @@ function RegisterByActivist({ user }) {
         telefono,
         direccion,
         colegioElectoral,
-        provincia: selectedProvincia,
-        municipio: selectedMunicipio,
+        provincia: selectedProvincia, // Valor fijo: Santo Domingo
+        municipio: selectedMunicipio, // Valor fijo: Santo Domingo Oeste
         sector: selectedSector,
         // NUEVO: Enviar las coordenadas
         lat: coordinates.lat,
@@ -228,17 +265,17 @@ function RegisterByActivist({ user }) {
 
       if (result.data.success) {
         setNotification({ message: result.data.message, type: "success" });
-        // Clear form
+        // Clear form y reset location states a fixed values
         setNombre("");
         setCedula("");
         setEmail("");
         setTelefono("");
         setDireccion("");
         setColegioElectoral("");
-        setSelectedProvincia("");
-        setSelectedMunicipio("");
+        setSelectedProvincia(PROVINCIA_FIJA);
+        setSelectedMunicipio(MUNICIPIO_FIJO);
         setSelectedSector("");
-        setCoordinates(initialCenter); // Resetear coordenadas
+        setCoordinates(initialCenter); 
       } else {
         setNotification({ message: result.data.message, type: "error" });
       }
@@ -262,8 +299,20 @@ function RegisterByActivist({ user }) {
         <h2>Registrar Nuevo Simpatizante</h2>
         <p>Los datos se asociarán a tu perfil.</p>
 
-        {/* Form Fields... (Mantenemos los tuyos) */}
-
+        {/* Cédula: Nuevo manejo de cambio */}
+        <div className="input-group">
+          <label htmlFor="cedula">Cédula de Identidad</label>
+          <input
+            type="text"
+            id="cedula"
+            placeholder="001-1234567-8"
+            value={cedula}
+            onChange={handleCedulaChange} 
+            required
+            disabled={isSearching || loading}
+          />
+        </div>
+        
         <div className="input-group">
           <label htmlFor="nombre">Nombre Completo</label>
           <input
@@ -272,17 +321,7 @@ function RegisterByActivist({ user }) {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
-          />
-        </div>
-        <div className="input-group">
-          <label htmlFor="cedula">Cédula de Identidad</label>
-          <input
-            type="text"
-            id="cedula"
-            placeholder="001-1234567-8"
-            value={cedula}
-            onChange={(e) => setCedula(e.target.value)}
-            required
+            disabled={isSearching || loading}
           />
         </div>
         <div className="input-group">
@@ -293,6 +332,7 @@ function RegisterByActivist({ user }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={isSearching || loading}
           />
         </div>
         <div className="input-group">
@@ -302,9 +342,11 @@ function RegisterByActivist({ user }) {
             id="telefono"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
+            disabled={isSearching || loading}
           />
         </div>
 
+        {/* Provincia: Fija y deshabilitada */}
         <div className="input-group">
           <label htmlFor="provincia">Provincia</label>
           <select
@@ -312,15 +354,12 @@ function RegisterByActivist({ user }) {
             value={selectedProvincia}
             onChange={(e) => setSelectedProvincia(e.target.value)}
             required
+            disabled={true} 
           >
-            <option value="">-- Selecciona --</option>
-            {ubicacionesData.map((p) => (
-              <option key={p.provincia} value={p.provincia}>
-                {p.provincia}
-              </option>
-            ))}
+            <option value={PROVINCIA_FIJA}>{PROVINCIA_FIJA}</option>
           </select>
         </div>
+        {/* Municipio: Fijo y deshabilitado */}
         <div className="input-group">
           <label htmlFor="municipio">Municipio</label>
           <select
@@ -328,16 +367,12 @@ function RegisterByActivist({ user }) {
             value={selectedMunicipio}
             onChange={(e) => setSelectedMunicipio(e.target.value)}
             required
-            disabled={!selectedProvincia}
+            disabled={true}
           >
-            <option value="">-- Selecciona --</option>
-            {municipios.map((m) => (
-              <option key={m.municipio} value={m.municipio}>
-                {m.municipio}
-              </option>
-            ))}
+            <option value={MUNICIPIO_FIJO}>{MUNICIPIO_FIJO}</option>
           </select>
         </div>
+        {/* Sector: Ahora usa la lista fija de SDO y es editable/autocompletable */}
         <div className="input-group">
           <label htmlFor="sector">Sector o Barrio</label>
           <select
@@ -345,11 +380,10 @@ function RegisterByActivist({ user }) {
             value={selectedSector}
             onChange={(e) => setSelectedSector(e.target.value)}
             required
-            disabled={!selectedMunicipio}
+            disabled={sectoresSDO.length === 0 || isSearching || loading}
           >
             <option value="">-- Selecciona --</option>
-            {Array.isArray(sectores) &&
-              sectores.map((s) => (
+            {sectoresSDO.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
@@ -364,6 +398,7 @@ function RegisterByActivist({ user }) {
             id="direccion"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
+            disabled={isSearching || loading}
           />
         </div>
         <div className="input-group">
@@ -373,27 +408,26 @@ function RegisterByActivist({ user }) {
             id="colegio"
             value={colegioElectoral}
             onChange={(e) => setColegioElectoral(e.target.value)}
+            disabled={isSearching || loading}
           />
         </div>
 
         {/* ---------------------------------------------------- */}
-        {/* NUEVO: Contenedor del Mapa de Google Maps */}
+        {/* Contenedor del Mapa de Google Maps */}
         {/* ---------------------------------------------------- */}
         <div className="map-group">
           <label>📍 Ubicación Exacta (Arrastra el Pin)</label>
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
             zoom={defaultZoom}
-            center={coordinates} // Centrar en la ubicación seleccionada
+            center={coordinates} 
             onLoad={onLoad}
             onUnmount={onUnmount}
           >
-            {/* Marcador Movible */}
-
             <Marker
               position={coordinates}
-              draggable={true} // Permitir arrastrar el marcador
-              onDragEnd={onMarkerDragEnd} // Capturar las nuevas coordenadas
+              draggable={true} 
+              onDragEnd={onMarkerDragEnd}
             />
           </GoogleMap>
           <p className="coords-display">
@@ -401,12 +435,9 @@ function RegisterByActivist({ user }) {
             {coordinates.lng.toFixed(6)}
           </p>
         </div>
-        {/* ---------------------------------------------------- */}
-        {/* FIN del Contenedor del Mapa */}
-        {/* ---------------------------------------------------- */}
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Registrando..." : "Registrar Simpatizante"}
+        
+        <button type="submit" disabled={loading || isSearching}>
+          {loading ? "Registrando..." : isSearching ? "Buscando..." : "Registrar Simpatizante"}
         </button>
 
         {/* Notification Area */}
@@ -421,3 +452,5 @@ function RegisterByActivist({ user }) {
 }
 
 export default RegisterByActivist;
+
+

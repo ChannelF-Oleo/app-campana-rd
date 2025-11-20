@@ -1,34 +1,57 @@
 /* ===============================================================
-   COMANDOS CSS - UNIFICADO Y COMPLETO
+   COMANDOS CSS - OPTIMIZADO (SISTEMA CRISTAL MATE)
    =============================================================== */
 
 .comandos-container {
-  padding: 2rem;
-  background-color: var(--page-bg);
-  color: var(--primary-text);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  /* El fondo lo maneja el layout principal, aquí dejamos transparente */
 }
 
 .comandos-container h2 {
-  color: var(--primary-text);
+  color: var(--color-text-main);
+  font-size: 2rem;
+  font-weight: 800;
   margin-bottom: 0.5rem;
+
+  /* Gradiente de texto (Toque pro) */
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
 }
 
 .subtitle-comandos {
-  color: var(--secondary-text);
+  color: var(--color-text-muted);
   margin-bottom: 2rem;
+  font-size: 1rem;
 }
 
-/* --- Estilos del Acordeón --- */
+/* --- Acordeón con Efecto Cristal --- */
 .accordion-comandos {
-  border-radius: 12px;
-  box-shadow: 0 4px 20px var(--shadow-color);
+  /* Aplicamos el Glassmorphism */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
 .comando-section {
-  background-color: var(--element-bg);
-  border-bottom: 1px solid var(--border-color);
+  background-color: transparent; /* Dejar ver el cristal de fondo */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Separador sutil */
+  transition: background-color 0.2s ease;
 }
+
+body.dark-mode .comando-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .comando-section:last-child {
   border-bottom: none;
 }
@@ -37,121 +60,127 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
-.comando-header:hover:not(.expanded) {
-  background-color: var(--hover-bg);
+
+.comando-header:hover {
+  background-color: rgba(0, 0, 0, 0.03); /* Hover muy sutil */
+}
+body.dark-mode .comando-header:hover {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .comando-header h3 {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-main);
 }
 
+/* --- Acciones del Header --- */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-/* Estilo Base para Iconos de Acción (Editar, Exportar, etc.) */
 .icon-button {
-  background: none;
-  border: none;
-  color: var(--secondary-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
   font-size: 1rem;
-  padding: 0.5rem;
-  border-radius: 6px;
-  transition: color 0.2s, background-color 0.2s;
 }
 
-/* Estilo de Hover General para iconos pequeños */
 .icon-button:hover {
-  color: var(--accent-color);
-  background-color: var(--hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* --- ESTILOS ESPECÍFICOS PARA BOTONES DE ACCIÓN VISIBLE --- */
-
-/* Edición */
-.header-actions .edit-button {
-  color: var(--accent-color); /* Color que lo hace visible */
-}
-.header-actions .edit-button:hover {
+/* Colores específicos al hacer hover */
+.edit-button:hover {
   color: white;
-  background-color: var(--accent-color);
+  background-color: var(--accent);
+  border-color: var(--accent);
 }
 
-/* Exportar (Excel) */
-.header-actions .export-button {
-  color: #21a366; /* Verde de Excel */
+.export-button {
+  color: #21a366; /* Verde Excel específico */
 }
-.header-actions .export-button:hover {
+.export-button:hover {
   color: white;
   background-color: #21a366;
+  border-color: #21a366;
 }
-/* ---------------------------------------------------- */
 
 .expand-icon {
   margin-left: 0.5rem;
   transition: transform 0.3s ease;
+  color: var(--color-text-muted);
 }
 .expand-icon.rotate {
   transform: rotate(180deg);
 }
 
-/* --- Contenido y Filtrado --- */
+/* --- Contenido Expandido --- */
 .comando-content {
-  padding: 1rem 1.5rem 1.5rem;
-  background-color: var(--element-bg);
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  background-color: rgba(0, 0, 0, 0.01); /* Diferencia sutil */
+  animation: fadeIn 0.3s ease;
 }
 
+/* Filtros */
 .filter-controls {
   display: flex;
   gap: 1rem;
   align-items: center;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 
 .filter-icon {
-  color: var(--accent-color);
+  color: var(--accent);
   font-size: 1.2rem;
 }
 
 .filter-input,
 .filter-select {
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: var(--page-bg);
-  color: var(--primary-text);
-  font-size: 0.95rem;
-  transition: border-color 0.2s;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); /* Glow focus */
+  outline: none;
 }
 
 .filter-input {
   flex-grow: 1;
   min-width: 150px;
 }
-
 .filter-select {
-  min-width: 120px;
+  min-width: 140px;
 }
 
-.filter-input:focus,
-.filter-select:focus {
-  border-color: var(--accent-color);
-  outline: none;
-}
-
-/* --- Estilos de Renglones (Lista) --- */
+/* --- Lista de Renglones --- */
 .renglones-list {
   display: flex;
   flex-direction: column;
@@ -161,63 +190,76 @@
 .renglon-item {
   display: flex;
   align-items: center;
-  padding: 10px 15px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background-color: var(--page-bg);
-  transition: background-color 0.2s;
-}
-.renglon-item.viewing:hover {
-  background-color: var(--hover-bg);
+  padding: 12px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface); /* Tarjeta blanca/oscura sólida */
+  transition: all 0.2s;
 }
 
-/* Vista de Lectura */
+.renglon-item.viewing:hover {
+  transform: translateX(4px);
+  border-color: var(--accent);
+}
+
+/* Vista Lectura */
 .view-mode {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.8rem;
   flex-grow: 1;
   flex-wrap: wrap;
+  align-items: center;
 }
+
 .view-rol {
-  color: var(--accent-color);
-  min-width: 200px;
-}
-.view-separator,
-.view-zona,
-.view-sector {
-  color: var(--secondary-text);
-  font-size: 0.9em;
-  font-style: italic;
-  white-space: nowrap;
-}
-
-.view-zona,
-.view-sector {
-  color: var(--accent-color);
+  color: var(--primary);
   font-weight: 600;
-  font-style: normal;
-}
-.view-user {
-  color: var(--primary-text);
-  font-weight: 500;
+  min-width: 180px;
 }
 
-/* Vista de Edición */
-.renglon-item.editing {
-  background-color: var(--hover-bg);
-  padding: 10px;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+.view-separator {
+  color: var(--color-text-muted);
+  opacity: 0.5;
 }
+
+.view-zona,
+.view-sector {
+  color: var(--color-text-main);
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+body.dark-mode .view-zona,
+body.dark-mode .view-sector {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.view-user {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Vista Edición */
+.renglon-item.editing {
+  background-color: var(--color-bg); /* Ligeramente diferente para destacar */
+  border-color: var(--primary);
+  padding: 15px;
+  gap: 10px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
 .rol-input,
 .usuario-select,
 .zona-select,
 .sector-select {
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--element-bg);
-  color: var(--primary-text);
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
 }
 
 .rol-input {
@@ -234,78 +276,104 @@
 }
 
 .remove-field-button {
-  background-color: #dc3545;
-  color: white;
+  background-color: rgba(239, 68, 68, 0.1); /* --danger muy suave */
+  color: var(--danger);
   border: none;
-  padding: 8px;
-  border-radius: 4px;
+  padding: 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: opacity 0.2s;
-  font-size: 0.8rem;
-}
-.remove-field-button:hover {
-  opacity: 0.8;
+  transition: all 0.2s;
 }
 
-/* Acciones de Edición (Guardar/Añadir/Cancelar) */
+.remove-field-button:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+/* --- Botonera de Edición --- */
 .editing-actions {
   display: flex;
   gap: 1rem;
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 
 .add-field-button,
 .save-changes-button,
 .cancel-button {
-  padding: 10px 15px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
-  transition: background-color 0.2s;
+  font-size: 0.9rem;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+/* Botón Añadir (Primario) */
 .add-field-button {
-  background-color: #0d6efd;
+  background-color: var(--primary);
   color: white;
+  box-shadow: 0 4px 6px rgba(0, 77, 153, 0.2);
 }
 .add-field-button:hover {
-  background-color: #0b5ed7;
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
+/* Botón Guardar (Éxito) */
 .save-changes-button {
-  background-color: #28a745;
+  background-color: var(--success);
   color: white;
 }
 .save-changes-button:hover {
-  background-color: #218838;
+  filter: brightness(1.1);
 }
 
+/* Botón Cancelar */
 .cancel-button {
-  background-color: var(--secondary-text);
-  color: white;
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
 }
 .cancel-button:hover {
-  background-color: #5a6268;
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  border-color: var(--color-text-muted);
 }
 
-.empty-state,
-.loading-state {
-  padding: 1rem;
-  color: var(--secondary-text);
-  font-style: italic;
+.empty-state {
+  padding: 2rem;
+  color: var(--color-text-muted);
   text-align: center;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
 }
 
-/* --- MEDIA QUERIES PARA RESPONSIVE --- */
+/* --- Animaciones --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+/* --- Responsive --- */
 @media (max-width: 768px) {
+  .comandos-container {
+    padding: 10px;
+  }
+
   .renglon-item.editing {
     flex-direction: column;
     align-items: stretch;
@@ -323,23 +391,15 @@
   .view-mode {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.2rem;
+    gap: 0.4rem;
   }
 
-  .view-rol {
-    min-width: unset;
-  }
-
-  .filter-controls {
+  .editing-actions {
     flex-direction: column;
-    align-items: flex-start;
   }
-  .filter-icon {
-    margin-bottom: 0.5rem;
-  }
-  .filter-input,
-  .filter-select {
+
+  .editing-actions button {
     width: 100%;
-    margin-top: 0.25rem;
+    justify-content: center;
   }
 }

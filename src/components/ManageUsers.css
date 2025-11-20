@@ -1,674 +1,416 @@
-/* CSS Profesional, Moderno y Estético para Gestión de Usuarios */
-/* Prioridad absoluta en tema CLARO: Diseño limpio, minimalista con toques modernos (gradientes sutiles, sombras suaves, tipografía refinada).
-   - Estética: Inspirado en Material Design 3 + Apple Human Interface, con transiciones fluidas y accesibilidad WCAG AAA.
-   - Profesional: Consistencia en variables, responsive con container queries, optimizado para performance.
-   - Moderno: Uso de CSS Grid/Flex avanzado, custom properties, :focus-visible, prefers-reduced-motion.
-   - Dark mode: Soporte completo pero secundario, con overrides suaves para no opacar el light.
-   - Mejoras: Botón crear compacto, badges con gradientes, modal con glassmorphism, tabla con zebra striping sutil.
-   - Fuentes: Sistema por defecto + fallback sans-serif para legibilidad.
-*/
+/* src/components/ManageUsers.css - OPTIMIZADO & INTEGRADO */
 
-:root {
-  /* Variables para tema CLARO (priorizado: tonos suaves, alto contraste) */
-  --bg: #ffffff;
-  --card: #ffffff;
-  --element-bg: #f9fafb;
-  --text: #111827;
-  --text-soft: #4b5563;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
-  --success: #22c55e;
-  --success-hover: #16a34a;
-  --success-gradient: linear-gradient(135deg, #22c55e, #16a34a);
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
-  --danger-gradient: linear-gradient(135deg, #ef4444, #dc2626);
-  --warning: #eab308;
-  --warning-hover: #ca8a04;
-  --error-bg: #fef2f2;
-  --error-border: #fee2e2;
-  --badge-admin-bg: #dbeafe;
-  --badge-admin-text: #1d4ed8;
-  --badge-lider-bg: #dcfce7;
-  --badge-lider-text: #15803d;
-  --badge-multi-bg: #fef9c3;
-  --badge-multi-text: #a16207;
-  --shadow-light: rgba(0, 0, 0, 0.05);
-  --shadow-medium: rgba(0, 0, 0, 0.1);
-  --shadow-heavy: rgba(0, 0, 0, 0.15);
-  --border: #e5e7eb;
-  --border-hover: #d1d5db;
-  --radius: 8px;
-  --spacing-xxs: 0.25rem;
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 0.75rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --transition-fast: all 0.15s ease-out;
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-size-base: 1rem;
-  --font-size-small: 0.875rem;
-  --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-bold: 600;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Overrides para DARK (secundario: mantiene estética pero con contraste alto) */
-    --bg: #030712;
-    --card: #111827;
-    --element-bg: #1f2937;
-    --text: #f3f4f6;
-    --text-soft: #9ca3af;
-    --primary: #60a5fa;
-    --primary-hover: #3b82f6;
-    --primary-gradient: linear-gradient(135deg, #60a5fa, #3b82f6);
-    --success: #4ade80;
-    --success-hover: #22c55e;
-    --success-gradient: linear-gradient(135deg, #4ade80, #22c55e);
-    --danger: #f87171;
-    --danger-hover: #ef4444;
-    --danger-gradient: linear-gradient(135deg, #f87171, #ef4444);
-    --warning: #fde047;
-    --warning-hover: #eab308;
-    --error-bg: #7f1d1d;
-    --error-border: #991b1b;
-    --badge-admin-bg: #1e40af;
-    --badge-admin-text: #bfdbfe;
-    --badge-lider-bg: #166534;
-    --badge-lider-text: #bbf7d0;
-    --badge-multi-bg: #854d0e;
-    --badge-multi-text: #fef08a;
-    --shadow-light: rgba(0, 0, 0, 0.6);
-    --shadow-medium: rgba(0, 0, 0, 0.7);
-    --shadow-heavy: rgba(0, 0, 0, 0.8);
-    --border: #374151;
-    --border-hover: #4b5563;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
-  }
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-regular);
-}
-
-body {
-  background-color: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Accesibilidad: Visually Hidden */
-.visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-}
+/* NOTA: No definimos :root ni body aquí. 
+   Usamos las variables globales de index.css para mantener la coherencia. */
 
 /* Contenedor Principal */
 .manage-users-container {
   width: 100%;
-  min-height: 100vh;
-  padding: var(--spacing-xl);
-  color: var(--text);
-  margin-left: 60px; /* Sidebar */
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
   max-width: 1440px;
   margin: 0 auto;
-}
+  padding: 20px;
 
-@media (max-width: 768px) {
-  .manage-users-container {
-    margin-left: 0;
-    padding: var(--spacing-lg);
-  }
-}
-
-/* Encabezado - Grid para balance profesional */
-.manage-users-header {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.manage-users-header h1 {
-  margin: 0;
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
-  font-weight: var(--font-weight-bold);
-  color: var(--text);
-  letter-spacing: -0.025em;
-}
-
-@media (max-width: 600px) {
-  .manage-users-header {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: var(--spacing-sm);
-  }
-
-  .manage-users-header button {
-    justify-self: center;
-  }
-}
-
-/* Botón Crear Usuario - Compacto, con gradiente moderno */
-.create-user-button {
-  background: var(--primary-gradient);
-  color: #fff;
-  border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-small);
-  transition: var(--transition-smooth);
-  box-shadow: 0 4px 6px var(--shadow-light);
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xxs);
-  justify-self: end;
-  width: max-content;
-}
-
-.create-user-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px var(--shadow-medium);
-}
-
-.create-user-button:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
-}
-
-/* Mensaje de Error - Estético con fade-in */
-.error-message.global {
-  padding: var(--spacing-md);
-  border-radius: var(--radius);
-  background: var(--error-bg);
-  color: var(--danger);
-  border: 1px solid var(--error-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: var(--font-size-small);
-  box-shadow: 0 2px 4px var(--shadow-light);
-  animation: fadeIn 0.3s ease-in;
+  /* Animación de entrada suave */
+  animation: fadeIn 0.4s ease-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.error-message.global button {
-  background: none;
+/* Encabezado */
+/* Contenedor del Encabezado */
+.manage-users-header {
+  display: flex; /* Activa el modo fila */
+  justify-content: space-between; /* Uno a la izquierda, otro a la derecha */
+  align-items: center; /* Centrados verticalmente */
+  flex-wrap: nowrap; /* FUERZA a que se mantengan en la misma línea */
+  gap: 20px; /* Espacio mínimo entre ellos */
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+/* Tu H1 (Mantenemos tu estilo con el gradiente) */
+.manage-users-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  white-space: nowrap; /* Evita que el título se parta en dos líneas si es posible */
+
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+/* Tu Botón (Con tus ajustes de padding) */
+.create-user-button {
+  background-color: var(--primary);
+  color: white;
   border: none;
+  padding: 8px 16px; /* Ajustado ligeramente para mejor toque */
+  border-radius: var(--radius-md);
+  font-weight: 600;
   cursor: pointer;
-  color: var(--text-soft);
-  font-size: 1rem;
-  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 77, 153, 0.2);
+
+  /* Asegura que el botón no se encoja */
+  flex-shrink: 0;
 }
 
-.error-message.global button:hover {
-  color: var(--text);
+.create-user-button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 77, 153, 0.3);
 }
 
-/* Barra de Filtros - Grid moderno con sombras suaves */
+/* RESPONSIVE: Solo en pantallas MUY pequeñas permitimos que bajen */
+@media (max-width: 480px) {
+  .manage-users-header {
+    flex-direction: column; /* Uno sobre otro solo en celular estrecho */
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .create-user-button {
+    width: 100%; /* Botón ancho completo en celular */
+    justify-content: center;
+  }
+}
+
+/* Barra de Filtros */
 .filters-bar-wrapper {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
   align-items: end;
-}
-
-.input-wrapper,
-.select-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
 .search-input,
 .role-filter-select {
-  background: var(--element-bg);
-  border: 1px solid var(--border);
-  padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-size: var(--font-size-small);
-  transition: var(--transition-fast);
-  box-shadow: inset 0 1px 2px var(--shadow-light);
-}
-
-.search-input::placeholder {
-  color: var(--text-soft);
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
 }
 
 .search-input:focus,
 .role-filter-select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), inset 0 1px 2px var(--shadow-light);
   outline: none;
-}
-
-.input-icon {
-  position: absolute;
-  right: var(--spacing-md);
-  bottom: var(--spacing-sm);
-  color: var(--text-soft);
-  font-size: 1rem;
-  pointer-events: none;
-}
-
-/* Botón Exportar - Con gradiente */
-.export-excel-button {
-  background: var(--success-gradient);
-  color: #fff;
-  border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  font-size: var(--font-size-small);
-  transition: var(--transition-smooth);
-  box-shadow: 0 4px 6px var(--shadow-light);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xxs);
-  justify-self: end;
-  width: max-content;
-}
-
-.export-excel-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px var(--shadow-medium);
-}
-
-.export-excel-button:disabled {
-  background: var(--text-soft);
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Tabla - Diseño moderno con hover effects y zebra */
-.table-wrapper {
-  overflow-x: auto;
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: 0 4px 12px var(--shadow-medium);
-  border: 1px solid var(--border);
-}
-
-.users-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: var(--font-size-small);
-}
-
-.users-table thead tr {
-  background: var(--element-bg);
-}
-
-.users-table th {
-  padding: var(--spacing-md);
-  text-align: left;
-  font-weight: var(--font-weight-medium);
-  color: var(--text-soft);
-  border-bottom: 1px solid var(--border);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
-.users-table td {
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--border);
-  vertical-align: middle;
-}
-
-.users-table tr:nth-child(even) {
-  background: rgba(243, 244, 246, 0.5); /* Zebra sutil en light */
-}
-
-.users-table tr:hover {
-  background: rgba(59, 130, 246, 0.05);
-  transition: var(--transition-fast);
-}
-
-/* Badges para Roles - Estéticos con gradientes y sombras */
-.role-badge {
-  padding: var(--spacing-xxs) var(--spacing-sm);
-  border-radius: 999px; /* Pill shape moderno */
-  font-size: 0.75rem;
-  font-weight: var(--font-weight-medium);
-  display: inline-flex;
-  align-items: center;
-  box-shadow: 0 1px 2px var(--shadow-light);
-  transition: var(--transition-fast);
-}
-
-.role-badge:hover {
-  transform: translateY(-1px);
-}
-
-.role-admin {
-  background: var(--badge-admin-bg);
-  color: var(--badge-admin-text);
-}
-
-.role-lider-de-zona {
-  background: var(--badge-lider-bg);
-  color: var(--badge-lider-text);
-}
-
-.role-multiplicador {
-  background: var(--badge-multi-bg);
-  color: var(--badge-multi-text);
-}
-
-/* Acciones en Tabla - Botones con gradientes */
-.actions-cell {
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
-.edit-button,
-.delete-button {
-  background: var(--primary-gradient);
-  color: #fff;
-  border: none;
-  padding: var(--spacing-xxs) var(--spacing-sm);
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-weight: var(--font-weight-medium);
-  font-size: 0.75rem;
-  transition: var(--transition-smooth);
-  box-shadow: 0 2px 4px var(--shadow-light);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xxs);
-  min-width: 80px;
-  justify-content: center;
-}
-
-.edit-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px var(--shadow-medium);
-}
-
-.delete-button {
-  background: var(--danger-gradient);
-}
-
-.delete-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px var(--shadow-medium);
-}
-
-.edit-button:disabled,
-.delete-button:disabled {
-  background: linear-gradient(135deg, var(--text-soft), var(--text-soft));
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* Estado Vacío - Moderno con icono y sugerencia */
-.empty-state {
-  text-align: center;
-  padding: var(--spacing-xl);
-  font-size: var(--font-size-base);
-  color: var(--text-soft);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-md);
-  font-weight: var(--font-weight-medium);
-}
-
-.empty-state span[role="img"] {
-  font-size: 3rem;
-  opacity: 0.3;
-  transition: var(--transition-fast);
-}
-
-.empty-state:hover span[role="img"] {
-  opacity: 0.5;
-}
-
-.empty-state small {
-  font-size: var(--font-size-small);
-  color: var(--text-soft);
-}
-
-/* Modal - Glassmorphism estético para modernidad */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-  backdrop-filter: blur(8px);
-  transition: var(--transition-smooth);
-}
-
-.modal-content {
-  background: rgba(255, 255, 255, 0.95); /* Glassmorphism en light */
-  backdrop-filter: blur(20px);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius);
-  width: min(90%, 400px);
-  box-shadow: 0 8px 32px var(--shadow-heavy);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  transform: scale(0.95);
-  transition: var(--transition-smooth);
-}
-
-.modal-backdrop[open] .modal-content {
-  transform: scale(1);
-}
-
-@media (prefers-color-scheme: dark) {
-  .modal-content {
-    background: rgba(31, 41, 55, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-}
-
-.modal-content h3 {
-  margin: 0 0 var(--spacing-md);
-  font-size: 1.125rem;
-  font-weight: var(--font-weight-bold);
-}
-
-.modal-content p {
-  margin-bottom: var(--spacing-md);
-  color: var(--text-soft);
-  font-size: var(--font-size-small);
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: var(--spacing-xxs);
-  font-weight: var(--font-weight-medium);
-  color: var(--text);
-  font-size: var(--font-size-small);
-}
-
-.role-select-modal {
-  background: var(--element-bg);
-  border: 1px solid var(--border);
-  padding: var(--spacing-sm);
-  border-radius: var(--radius);
-  color: var(--text);
-  width: 100%;
-  font-size: var(--font-size-small);
-  transition: var(--transition-fast);
-}
-
-.role-select-modal:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Nota Warning - Sutil highlight */
-.note-warning {
-  margin-top: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  background: #fef9c3;
-  color: var(--warning);
-  font-size: 0.75rem;
-  border-radius: var(--radius);
-  border-left: 4px solid var(--warning-hover);
-}
-
-@media (prefers-color-scheme: dark) {
-  .note-warning {
-    background: #854d0e;
-    color: #fef08a;
-    border-left-color: #d97706;
-  }
-}
-
-/* Acciones Modal - Alineadas profesionalmente */
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-lg);
-}
-
-.save-button,
-.cancel-button {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-small);
-  transition: var(--transition-smooth);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xxs);
-  min-width: 100px;
-  justify-content: center;
-}
-
-.save-button {
-  background: var(--primary-gradient);
-  color: #fff;
+/* Botón Exportar Excel */
+.export-excel-button {
+  background-color: var(--success);
+  color: white;
   border: none;
-  box-shadow: 0 2px 4px var(--shadow-light);
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.save-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px var(--shadow-medium);
+.export-excel-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
-.cancel-button {
-  background: transparent;
-  color: var(--text-soft);
-  border: 1px solid var(--border);
+/* TABLA con Efecto Cristal */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+
+  /* Glassmorphism aplicado desde variables globales */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
 }
 
-.cancel-button:hover:not(:disabled) {
-  background: var(--element-bg);
-  color: var(--text);
-  border-color: var(--border-hover);
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; /* Evita que se aplaste en móvil */
 }
 
-.save-button:disabled,
-.cancel-button:disabled {
+.users-table th {
+  text-align: left;
+  padding: 18px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--color-border);
+  background-color: rgba(0, 0, 0, 0.02); /* Diferencia sutil del header */
+}
+
+.users-table td {
+  padding: 16px 18px;
+  color: var(--color-text-main);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Efecto Hover en Filas */
+.users-table tr:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+body.dark-mode .users-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Badges de Roles */
+.role-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-admin {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+body.dark-mode .role-admin {
+  color: #60a5fa;
+}
+
+.role-lider-de-zona {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+body.dark-mode .role-lider-de-zona {
+  color: #4ade80;
+}
+
+.role-multiplicador {
+  background-color: rgba(234, 179, 8, 0.15);
+  color: #ca8a04;
+}
+body.dark-mode .role-multiplicador {
+  color: #facc15;
+}
+
+/* Acciones (Botones Editar/Eliminar) */
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-button,
+.delete-button {
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-button {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.edit-button:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.delete-button {
+  background-color: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.delete-button:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+/* Paginación */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.pagination-controls button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-main);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pagination-controls button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Error en Modal */
+/* Estado Vacío */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-muted);
+}
+
+.empty-state span {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+/* Error Message */
 .error-message {
-  padding: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-  border-radius: var(--radius);
-  background: var(--error-bg);
+  background-color: rgba(239, 68, 68, 0.1);
   color: var(--danger);
-  border: 1px solid var(--error-border);
-  font-size: var(--font-size-small);
-  animation: fadeIn 0.3s ease-in;
+  padding: 15px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-/* Spinner */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+/* MODAL (Glassmorphism) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.loading-spinner {
-  animation: spin 1s linear infinite;
-  margin-right: var(--spacing-xxs);
+.modal-content {
+  background: var(--color-surface);
+  padding: 30px;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-border);
+  animation: modalUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Media Queries - Responsive moderno */
-@container (max-width: 600px) {
+@keyframes modalUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-content h3 {
+  color: var(--primary);
+  margin-top: 0;
+}
+
+.modal-actions {
+  margin-top: 25px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.save-button {
+  background-color: var(--success);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .manage-users-container {
+    padding: 15px;
+  }
+
+  .manage-users-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .create-user-button {
+    width: 100%;
+    justify-content: center;
+  }
+
   .filters-bar-wrapper {
     grid-template-columns: 1fr;
   }
 
-  .actions-cell {
-    flex-direction: column;
-    gap: var(--spacing-xxs);
+  /* Scroll horizontal para la tabla en móviles */
+  .table-wrapper {
+    overflow-x: auto;
   }
 
-  .edit-button,
-  .delete-button {
-    width: 100%;
-  }
-
-  .modal-actions {
+  .pagination-controls {
     flex-direction: column;
+    gap: 10px;
   }
 }
-
-@media (max-width: 480px) {
-  .manage-users-container {
-    padding: var(--spacing-md);
-  }
-
-  .users-table th,
-  .users-table td {
-    padding: var(--spacing-sm);
-  }
-}
-
-
-  
-
-

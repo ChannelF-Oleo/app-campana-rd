@@ -1,129 +1,110 @@
-import React, { useState, useEffect } from 'react';
-// Imports de los componentes del dashboard
-import MyTeam from './MyTeam';
-import TotalRegistrations from './TotalRegistrations';
-import RegistrationsByDayChart from './RegistrationsByDayChart';
-import MyGoals from './MyGoals';
-import RegistrationsByZoneChart from './RegistrationsByZoneChart';
-import MyReferralLink from './MyReferralLink';
-// CORRECCIÓN: Importación correcta de MyRegisteredSimpatizantes
-import MyRegisteredSimpatizantes from './MyRegisteredSimpatizantes'; 
-import './Dashboard.css';
+import React, { useState, useEffect, useMemo } from "react";
+// NOTA: No importamos DashboardSidebar ni Navbar aquí. Eso lo maneja App.js
 
-function Dashboard({ user }) {
-  // Estado para guardar los IDs relevantes según el rol
-  const [relevantUserIds, setRelevantUserIds] = useState(undefined); // undefined = admin (sin filtro)
+// Componentes de Widgets
+import MyTeam from "./MyTeam";
+import TotalRegistrations from "./TotalRegistrations";
+import RegistrationsByDayChart from "./RegistrationsByDayChart";
+import MyGoals from "./MyGoals";
+import RegistrationsByZoneChart from "./RegistrationsByZoneChart";
+import MyReferralLink from "./MyReferralLink";
+import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
+import "./Dashboard.css";
 
+const Dashboard = ({ user }) => {
+  const [relevantUserIds, setRelevantUserIds] = useState(undefined);
+
+  // 1. Lógica para determinar qué datos ver según el rol
   useEffect(() => {
     if (!user) return;
-
-    if (user.rol === 'lider de zona') {
-      // Incluye al líder + su equipo
-      const ids = [user.uid, ...(user.multiplicadoresAsignados || [])];
-      setRelevantUserIds(ids);
-    } else if (user.rol === 'multiplicador') {
-      // Solo el multiplicador
-       setRelevantUserIds([user.uid]);
-    } else if (user.rol === 'admin') {
-      // Admin ve todo
-      setRelevantUserIds(undefined);
+    if (user.rol === "lider de zona") {
+      setRelevantUserIds([user.uid, ...(user.multiplicadoresAsignados || [])]);
+    } else if (user.rol === "multiplicador") {
+      setRelevantUserIds([user.uid]);
+    } else if (user.rol === "admin") {
+      setRelevantUserIds(undefined); // undefined = ver todo
     } else {
-      // Rol desconocido o sin permisos para ver métricas de equipo
-      setRelevantUserIds(null); // Usamos null para indicar "nada que mostrar"
+      setRelevantUserIds(null); // null = no ver nada
     }
+  }, [user]);
 
-  }, [user]); // Se recalcula si el usuario cambia
-
-  // Si aún estamos determinando los IDs (y no es admin), mostramos carga
-  if (relevantUserIds === undefined && user.rol !== 'admin') {
-      return <div>Calculando permisos de visualización...</div>;
-  }
-
-  // --- CORRECCIÓN: Definir los bloques DENTRO de la función principal ---
-  // Bloque de métricas generales/filtradas
-  const filteredMetrics = (
-    <>
-      <div className="dashboard-section-title">
-        {user.rol === 'admin' ? 'Métricas Generales' : 'Métricas Equipo / Personales'}
-      </div>
-      <div className="metrics-grid">
-        <TotalRegistrations filterUserIds={relevantUserIds} />
-        <RegistrationsByDayChart filterUserIds={relevantUserIds} />
-        <RegistrationsByZoneChart filterUserIds={relevantUserIds} />
-      </div>
-    </>
+  // 2. Memorizar componentes costosos para evitar re-renders
+  const referralLinkSection = useMemo(
+    () => <MyReferralLink key="link" user={user} />,
+    [user]
+  );
+  const personalGoal = useMemo(
+    () => <MyGoals key="goals" user={user} />,
+    [user]
+  );
+  const myRegistrationsList = useMemo(
+    () => <MyRegisteredSimpatizantes key="reg-list" user={user} />,
+    [user]
   );
 
-  // Bloque de meta personal (solo para roles con metas)
-  const personalGoal = (user.rol === 'multiplicador' || user.rol === 'lider de zona') ? (
-    <>
-      <div className="dashboard-section-title">Mi Meta Actual</div>
-      <div className="metrics-grid">
-        <MyGoals user={user} />
-      </div>
-    </>
-  ) : null; // No mostrar nada si es admin
+  const filteredMetrics = useMemo(
+    () => (
+      <>
+        <div className="metrics-grid">
+          <TotalRegistrations userIds={relevantUserIds} />
+        </div>
+        <RegistrationsByDayChart userIds={relevantUserIds} />
+        <RegistrationsByZoneChart userIds={relevantUserIds} />
+      </>
+    ),
+    [relevantUserIds]
+  );
 
-  // Bloque del enlace de referido (solo para roles con referido)
-  const referralLinkSection = (user.rol === 'multiplicador' || user.rol === 'lider de zona') 
-    ? <MyReferralLink user={user} /> 
-    : null;
+  if (!user) return <div className="loading-screen">Cargando datos...</div>;
 
-  // Bloque de la lista de registros personales
-   const myRegistrationsList = (user.rol === 'multiplicador' || user.rol === 'lider de zona') ? (
-    <>
-      <div className="dashboard-section-title">Mis Soldados Registrados</div>
-      <MyRegisteredSimpatizantes user={user} />
-    </>
-   ) : null;
-
-
-  // --- Función interna para renderizar el contenido según el rol ---
-  // (No es estrictamente necesaria, pero ayuda a organizar)
-  const renderRoleSpecificContent = () => {
-    switch (user.rol) {
-      case 'lider de zona':
-        return (
-          <>
-          <div className="dashboard-welcome"><h1>¡Bienvenido, {user.nombre}!</h1></div>
-            {referralLinkSection}
-            {personalGoal}
-            {myRegistrationsList} {/* Lista personal del líder */}
-            {filteredMetrics} {/* Métricas del equipo del líder */}
-            <div className="dashboard-section-title">Mi Peloton Asignado</div>
-            <MyTeam user={user} />
-          </>
-        );
-      case 'admin':
-        return (
-          <>
-            <div className="dashboard-welcome"><h1>Panel de Administrador,
-          ¡Bienvenido, {user.nombre}!</h1></div>
-            {filteredMetrics} {/* Admin ve métricas generales */}
-          </>
-        );
-      case 'multiplicador':
-      default: // Multiplicador
-        return (
-          <>
-            <div className="dashboard-welcome"><h1>¡Bienvenido, {user.nombre}!</h1></div>
-            {referralLinkSection}
-            {personalGoal}
-            {myRegistrationsList} {/* Lista personal del multiplicador */}
-            {filteredMetrics} {/* Métricas filtradas solo para él */}
-          </>
-        );
-    }
-  };
-
-  // --- Renderizado principal del componente Dashboard ---
+  // 3. Renderizado limpio (sin layout wrappers)
   return (
-    <div>
-      {/* Llamamos a la función que decide qué mostrar */}
-      {renderRoleSpecificContent()}
+    <div className="dashboard-container-inner">
+      {/* --- ROL: LÍDER DE ZONA --- */}
+      {user.rol === "lider de zona" && (
+        <>
+          <div className="dashboard-welcome">
+            <h1>¡Bienvenido, {user.nombre}!</h1>
+          </div>
+          {referralLinkSection}
+          {personalGoal}
+          {myRegistrationsList}
+
+          <div className="dashboard-section-title">Métricas de mi Equipo</div>
+          {filteredMetrics}
+
+          <div className="dashboard-section-title">Mi Pelotón Asignado</div>
+          <MyTeam user={user} />
+        </>
+      )}
+
+      {/* --- ROL: ADMIN --- */}
+      {user.rol === "admin" && (
+        <>
+          <div className="dashboard-welcome">
+            <h1>Panel de Administrador: {user.nombre}</h1>
+          </div>
+          {filteredMetrics}
+        </>
+      )}
+
+      {/* --- ROL: MULTIPLICADOR (y otros) --- */}
+      {(user.rol === "multiplicador" ||
+        !["admin", "lider de zona"].includes(user.rol)) && (
+        <>
+          <div className="dashboard-welcome">
+            <h1>¡Bienvenido, {user.nombre}!</h1>
+          </div>
+          {referralLinkSection}
+          {personalGoal}
+          {myRegistrationsList}
+
+          <div className="dashboard-section-title">Métricas Personales</div>
+          {filteredMetrics}
+        </>
+      )}
     </div>
-  ); 
-  // CORRECCIÓN: No debe haber código después de este return que cause 'Unreachable code'
-}
+  );
+};
 
 export default Dashboard;

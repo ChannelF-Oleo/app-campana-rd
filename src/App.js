@@ -5,205 +5,192 @@ import {
   Route,
   Navigate,
   Outlet,
-  useNavigate,
 } from "react-router-dom";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-// IMPORTANT: You must ensure 'db' is correctly exported from this file
-import { db } from "./firebase";
 
-// --- 1. IMPORTACIONES DE COMPONENTES ---
+// --- CONTEXTOS ---
+import { AuthProvider, useAuth } from "./AuthContext";
+import { ThemeProvider, useTheme } from "./ThemeContext";
+
+// --- COMPONENTES GLOBALES ---
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import "./index.css"; // IMPORTANTE: Asegúrate de importar index.css aquí o en index.js
+import "./App.css"; // Estilos de layout específicos
+
+// --- COMPONENTES DEL DASHBOARD ---
+import DashboardSidebar from "./components/DashboardSidebar";
+import BottomNavBar from "./components/BottomNavBar";
+
+// --- PÁGINAS ---
 import HomePage from "./components/Home";
 import Login from "./components/Login";
-import SignUp from "./components/SignUp";
-import Dashboard from "./components/Dashboard";
-import CreateUser from "./components/CreateUser";
-import ManageUsers from "./components/ManageUsers";
-import ManageTeams from "./components/ManageTeams";
-import DashboardSidebar from "./components/DashboardSidebar";
-import Navbar from "./components/Navbar";
 import PublicRegister from "./components/PublicRegister";
 import ProposalsPage from "./components/Propuestas";
+
+// --- PÁGINAS PROTEGIDAS ---
+import Dashboard from "./components/Dashboard";
 import RegisterByActivist from "./components/RegisterByActivist";
-import SetGoalModal from "./components/SetGoalModal";
+import ManageUsers from "./components/ManageUsers";
+import ManageTeams from "./components/ManageTeams";
+import CreateUser from "./components/CreateUser";
 import Comandos from "./components/Comandos";
-import { ThemeProvider, useTheme } from "./ThemeContext";
-import Footer from "./components/Footer";
+import SetGoalModal from "./components/SetGoalModal";
 
-// --- 2. CONTEXTO DE AUTENTICACIÓN ---
-const AuthContext = createContext(null);
-export const useAuth = () => useContext(AuthContext);
-
-// Contexto para pasar funciones específicas del layout del dashboard.
+// Contexto para UI del Layout
 const LayoutContext = createContext(null);
 const useLayoutContext = () => useContext(LayoutContext);
 
-// --- 3. LAYOUTS ---
+// --- HOOK: DETECCIÓN DE DISPOSITIVO ---
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(window.matchMedia(query).matches);
 
-// Layout para las páginas públicas (con la barra de navegación principal)
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const listener = () => setMatches(media.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [query]);
+
+  return matches;
+};
+
+// --- LAYOUTS ---
 function PublicLayout() {
   return (
     <>
       <Navbar />
-      <Outlet />
+      <div className="public-content-wrapper">
+        <Outlet />
+      </div>
       <Footer />
     </>
   );
 }
 
-// Layout para el panel de control (con la barra lateral)
 function DashboardLayout() {
   const { user, logout } = useAuth();
   const { handleOpenGoalModal } = useLayoutContext();
+
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   if (!user) return null;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <DashboardSidebar
-        user={user}
-        onLogout={logout}
-        isCollapsed={isSidebarCollapsed}
-        onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
-        onSetGoalClick={handleOpenGoalModal}
-      />
-      <main
-        style={{
-          flexGrow: 1,
-          backgroundColor: "var(--page-bg)",
-          color: "var(--primary-text)",
-          overflowY: "auto",
-        }}
-      >
+    <div
+      className={`dashboard-layout ${
+        isSidebarCollapsed ? "sidebar-collapsed" : ""
+      }`}
+    >
+      {/* Navegación Inteligente */}
+      {!isMobile ? (
+        <DashboardSidebar
+          user={user}
+          onLogout={logout}
+          isCollapsed={isSidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
+          onSetGoalClick={handleOpenGoalModal}
+        />
+      ) : (
+        <BottomNavBar
+          user={user}
+          onSetGoalClick={handleOpenGoalModal}
+          onLogout={logout}
+        />
+      )}
+
+      <main className="dashboard-content">
         <Outlet />
       </main>
     </div>
   );
 }
 
-// --- 4. COMPONENTES DE RUTAS LÓGICAS ---
-
-// RUTA PROTEGIDA: Si el usuario NO está logueado, lo envía a /login.
+// --- RUTAS PROTEGIDAS ---
 function ProtectedRoute() {
-  const { user, loading } = useAuth();
-  if (loading) return <div>Verificando sesión...</div>;
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <div className="loading-screen">Cargando...</div>;
   if (!user) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
 
-// RUTA SOLO PÚBLICA: Si el usuario SÍ está logueado, lo envía al dashboard.
 function PublicOnlyRoute() {
-  const { user, loading } = useAuth();
-  if (loading) return <div>Verificando sesión...</div>;
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <div className="loading-screen">Verificando...</div>;
   if (user) return <Navigate to="/dashboard" replace />;
-  // RENDERIZA EL OUTLET, que será la ruta hija (Login o PublicRegister)
   return <Outlet />;
 }
 
-// --- 5. LÓGICA PRINCIPAL DE LA APLICACIÓN ---
-function AppLogic() {
-  const { isDarkMode } = useTheme();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+// --- DEFINICIÓN DE RUTAS ---
+function AppRoutes() {
+  const { user } = useAuth();
+  // Nota: Ya no necesitamos lógica de tema aquí, ThemeContext se encarga.
 
   const [isGoalModalOpen, setGoalModalOpen] = useState(false);
   const handleOpenGoalModal = () => setGoalModalOpen(true);
   const handleCloseGoalModal = () => setGoalModalOpen(false);
 
-  useEffect(() => {
-    document.body.className = isDarkMode ? "dark-mode" : "";
-  }, [isDarkMode]);
-
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Asumiendo que 'db' es el objeto Firestore importado
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser({ uid: firebaseUser.uid, ...userDoc.data() });
-        } else {
-          await signOut(auth);
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const logout = async () => {
-    const auth = getAuth();
-    await signOut(auth);
-    navigate("/");
-  };
-
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
-      <LayoutContext.Provider value={{ handleOpenGoalModal }}>
-        {isGoalModalOpen && user && (
-          <SetGoalModal user={user} onClose={handleCloseGoalModal} />
-        )}
+    <LayoutContext.Provider value={{ handleOpenGoalModal }}>
+      {isGoalModalOpen && user && (
+        <SetGoalModal user={user} onClose={handleCloseGoalModal} />
+      )}
 
-        <Routes>
-          {/* --- BLOQUE UNIFICADO DE RUTAS PÚBLICAS ---
-            Todas las rutas anidadas aquí usarán el PublicLayout (Navbar y Footer).
-          */}
-          <Route element={<PublicLayout />}>
-            {/* Rutas 100% públicas */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/propuestas" element={<ProposalsPage />} />
-
-            {/* Rutas de Autenticación:
-              1. Usan PublicLayout para Navbar/Footer.
-              2. Usan PublicOnlyRoute para redirigir si el usuario está logueado. 
-            */}
-            <Route element={<PublicOnlyRoute />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/registro" element={<PublicRegister />} />
-              <Route path="/signUp" element={<SignUp />} />
-            </Route>
+      <Routes>
+        {/* ZONA PÚBLICA */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/propuestas" element={<ProposalsPage />} />
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/registro" element={<PublicRegister />} />
           </Route>
+        </Route>
 
-          {/* --- RUTAS PROTEGIDAS (Dashboard) --- */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<Dashboard user={user} />} />
-              <Route
-                path="/dashboard/registrar"
-                element={<RegisterByActivist user={user} />}
-              />
+        {/* ZONA PRIVADA (DASHBOARD) - RUTAS PLANAS */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard user={user} />} />
+            <Route
+              path="/dashboard/registrar"
+              element={<RegisterByActivist user={user} />}
+            />
 
-              {/* Rutas de Administrador */}
-              {user?.rol === "admin" && (
-                <>
-                  <Route path="/admin/usuarios" element={<ManageUsers />} />
-                  <Route path="/admin/crear-usuario" element={<CreateUser />} />
-                  <Route path="/admin/equipos" element={<ManageTeams />} />
-                  <Route path="/admin/comandos" element={<Comandos />} />
-                </>
-              )}
-            </Route>
+            {/* Admin */}
+            {user?.rol === "admin" && (
+              <>
+                <Route path="/admin/usuarios" element={<ManageUsers />} />
+                <Route path="/admin/crear-usuario" element={<CreateUser />} />
+                <Route path="/admin/equipos" element={<ManageTeams />} />
+                <Route path="/admin/comandos" element={<Comandos />} />
+              </>
+            )}
           </Route>
+        </Route>
 
-          {/* 404 Catch-all */}
-          <Route path="*" element={<h2>404: Página no encontrada</h2>} />
-        </Routes>
-      </LayoutContext.Provider>
-    </AuthContext.Provider>
+        <Route
+          path="*"
+          element={
+            <h2 style={{ textAlign: "center", marginTop: "50px" }}>
+              404: Página no encontrada
+            </h2>
+          }
+        />
+      </Routes>
+    </LayoutContext.Provider>
   );
 }
 
-// --- 6. COMPONENTE RAÍZ ---
+// --- ROOT ---
 function App() {
   return (
     <Router>
-      <ThemeProvider>
-        <AppLogic />
-      </ThemeProvider>
+      <AuthProvider>
+        {/* ThemeProvider debe envolver a los componentes que usen useTheme */}
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
+      </AuthProvider>
     </Router>
   );
 }

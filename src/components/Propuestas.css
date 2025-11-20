@@ -23,12 +23,15 @@
 /* -------------------------- */
 /* 1. CONTENEDOR Y ENCABEZADOS */
 /* -------------------------- */
+
 .propuestas-container {
-  padding: var(--spacing-lg) 0 var(--spacing-xl);
+  /* 🛑 FIX: Aplicación explícita del modo CLARO para anular la herencia */
+  background-color: var(--color-bg-light);
+  color: var(--color-text-dark); /* Color de texto principal claro */
   margin-bottom: 30px;
+  width: 100%;
+  padding: var(--spacing-lg);
 }
-
-
 
 .page-header {
   color: var(--primary-blue);
@@ -76,7 +79,6 @@
   font-weight: 700;
   margin-top: var(--spacing-lg);
   margin-bottom: var(--spacing-md);
-
 }
 
 /* -------------------------- */
@@ -109,7 +111,7 @@
   flex-direction: column; /* Para asegurar que el contenido se comporte bien con height: 100% */
   text-align: justify;
   border-bottom: 3px solid transparent; /* Línea inferior para efecto hover */
-  margin-bottom:30px;
+  margin-bottom: 30px;
 }
 
 .prop-card:hover {

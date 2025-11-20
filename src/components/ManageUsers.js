@@ -91,7 +91,11 @@ function EditUserModal({ user, onClose, onSave }) {
           Email: <strong>{user.email}</strong>{" "}
           {user.numeroCedula && `(Cédula: ${user.numeroCedula})`}
         </p>
-        {error && <div className="error-message" role="alert">{error}</div>}
+        {error && (
+          <div className="error-message" role="alert">
+            {error}
+          </div>
+        )}
         <div className="form-group">
           <label htmlFor="role-select">Seleccionar Nuevo Rol:</label>
           <select
@@ -262,7 +266,10 @@ function ManageUsers() {
       Nombre: user.nombre || "N/A",
       Email: user.email || "N/A",
       Cedula: user.numeroCedula || "N/A",
-      Rol: ROLES_DISPONIBLES.find((r) => r.value === user.rol)?.label || user.rol || "N/A",
+      Rol:
+        ROLES_DISPONIBLES.find((r) => r.value === user.rol)?.label ||
+        user.rol ||
+        "N/A",
       Registros: user.registrationCount || 0,
       UID: user.id,
     }));
@@ -270,9 +277,14 @@ function ManageUsers() {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios Filtrados");
-    XLSX.writeFile(workbook, `Usuarios_Filtrados_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(
+      workbook,
+      `Usuarios_Filtrados_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
     // Mejora: Alert con fecha para trazabilidad
-    alert(`Se han exportado ${filteredUsersMemo.length} usuarios al archivo con fecha de hoy.`);
+    alert(
+      `Se han exportado ${filteredUsersMemo.length} usuarios al archivo con fecha de hoy.`
+    );
   }, [filteredUsersMemo]);
 
   const handleEditClick = useCallback((user) => {
@@ -308,7 +320,10 @@ function ManageUsers() {
 
   if (loading) {
     return (
-      <div className="manage-users-container" style={{ textAlign: "center", padding: "4rem" }}>
+      <div
+        className="manage-users-container"
+        style={{ textAlign: "center", padding: "4rem" }}
+      >
         <LoadingSpinner size="large" />
         <p>Cargando datos de usuarios...</p>
       </div>
@@ -316,7 +331,11 @@ function ManageUsers() {
   }
 
   return (
-    <div className="manage-users-container" role="main" aria-label="Gestión de Usuarios">
+    <div
+      className="manage-users-container"
+      role="main"
+      aria-label="Gestión de Usuarios"
+    >
       {/* Error Global */}
       {error && (
         <div className="error-message global" role="alert">
@@ -390,11 +409,17 @@ function ManageUsers() {
       </div>
 
       {/* 3. Tabla (mejorada con role="table" y data-labels para mobile) */}
-      <div className="table-wrapper" role="region" aria-label="Tabla de usuarios">
-        <table className="users-table" role="table" aria-describedby="table-desc">
-          <caption id="table-desc" className="visually-hidden">
-            Lista de usuarios con filtros aplicados ({filteredUsersMemo.length} resultados)
-          </caption>
+      <div
+        className="table-wrapper"
+        role="region"
+        aria-label="Tabla de usuarios"
+      >
+        <table
+          className="users-table"
+          role="table"
+          aria-describedby="table-desc"
+        >
+        
           <thead>
             <tr>
               <th scope="col">Nombre</th>
@@ -410,16 +435,20 @@ function ManageUsers() {
                 <tr key={user.id} role="row">
                   <td data-label="Nombre">{user.nombre || "N/A"}</td>
                   <td data-label="Email / Cédula">
-                    <strong>
-                      {user.numeroCedula || user.email || "N/A"}
-                    </strong>
+                    <strong>{user.numeroCedula || user.email || "N/A"}</strong>
                   </td>
                   <td data-label="Rol">
                     <span
                       className={`role-badge role-${user.rol}`}
-                      title={`Rol: ${ROLES_DISPONIBLES.find((r) => r.value === user.rol)?.label || user.rol}`}
+                      title={`Rol: ${
+                        ROLES_DISPONIBLES.find((r) => r.value === user.rol)
+                          ?.label || user.rol
+                      }`}
                     >
-                      {ROLES_DISPONIBLES.find((r) => r.value === user.rol)?.label || user.rol || "N/A"}
+                      {ROLES_DISPONIBLES.find((r) => r.value === user.rol)
+                        ?.label ||
+                        user.rol ||
+                        "N/A"}
                     </span>
                   </td>
                   <td data-label="Registros">{user.registrationCount || 0}</td>
@@ -431,7 +460,7 @@ function ManageUsers() {
                       title="Editar rol"
                       disabled={loading}
                     >
-                      {ICONS.edit} Editar Rol
+                      {ICONS.edit}
                     </button>
                     <button
                       onClick={() => handleDeleteUser(user)}
@@ -440,7 +469,7 @@ function ManageUsers() {
                       title="Eliminar usuario (irreversible)"
                       disabled={loading}
                     >
-                      {ICONS.delete} Eliminar
+                      {ICONS.delete}
                     </button>
                   </td>
                 </tr>
@@ -448,10 +477,14 @@ function ManageUsers() {
             ) : (
               <tr>
                 <td colSpan="5" className="empty-state" role="status">
-                  <span role="img" aria-label="No results">👥</span>
+                  <span role="img" aria-label="No results">
+                    👥
+                  </span>
                   No se encontraron usuarios con los filtros aplicados.
                   <br />
-                  <small>Intenta ajustar la búsqueda o el filtro de roles.</small>
+                  <small>
+                    Intenta ajustar la búsqueda o el filtro de roles.
+                  </small>
                 </td>
               </tr>
             )}
@@ -467,69 +500,8 @@ function ManageUsers() {
           onSave={handleSaveRole}
         />
       )}
-
-      {/* Estilos inline para nuevos elementos (mueve a CSS global) */}
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .visually-hidden {
-          position: absolute !important;
-          width: 1px !important;
-          height: 1px !important;
-          padding: 0 !important;
-          margin: -1px !important;
-          overflow: hidden !important;
-          clip: rect(0, 0, 0, 0) !important;
-          white-space: nowrap !important;
-          border: 0 !important;
-        }
-        .input-wrapper, .select-wrapper {
-          position: relative;
-        }
-        .input-icon {
-          position: absolute;
-          right: 0.75rem;
-          top: 50%;
-          transform: translateY(-50%);
-          pointer-events: none;
-          opacity: 0.5;
-        }
-        .actions-cell {
-          display: flex;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-        .role-badge {
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
-          font-size: 0.85rem;
-          font-weight: 600;
-        }
-        .role-admin { background: var(--primary); color: white; }
-        .role-lider-de-zona { background: var(--success); color: white; }
-        .role-multiplicador { background: var(--warning); color: black; }
-        .error-message {
-          padding: 0.75rem;
-          margin-bottom: 1rem;
-          border-radius: var(--radius);
-          background: rgba(239, 68, 68, 0.1);
-          color: var(--danger);
-          border-left: 3px solid var(--danger);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .error-message.global { max-width: 100%; }
-        .error-message button { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
-        .loading-spinner { margin-right: 0.5rem; }
-      `}</style>
     </div>
   );
 }
 
 export default ManageUsers;
-
-
-

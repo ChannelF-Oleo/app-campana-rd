@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { db } from "../firebase"; // db needed for getDoc
+import { db } from "../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { doc, getDoc } from "firebase/firestore";
-import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api"; // Nuevo: Importar componentes de Google Maps
+import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { ubicacionesData } from "../data/ubicaciones.js";
 import "./PublicRegister.css";
 import logo from "../Felix/Inscribete.png";
@@ -24,7 +24,19 @@ const initialCenter = {
   lng: -69.9309,
 };
 const defaultZoom = 12;
-const libraries = ["places"]; // Librería de places
+const libraries = ["places"];
+
+// [INICIO CORRECCIÓN SDO]
+const PROVINCIA_FIJA = "Santo Domingo";
+const MUNICIPIO_FIJO = "Santo Domingo Oeste";
+
+// Cargar sectores fijos de SDO una sola vez
+const provinciaSDO = ubicacionesData.find(p => p.provincia === PROVINCIA_FIJA);
+const municipioData = provinciaSDO 
+  ? provinciaSDO.municipios.find(m => m.municipio === MUNICIPIO_FIJO)
+  : null;
+const sectoresSDO = municipioData ? municipioData.sectores : [];
+// [FIN CORRECCIÓN SDO]
 
 // Function to get URL parameters
 function useQuery() {
@@ -51,6 +63,11 @@ const registerSimpatizanteCallable = httpsCallable(
   functions,
   "registerSimpatizante"
 );
+// Callable para buscar votante
+const searchVotanteCallable = httpsCallable(
+  functions,
+  "searchVotanteByCedula"
+);
 
 function PublicRegister() {
   // Form field states
@@ -61,18 +78,23 @@ function PublicRegister() {
   const [direccion, setDireccion] = useState("");
   const [colegioElectoral, setColegioElectoral] = useState("");
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  
+  // Estados de carga y búsqueda
   const [loading, setLoading] = useState(false);
-  // Dropdown states
-  const [selectedProvincia, setSelectedProvincia] = useState("");
-  const [selectedMunicipio, setSelectedMunicipio] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Dropdown states: Inicializados a los valores fijos de SDO
+  const [selectedProvincia, setSelectedProvincia] = useState(PROVINCIA_FIJA);
+  const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIO_FIJO);
   const [selectedSector, setSelectedSector] = useState("");
-  const [municipios, setMunicipios] = useState([]);
-  const [sectores, setSectores] = useState([]);
+
+  // [REMOVIDO: useEffects de cascada de ubicación]
+
   // NUEVO: Estado para las coordenadas (ubicación pineada)
   const [coordinates, setCoordinates] = useState(initialCenter);
 
   // Notification state
-  const [notification, setNotification] = useState({ message: "", type: "" }); // type: 'success' or 'error'
+  const [notification, setNotification] = useState({ message: "", type: "" }); 
 
   const queryParams = useQuery();
   const referrerId = queryParams.get("ref");
@@ -92,46 +114,69 @@ function PublicRegister() {
     });
   }, []);
 
-  // Effect for provincia -> municipio cascade
-  useEffect(() => {
-    if (selectedProvincia) {
-      const provinciaEncontrada = ubicacionesData.find(
-        (p) => p.provincia === selectedProvincia
-      );
-      setMunicipios(provinciaEncontrada ? provinciaEncontrada.municipios : []);
-      setSelectedMunicipio("");
-      setSectores([]);
-    } else {
-      setMunicipios([]);
-      setSectores([]);
-    }
-  }, [selectedProvincia]);
+  // NUEVA FUNCIÓN: Buscar votante al ingresar cédula válida
+  const handleCedulaSearch = useCallback(async (inputCedula) => {
+    const cedulaNormalizada = inputCedula.replace(/-/g, "");
+    if (cedulaNormalizada.length === 11 && validarCedula(inputCedula)) {
+        setIsSearching(true);
+        setNotification({ message: "Buscando datos del votante...", type: "info" });
+        try {
+            const result = await searchVotanteCallable({ cedula: inputCedula });
+            const { found, data } = result.data;
 
-  // Effect for municipio -> sector cascade
-  useEffect(() => {
-    if (selectedMunicipio) {
-      const provinciaActual = ubicacionesData.find(
-        (p) => p.provincia === selectedProvincia
-      );
-      if (provinciaActual) {
-        const municipioActual = provinciaActual.municipios.find(
-          (m) => m.municipio === selectedMunicipio
-        );
-        setSectores(municipioActual ? municipioActual.sectores : []);
-      } else {
-        setSectores([]);
-      }
-      setSelectedSector("");
-    } else {
-      setSectores([]);
+            if (found) {
+                setNombre(data.nombre);
+                // No actualizamos email/telefono/direccion con data. Se dejan en blanco o se completan con lo que el votante decida
+                // Esto permite al usuario actualizar/corregir esos datos si vienen vacíos o son incorrectos.
+                setColegioElectoral(data.colegioElectoral || "");
+                
+                // CRUCIAL: Solo actualizamos el sector si coincide con un sector de SDO
+                const foundSector = sectoresSDO.includes(data.sector) ? data.sector : "";
+                setSelectedSector(foundSector);
+
+                setNotification({ message: "Datos encontrados y cargados. Por favor, revisa y completa la información de contacto.", type: "success" });
+            } else {
+                // Limpiar solo campos de autocompletado si la búsqueda falla
+                setNombre("");
+                setColegioElectoral("");
+                setSelectedSector("");
+                setNotification({ message: "Cédula no encontrada en la base de votantes. Por favor, rellena los campos.", type: "error" });
+            }
+        } catch (error) {
+            console.error("Error al buscar cédula:", error);
+            setNotification({ message: "Error en la conexión al buscar la cédula.", type: "error" });
+        } finally {
+            setIsSearching(false);
+        }
     }
-  }, [selectedMunicipio, selectedProvincia]); // Corrected dependency
+  }, []);
+
+
+  const handleCedulaChange = (e) => {
+    const value = e.target.value;
+    const normalized = value.replace(/-/g, '');
+    let formatted = '';
+    if (normalized.length > 0) formatted += normalized.substring(0, 3);
+    if (normalized.length > 3) formatted += '-' + normalized.substring(3, 10);
+    if (normalized.length > 10) formatted += '-' + normalized.substring(10, 11);
+    
+    // Solo actualizamos el estado si es diferente para evitar loops o problemas
+    if(value !== formatted) setCedula(formatted);
+
+
+    // Intentar buscar automáticamente si la cédula es válida
+    if (validarCedula(formatted)) {
+        handleCedulaSearch(formatted);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setNotification({ message: "", type: "" }); // Clear previous notification
+    setNotification({ message: "", type: "" }); 
 
-    // Validations
+    if (isSearching || loading) return; 
+
+    // Validaciones
     if (!aceptaTerminos) {
       setNotification({
         message: "Debes aceptar los términos y condiciones.",
@@ -140,7 +185,7 @@ function PublicRegister() {
       return;
     }
     const cedulaNormalizada = cedula.replace(/-/g, "");
-    // Ensure normalization doesn't fail if input is too short
+    
     if (cedulaNormalizada.length !== 11) {
       setNotification({
         message: "Formato de cédula incorrecto (debe tener 11 dígitos).",
@@ -169,14 +214,16 @@ function PublicRegister() {
       });
       return;
     }
-    if (!selectedProvincia || !selectedMunicipio || !selectedSector) {
+    // VALIDACIÓN SIMPLIFICADA: Solo se revisa el Sector
+    if (!selectedSector) { 
       setNotification({
-        message: "Por favor, selecciona Provincia, Municipio y Sector.",
+        message: "Por favor, selecciona un Sector.",
         type: "error",
       });
       return;
     }
-    // Opcional: Validar que el pin esté ubicado (puedes decidir si es obligatorio)
+
+    // Opcional: Validar que el pin esté ubicado
     if (
       !coordinates ||
       (coordinates.lat === initialCenter.lat &&
@@ -187,8 +234,6 @@ function PublicRegister() {
           "Por favor, arrastra el pin en el mapa para especificar tu ubicación exacta.",
         type: "error",
       });
-      // Si quieres que sea obligatorio, descomenta el return:
-      // return;
     }
 
     setLoading(true);
@@ -236,10 +281,9 @@ function PublicRegister() {
         telefono,
         direccion,
         colegioElectoral,
-        provincia: selectedProvincia,
-        municipio: selectedMunicipio,
+        provincia: selectedProvincia, // Valor fijo: Santo Domingo
+        municipio: selectedMunicipio, // Valor fijo: Santo Domingo Oeste
         sector: selectedSector,
-        // NUEVO: Coordenadas
         lat: coordinates.lat,
         lng: coordinates.lng,
         ...registeredByData,
@@ -247,7 +291,7 @@ function PublicRegister() {
 
       if (result.data.success) {
         setNotification({ message: result.data.message, type: "success" });
-        // Clear form
+        // Clear form y reset location states a fixed values
         setNombre("");
         setCedula("");
         setEmail("");
@@ -255,10 +299,10 @@ function PublicRegister() {
         setDireccion("");
         setColegioElectoral("");
         setAceptaTerminos(false);
-        setSelectedProvincia("");
-        setSelectedMunicipio("");
+        setSelectedProvincia(PROVINCIA_FIJA);
+        setSelectedMunicipio(MUNICIPIO_FIJO);
         setSelectedSector("");
-        setCoordinates(initialCenter); // Restablecer coordenadas
+        setCoordinates(initialCenter);
       } else {
         setNotification({ message: result.data.message, type: "error" });
       }
@@ -273,13 +317,11 @@ function PublicRegister() {
     }
   };
 
-  // Renderizado condicional si hay error o está cargando el mapa
   if (loadError)
     return (
       <div className="register-container">
         <p className="notification error">
-          Error al cargar el mapa de Google Maps. Por favor, verifica la clave
-          API.
+          Error al cargar el mapa de Google Maps. Por favor, verifica la clave API.
         </p>
       </div>
     );
@@ -299,7 +341,7 @@ function PublicRegister() {
         <div className="logo-container">
           <img src={logo} alt="Inscríbete" className="register-logo" />
         </div>
-        <h2>Regístrate como simpatizante de Felix Encarnacion</h2>
+        <h2>Regístrate como simpatizante de Felix Encarnación</h2>
         <p>¡Quiero ser parte!</p>
 
         {/* Cédula */}
@@ -310,8 +352,9 @@ function PublicRegister() {
             id="cedula"
             placeholder="001-1234567-8"
             value={cedula}
-            onChange={(e) => setCedula(e.target.value)}
+            onChange={handleCedulaChange} 
             required
+            disabled={isSearching || loading}
           />
         </div>
         {/* Nombre */}
@@ -323,6 +366,7 @@ function PublicRegister() {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
+            disabled={isSearching || loading}
           />
         </div>
 
@@ -335,6 +379,7 @@ function PublicRegister() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={isSearching || loading}
           />
         </div>
         {/* Teléfono */}
@@ -345,10 +390,11 @@ function PublicRegister() {
             id="telefono"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
+            disabled={isSearching || loading}
           />
         </div>
 
-        {/* Provincia */}
+        {/* Provincia: Fija y deshabilitada */}
         <div className="input-group">
           <label htmlFor="provincia">Provincia</label>
           <select
@@ -356,16 +402,12 @@ function PublicRegister() {
             value={selectedProvincia}
             onChange={(e) => setSelectedProvincia(e.target.value)}
             required
+            disabled={true} 
           >
-            <option value="">-- Selecciona --</option>
-            {ubicacionesData.map((p) => (
-              <option key={p.provincia} value={p.provincia}>
-                {p.provincia}
-              </option>
-            ))}
+            <option value={PROVINCIA_FIJA}>{PROVINCIA_FIJA}</option>
           </select>
         </div>
-        {/* Municipio */}
+        {/* Municipio: Fijo y deshabilitado */}
         <div className="input-group">
           <label htmlFor="municipio">Municipio</label>
           <select
@@ -373,17 +415,12 @@ function PublicRegister() {
             value={selectedMunicipio}
             onChange={(e) => setSelectedMunicipio(e.target.value)}
             required
-            disabled={!selectedProvincia}
+            disabled={true}
           >
-            <option value="">-- Selecciona --</option>
-            {municipios.map((m) => (
-              <option key={m.municipio} value={m.municipio}>
-                {m.municipio}
-              </option>
-            ))}
+            <option value={MUNICIPIO_FIJO}>{MUNICIPIO_FIJO}</option>
           </select>
         </div>
-        {/* Sector */}
+        {/* Sector: Usa la lista fija de SDO y es editable/autocompletable */}
         <div className="input-group">
           <label htmlFor="sector">Sector o Barrio</label>
           <select
@@ -391,11 +428,10 @@ function PublicRegister() {
             value={selectedSector}
             onChange={(e) => setSelectedSector(e.target.value)}
             required
-            disabled={!selectedMunicipio}
+            disabled={sectoresSDO.length === 0 || isSearching || loading}
           >
             <option value="">-- Selecciona --</option>
-            {Array.isArray(sectores) &&
-              sectores.map((s) => (
+            {sectoresSDO.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
@@ -411,6 +447,7 @@ function PublicRegister() {
             id="direccion"
             value={direccion}
             onChange={(e) => setDireccion(e.target.value)}
+            disabled={isSearching || loading}
           />
         </div>
         {/* Colegio Electoral */}
@@ -421,11 +458,12 @@ function PublicRegister() {
             id="colegio"
             value={colegioElectoral}
             onChange={(e) => setColegioElectoral(e.target.value)}
+            disabled={isSearching || loading}
           />
         </div>
 
         {/* ---------------------------------------------------- */}
-        {/* NUEVO: Contenedor del Mapa de Google Maps */}
+        {/* Contenedor del Mapa de Google Maps */}
         {/* ---------------------------------------------------- */}
         <div className="map-group input-group">
           <label className="map-label">
@@ -435,13 +473,11 @@ function PublicRegister() {
             mapContainerStyle={mapContainerStyle}
             zoom={defaultZoom}
             center={coordinates}
-            // Puedes añadir onClick para permitir pinchar en el mapa
           >
-            {/* Marcador Movible */}
             <Marker
               position={coordinates}
-              draggable={true} // Permitir arrastrar el marcador
-              onDragEnd={onMarkerDragEnd} // Capturar las nuevas coordenadas
+              draggable={true} 
+              onDragEnd={onMarkerDragEnd}
             />
           </GoogleMap>
           <p className="coords-display">
@@ -449,9 +485,6 @@ function PublicRegister() {
             {coordinates.lng.toFixed(6)}
           </p>
         </div>
-        {/* ---------------------------------------------------- */}
-        {/* FIN del Contenedor del Mapa */}
-        {/* ---------------------------------------------------- */}
 
         {/* Checkbox de Términos */}
         <div className="checkbox-group">
@@ -461,12 +494,13 @@ function PublicRegister() {
             checked={aceptaTerminos}
             onChange={(e) => setAceptaTerminos(e.target.checked)}
             required
+            disabled={isSearching || loading}
           />
           <label htmlFor="terminos">Acepto los términos y condiciones.</label>
         </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Enviando..." : "Firmar y Enviar"}
+        <button type="submit" disabled={loading || isSearching}>
+          {loading ? "Enviando..." : isSearching ? "Buscando..." : "Firmar y Enviar"}
         </button>
 
         {/* Notification Area */}
