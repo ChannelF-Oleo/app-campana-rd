@@ -408,3 +408,69 @@ const getWelcomeHtml = (nombre, baseUrl) => `
 </body>
 </html>
 `;
+
+
+// ... (MANTÉN TUS IMPORTS Y CONFIGURACIONES ANTERIORES ARRIBA) ...
+
+// Agrega este import específico si no lo tenías
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+
+// Importar el archivo de zonas (Asegúrate de haberlo pegado en la carpeta functions)
+const zonasData = require("./zonas.json");
+
+// =========================================================================
+// 7. TRIGGER: ASIGNACIÓN AUTOMÁTICA DE ZONA Y RECINTO
+// =========================================================================
+exports.asignarZonaYRecinto = onDocumentWritten("simpatizantes/{docId}", async (event) => {
+  // Si el documento se borró, no hacemos nada
+  if (!event.data.after.exists) return;
+
+  const newData = event.data.after.data();
+  const oldData = event.data.before.exists ? event.data.before.data() : null;
+  
+  const colegio = newData.colegioElectoral;
+
+  // Si no hay colegio, o si el colegio no ha cambiado y ya tiene zona, salimos
+  // (Esto evita bucles infinitos de escritura)
+  if (!colegio) return;
+  if (oldData && oldData.colegioElectoral === colegio && newData.zona) return;
+
+  // Normalizamos el colegio buscado (quitamos extensiones si vienen del padrón antiguo)
+  // Ej: "1234.xlsx" -> "1234", "0012" -> "12"
+  const colegioBuscado = String(colegio).replace(/(\.pdf|\.xlsx|\.xls)/gi, "").trim();
+
+  let zonaEncontrada = "Sin Asignar";
+  let recintoEncontrado = "Desconocido";
+
+  // Algoritmo de Búsqueda en el JSON
+  // Recorremos Zonas -> Centros -> Padrones
+  outerLoop:
+  for (const z of zonasData) {
+    for (const centro of z.centros) {
+      // Buscamos si el colegio está en la lista de padrones de este centro
+      const match = centro.padrones.some(padronFile => {
+        // Limpiamos el nombre del archivo en el JSON también
+        const padronLimpio = padronFile.replace(/(\.pdf|\.xlsx|\.xls)/gi, "").trim();
+        // Comparamos exacto o si está contenido (para casos como 0025 vs 25)
+        return padronLimpio === colegioBuscado || padronLimpio === colegioBuscado.padStart(4, '0');
+      });
+
+      if (match) {
+        zonaEncontrada = z.zona; // Ej: "ZONA A"
+        recintoEncontrado = centro.nombre; // Ej: "00305 - ESC. PRIM..."
+        break outerLoop; // ¡Lo encontramos! Dejamos de buscar.
+      }
+    }
+  }
+
+  // Si encontramos datos nuevos, actualizamos el documento
+  if (zonaEncontrada !== newData.zona || recintoEncontrado !== newData.recinto) {
+    logger.info(`Asignando ${colegioBuscado} -> ${zonaEncontrada} | ${recintoEncontrado}`);
+    return event.data.after.ref.update({
+      zona: zonaEncontrada,
+      recinto: recintoEncontrado,
+      zonaAutoasignada: true // Marca de auditoría
+    });
+  }
+});
+
