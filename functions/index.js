@@ -1,446 +1,410 @@
-// Importa las funciones y parámetros necesarios
-const functions = require("firebase-functions"); 
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { HttpsError, onCall } = require("firebase-functions/v2/https"); 
-const { logger } = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const {
+  onDocumentCreated,
+  onDocumentDeleted,
+} = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const { defineSecret } = require("firebase-functions/params");
+const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
-const { onSchedule } = require("firebase-functions/v2/scheduler"); 
 
-// Inicializa el SDK de Admin
+// Importación específica para Triggers de Auth (Aún usan v1)
+const { user } = require("firebase-functions/v1/auth");
+
 admin.initializeApp();
 
-// Define los secretos que la función de correo necesita
+// Configuración Global (V2)
+setGlobalOptions({
+  region: "us-central1",
+  memory: "512MiB",
+  cors: true,
+});
+
 const gmailEmail = defineSecret("GMAIL_EMAIL");
 const gmailPassword = defineSecret("GMAIL_PASSWORD");
 
-// 🆕 PARÁMETRO DE CONFIGURACIÓN DE INACTIVIDAD (8 horas en milisegundos)
-const INACTIVITY_TIMEOUT_MS = 8 * 60 * 60 * 1000; 
-
-// --- CONFIGURACIÓN DE OPTIMIZACIÓN GLOBAL (B4) y FIX CORS ---
-const DEFAULT_REGION = 'us-central1'; 
-// APLICANDO CORRECCIÓN CORS: Añadimos cors: true para permitir llamadas desde localhost
-const CALLABLE_OPTS = { region: DEFAULT_REGION, memory: '512MiB', cors: true }; 
-const TRIGGER_OPTS = { region: DEFAULT_REGION };
-// ----------------------------------------------------------------------
-
 // =========================================================================
-// FUNCIÓN PROGRAMADA: VENCIMIENTO DE SESIÓN POR INACTIVIDAD
+// 1. AUTH TRIGGER: CREAR PERFIL AUTOMÁTICO (Google/Apple)
 // =========================================================================
-exports.enforceInactivityTimeout = onSchedule(TRIGGER_OPTS, "0 1 * * *", async (event) => { // Aplicando TRIGGER_OPTS
-    logger.info("Iniciando revisión de inactividad de usuarios...");
-    const now = Date.now();
-    let usersRevoked = 0;
-    
-    try {
-        let nextPageToken;
-        do {
-            const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
-            nextPageToken = listUsersResult.pageToken;
-            
-            const inactiveUsers = listUsersResult.users.filter(user => {
-                const lastSignIn = user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : 0;
-                return lastSignIn > 0 && (now - lastSignIn) > INACTIVITY_TIMEOUT_MS;
-            });
-            
-            for (const user of inactiveUsers) {
-                await admin.auth().revokeRefreshTokens(user.uid);
-                logger.log(`Tokens revocados para el usuario inactivo: ${user.email} (Última sesión: ${user.metadata.lastSignInTime})`);
-                usersRevoked++;
-            }
-            
-        } while (nextPageToken);
+exports.createProfileForProvider = user().onCreate(async (userRecord) => {
+  const db = admin.firestore();
+  const userRef = db.collection("users").doc(userRecord.uid);
 
-        logger.info(`Revisión de inactividad completada. Tokens revocados: ${usersRevoked}`);
-        return null;
-        
-    } catch (error) {
-        logger.error("Error al ejecutar la revisión de inactividad:", error);
-        return null;
+  try {
+    const doc = await userRef.get();
+    if (!doc.exists) {
+      await userRef.set({
+        uid: userRecord.uid,
+        nombre: userRecord.displayName || "Usuario Sin Nombre",
+        email: userRecord.email,
+        fotoUrl: userRecord.photoURL || null,
+        rol: "multiplicador", // Rol por defecto
+        cedula: null,
+        registrationCount: 0, // Inicializamos contador
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastActivity: admin.firestore.FieldValue.serverTimestamp(),
+        metodoRegistro: "google",
+      });
+      logger.info(`Perfil creado automáticamente para: ${userRecord.email}`);
     }
+  } catch (error) {
+    logger.error("Error creando perfil automático:", error);
+  }
 });
 
-
 // =========================================================================
-// CALLABLE FUNCTION: CREAR USUARIO
+// 2. SCHEDULER: CERRAR SESIONES INACTIVAS (>1 Hora)
 // =========================================================================
-exports.createUserAdmin = onCall(
-    // Aplicando CALLABLE_OPTS
-    { ...CALLABLE_OPTS, enforceAppCheck: false }, 
-    async (request) => {
-        // ... (cuerpo de la función mantenido)
-        const { nombre, email, password, rol, cedula } = request.data;
+exports.enforceInactivityTimeout = onSchedule(
+  {
+    schedule: "every 60 minutes",
+    timeoutSeconds: 540,
+  },
+  async () => {
+    const db = admin.firestore();
+    const auth = admin.auth();
+    const INACTIVITY_LIMIT = 60 * 60 * 1000; // 1 Hora
+    const cutoffTime = new Date(Date.now() - INACTIVITY_LIMIT);
 
-        // 2. Validar datos de entrada
-        if (
-            !nombre || !email || !password || !rol || !cedula || password.length < 6
-        ) {
-            throw new HttpsError(
-                "invalid-argument",
-                "Faltan datos requeridos (nombre, email, cédula, password) o la contraseña es muy corta."
-            );
-        }
-        if (!["multiplicador", "lider de zona", "admin"].includes(rol)) {
-            throw new HttpsError("invalid-argument", "El rol asignado no es válido.");
-        }
+    try {
+      const inactiveQuery = await db
+        .collection("users")
+        .where("lastActivity", "<", cutoffTime)
+        .get();
 
-        try {
-            // 3. Crear usuario en Auth
-            logger.info(`Admin creando usuario: ${email} con rol ${rol}`);
-            const userRecord = await admin.auth().createUser({
-                email: email,
-                password: password,
-                displayName: nombre,
-                disabled: false,
-            });
+      if (inactiveQuery.empty) return;
 
-            // 4. Crear el perfil del usuario en Firestore
-            await admin.firestore().collection("users").doc(userRecord.uid).set({
-                uid: userRecord.uid,
-                nombre: nombre,
-                email: email,
-                rol: rol,
-                cedula: cedula, 
-            });
+      const promises = [];
+      inactiveQuery.forEach((doc) => {
+        const uid = doc.id;
+        const promise = auth
+          .revokeRefreshTokens(uid)
+          .then(() =>
+            db.collection("users").doc(uid).update({
+              forceLogout: true,
+              lastActivity: null,
+            })
+          )
+          .catch((err) => logger.error(`Error revocando ${uid}:`, err));
+        promises.push(promise);
+      });
 
-            // 5. Añadir/Verificar el registro en la colección "simpatizantes"
-            const simpatizantesRef = admin.firestore().collection("simpatizantes");
-            const sympathizerQuery = simpatizantesRef.where("cedula", "==", cedula);
-            const querySnapshot = await sympathizerQuery.get();
-
-            if (querySnapshot.empty) {
-                logger.info(`Simpatizante no encontrado para cédula ${cedula}. Creando registro de usuario interno.`);
-                await simpatizantesRef.add({
-                    nombre: nombre,
-                    cedula: cedula,
-                    email: email,
-                    telefono: null,
-                    provincia: "N/A (Usuario Interno)",
-                    municipio: "N/A (Usuario Interno)",
-                    sector: "N/A (Usuario Interno)",
-                    direccion: "N/A (Usuario Interno)",
-                    colegioElectoral: null,
-                    ubicacion: new admin.firestore.GeoPoint(18.4861, -69.9309),
-                    lat: 18.4861,
-                    lng: -69.9309,
-                    fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
-                    registradoPor: "Creación Admin",
-                    registradoPorEmail: request.auth?.token?.email || "System/Admin Console",
-                    esUsuarioInterno: true,
-                    rolInterno: rol,
-                });
-            } else {
-                logger.info(`Simpatizante con cédula ${cedula} ya existe. No se creó un registro duplicado.`);
-            }
-
-            logger.info(`Usuario ${userRecord.uid} (${email}) creado exitosamente por admin y registro de simpatizante verificado.`);
-            return {
-                success: true,
-                message: `Usuario "${nombre}" creado exitosamente.`,
-            };
-        } catch (error) {
-            logger.error(`Error al crear usuario ${email} por admin:`, error);
-            let clientMessage = "Ocurrió un error interno al crear el usuario.";
-            if (error.code === "auth/email-already-exists") {
-                clientMessage = "El correo electrónico ya está en uso por otra cuenta.";
-            } else if (error.code === "auth/invalid-password") {
-                clientMessage = "La contraseña no cumple los requisitos de Firebase.";
-            }
-            throw new HttpsError("unknown", clientMessage, error.message);
-        }
+      await Promise.all(promises);
+      logger.info(`Sesiones cerradas por inactividad: ${promises.length}`);
+    } catch (error) {
+      logger.error("Error en enforceInactivityTimeout:", error);
     }
+  }
 );
 
 // =========================================================================
-// CALLABLE FUNCTION: ELIMINAR USUARIO
+// 3. FIRESTORE TRIGGER: CONTADOR DE REGISTROS (IncrementUserRegistrationCount)
 // =========================================================================
-exports.deleteUserAndData = onCall(CALLABLE_OPTS, async (data, context) => { // Aplicando CALLABLE_OPTS
-    const { uid } = data;
-
-    // 1. VERIFICACIÓN DE AUTENTICACIÓN
-    if (!context.auth) {
-        throw new HttpsError('unauthenticated', 'Solo usuarios autentados pueden realizar esta acción.');
-    }
-    
-    const callerUid = context.auth.uid;
-
-    // 1a. Comprobar el rol de administrador
-    try {
-        const adminDoc = await admin.firestore().collection('users').doc(callerUid).get();
-        const isAdmin = adminDoc.exists && adminDoc.data().rol === 'admin';
-        
-        if (!isAdmin) {
-            throw new HttpsError('permission-denied', 'Acceso denegado. Solo administradores pueden eliminar usuarios.');
-        }
-
-    } catch (error) {
-        logger.error('Error al verificar rol de administrador:', error);
-        throw new HttpsError('internal', 'Fallo en la verificación de seguridad.', error.message);
-    }
-
-    if (!uid) {
-        throw new HttpsError('invalid-argument', 'Falta el UID del usuario a eliminar.');
-    }
-
-    try {
-        // 2. ELIMINAR LA CUENTA DE FIREBASE AUTH
-        await admin.auth().deleteUser(uid);
-        logger.info(`Cuenta de Auth eliminada para el UID: ${uid}`);
-
-        // 3. ELIMINAR EL DOCUMENTO DE FIRESTORE
-        await admin.firestore().collection('users').doc(uid).delete();
-        logger.info(`Documento de Firestore eliminado para el UID: ${uid}`);
-
-        return { success: true, message: 'Usuario y datos eliminados correctamente.' };
-
-    } catch (error) {
-        logger.error("Error al eliminar el usuario y datos:", error);
-
-        if (error.code === 'auth/user-not-found') {
-             return { success: true, message: 'El usuario de Auth no fue encontrado, se limpiaron los registros de Firestore.' };
-        }
-        
-        throw new HttpsError('internal', 'Fallo la eliminación del usuario.', error.message);
-    }
-});
-
-
-// =========================================================================
-// CALLABLE FUNCTION: REGISTRAR SIMPATIZANTE
-// =========================================================================
-exports.registerSimpatizante = onCall(CALLABLE_OPTS, async (request) => { // Aplicando CALLABLE_OPTS
-    // ... (cuerpo de la función mantenido)
-    const data = request.data;
-    const cedula = data.cedula; 
-    
-    const {
-        nombre,
-        email,
-        telefono,
-        direccion,
-        colegioElectoral,
-        provincia,
-        municipio,
-        sector,
-        registradoPor,
-        registradoPorEmail,
-        lat, 
-        lng, 
-    } = data;
-
-    if (
-        !cedula ||
-        !nombre ||
-        !email ||
-        !provincia ||
-        !municipio ||
-        !sector ||
-        (lat !== 0 && !lat) ||
-        (lng !== 0 && !lng)
-    ) {
-        logger.error(
-            "registerSimpatizante: Faltan datos requeridos.",
-            data
-        );
-        throw new HttpsError(
-            "invalid-argument",
-            "Faltan datos requeridos (nombre, email, cédula, provincia, municipio, sector, y coordenadas de ubicación)."
-        );
-    }
-
-    const simpatizantesRef = admin.firestore().collection("simpatizantes");
-    const q = simpatizantesRef.where("cedula", "==", cedula);
-
-    try {
-        const querySnapshot = await q.get();
-
-        if (!querySnapshot.empty) {
-            logger.warn(
-                `registerSimpatizante: Intento de registro duplicado para cédula ${cedula}.`
-            );
-            return {
-                success: false,
-                message: `La cédula ${cedula} ya se encuentra registrada en nuestra base de datos.`,
-            };
-        }
-
-        logger.log(`registerSimpatizante: Registrando nueva cédula ${cedula}.`);
-
-        const ubicacionGeoPoint = new admin.firestore.GeoPoint(lat, lng);
-
-        const docRef = await simpatizantesRef.add({
-            nombre: nombre,
-            cedula: cedula, 
-            email: email,
-            telefono: telefono || null, 
-            provincia: provincia,
-            municipio: municipio,
-            sector: sector,
-            direccion: direccion || null,
-            colegioElectoral: colegioElectoral || null,
-
-            ubicacion: ubicacionGeoPoint,
-            lat: lat, 
-            lng: lng, 
-
-            fechaRegistro: admin.firestore.FieldValue.serverTimestamp(), 
-            registradoPor: registradoPor || "Página Pública", 
-            registradoPorEmail: registradoPorEmail || null,
-        });
-
-        logger.log(
-            `registerSimpatizante: Simpatizante ${docRef.id} (cédula: ${cedula}) registrado exitosamente.`
-        );
-        return {
-            success: true,
-            message: "¡Registro exitoso! Gracias por unirte a la campaña.",
-        };
-    } catch (error) {
-        logger.error(
-            `registerSimpatizante: Error procesando cédula ${cedula}:`,
-            error
-        );
-        throw new HttpsError(
-            "internal",
-            "Ocurrió un error inesperado al procesar el registro. Por favor, inténtalo de nuevo."
-        );
-    }
-});
-
-// =========================================================================
-// CALLABLE FUNCTION: BUSCAR VOTANTE POR CÉDULA
-// =========================================================================
-exports.searchVotanteByCedula = onCall(CALLABLE_OPTS, async (request) => { // Aplicando CALLABLE_OPTS
-    // ... (Lógica de validación y normalización de cédula) ...
-    const cedula = request.data.cedula; 
-
-    if (!cedula) {
-        throw new HttpsError('invalid-argument', 'El campo "cedula" es requerido.');
-    }
-
-    const cedulaNormalizada = cedula.replace(/-/g, "");
-    const votantesRef = admin.firestore().collection("votantes");
-    
-    try {
-        const q = votantesRef.where("cedula", "==", cedulaNormalizada).limit(1);
-        const querySnapshot = await q.get();
-
-        if (querySnapshot.empty) {
-            logger.log(`searchVotanteByCedula: Cédula ${cedulaNormalizada} no encontrada.`);
-            return { found: false, data: {} };
-        }
-
-        const doc = querySnapshot.docs[0];
-        const votanteData = doc.data();
-        
-        return {
-            found: true,
-            data: {
-                nombre: votanteData.nombre || "",
-                provincia: votanteData.provincia || "", // Se mantiene para consistencia, aunque frontend lo ignora
-                municipio: votanteData.municipio || "", // Se mantiene para consistencia, aunque frontend lo ignora
-                sector: votanteData.sector || "", 
-                colegioElectoral: votanteData.colegioElectoral || "",
-                email: "",
-                telefono: "",
-                direccion: "",
-            }
-        };
-
-    } catch (error) {
-        logger.error(`searchVotanteByCedula: Error buscando cédula ${cedulaNormalizada}:`, error);
-        throw new HttpsError(
-            "internal",
-            "Ocurrió un error inesperado al buscar en la base de datos de votantes."
-        );
-    }
-});
-
-
-// =========================================================================
-// FIRESTORE TRIGGER: ENVIAR CORREO (Mantenido)
-// =========================================================================
-exports.sendWelcomeEmail = onDocumentCreated(
-    {
-        document: "simpatizantes/{simpatizanteId}",
-        secrets: [gmailEmail, gmailPassword],
-        ...TRIGGER_OPTS, // Aplicando TRIGGER_OPTS
-    },
-    (event) => {
-        // ... (cuerpo de la función mantenido)
-        const mailTransport = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: gmailEmail.value(),
-                pass: gmailPassword.value(),
-            },
-        });
-
-        const snap = event.data;
-        if (!snap) {
-            logger.log("sendWelcomeEmail: No data.");
-            return null;
-        }
-        const newSimpatizante = snap.data();
-        const email = newSimpatizante?.email;
-        const name = newSimpatizante?.nombre || "Nuevo Miembro";
-
-        if (!email) {
-            logger.error(
-                "sendWelcomeEmail: Email no encontrado:",
-                event.params.simpatizanteId
-            );
-            return null;
-        }
-
-        const mailOptions = {
-            from: `"App Campaña RD" <${gmailEmail.value()}>`,
-            to: email,
-            subject: "¡Gracias por unirte a la campaña!",
-            html: `<h1>¡Hola, ${name}!</h1><p>Agradecemos tu apoyo...</p><p><strong>El Equipo de Campaña</strong></p>`, // Mensaje abreviado
-        };
-
-        logger.info(`Enviando correo de bienvenida a: ${email}`);
-        return mailTransport
-            .sendMail(mailOptions)
-            .then(() => logger.log(`Correo enviado a ${email}.`))
-            .catch((error) =>
-                logger.error(`Error al enviar correo a ${email}:`, error)
-            );
-    }
-);
-
-
-// =========================================================================
-// FIRESTORE TRIGGER: INCREMENTAR CONTADOR DE REGISTROS
-// =========================================================================
+// Se ejecuta cada vez que se crea un simpatizante para sumar +1 al usuario que lo registró
 exports.incrementUserRegistrationCount = onDocumentCreated(
-    {
-        document: "simpatizantes/{simpatizanteId}",
-        ...TRIGGER_OPTS, // Aplicando TRIGGER_OPTS
-    },
-    async (event) => {
-        const simpatizanteData = event.data.data();
-        const activistUid = simpatizanteData.registradoPor; 
+  "simpatizantes/{simpatizanteId}",
+  async (event) => {
+    const newData = event.data?.data();
+    if (!newData || !newData.registradoPor) return;
 
-        if (!activistUid || activistUid.length < 20 || activistUid.includes(' ')) {
-             // Ignorar registros de "Creación Admin" o "Página Pública" que no son UID válidos
-            return null;
-        }
+    const userId = newData.registradoPor;
+    // Ignoramos si fue "Página Pública" o "Admin Console" (no son UIDs reales)
+    if (userId === "Página Pública" || userId === "Admin Console") return;
 
-        const userRef = admin.firestore().collection('users').doc(activistUid);
-
-        try {
-            await userRef.update({
-                registrationsCount: admin.firestore.FieldValue.increment(1)
-            });
-            logger.info(`Contador incrementado para el usuario ${activistUid}.`);
-            return null;
-        } catch (error) {
-            logger.error(`Error al incrementar el contador para ${activistUid}:`, error);
-            return null;
-        }
+    try {
+      const userRef = admin.firestore().collection("users").doc(userId);
+      await userRef.update({
+        registrationCount: admin.firestore.FieldValue.increment(1),
+        lastActivity: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      logger.info(`Contador incrementado para usuario: ${userId}`);
+    } catch (error) {
+      logger.error("Error incrementando contador:", error);
     }
+  }
 );
 
+// =========================================================================
+// 4. CALLABLE: ELIMINAR USUARIO Y DATOS (DeleteUserAndData)
+// =========================================================================
+exports.deleteUserAndData = onCall(async (request) => {
+  // Verificar autenticación (Opcional: Verificar si es Admin)
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Debes estar autenticado.");
+  }
+
+  const { uid } = request.data;
+  if (!uid) throw new HttpsError("invalid-argument", "UID requerido.");
+
+  try {
+    // 1. Eliminar de Authentication
+    await admin.auth().deleteUser(uid);
+
+    // 2. Eliminar perfil de Firestore
+    await admin.firestore().collection("users").doc(uid).delete();
+
+    // 3. (Opcional) ¿Qué hacer con los simpatizantes que registró?
+    // Opción A: Dejarlos huérfanos (mantienen el ID pero el usuario ya no existe)
+    // Opción B: Reasignarlos a un admin.
+    // Por ahora, solo borramos el usuario.
+
+    logger.info(`Usuario ${uid} eliminado correctamente.`);
+    return { success: true, message: "Usuario eliminado." };
+  } catch (error) {
+    logger.error("Error eliminando usuario:", error);
+    throw new HttpsError("internal", "No se pudo eliminar el usuario.");
+  }
+});
+
+// =========================================================================
+// 5. CALLABLE: CREAR USUARIO ADMIN (CreateUserAdmin)
+// =========================================================================
+exports.createUserAdmin = onCall(async (request) => {
+  const { nombre, email, password, rol, cedula } = request.data;
+
+  if (!nombre || !email || !password || !rol || !cedula) {
+    throw new HttpsError("invalid-argument", "Datos incompletos.");
+  }
+
+  try {
+    const userRecord = await admin.auth().createUser({
+      email,
+      password,
+      displayName: nombre,
+      disabled: false,
+    });
+
+    await admin.firestore().collection("users").doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      nombre,
+      email,
+      rol,
+      cedula,
+      registrationCount: 0,
+      lastActivity: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Espejo en Simpatizantes
+    const simpRef = admin.firestore().collection("simpatizantes");
+    const existing = await simpRef.where("cedula", "==", cedula).get();
+    if (existing.empty) {
+      await simpRef.add({
+        nombre,
+        cedula,
+        email,
+        registradoPor: "Admin Console",
+        esUsuarioInterno: true,
+        fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
+        provincia: "N/A",
+        municipio: "N/A",
+        sector: "N/A",
+        direccion: "N/A",
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+// =========================================================================
+// 6. HELPERS: BÚSQUEDAS (Login y Padrón)
+// =========================================================================
+
+// Buscar Email por Cédula
+exports.getEmailByCedula = onCall(async (request) => {
+  const { cedula } = request.data;
+  if (!cedula) throw new HttpsError("invalid-argument", "Cédula requerida.");
+
+  try {
+    const usersRef = admin.firestore().collection("users");
+    // Intento 1: Directo
+    let query = await usersRef.where("cedula", "==", cedula).limit(1).get();
+
+    // Intento 2: Formateado
+    if (query.empty) {
+      const clean = cedula.replace(/-/g, "");
+      const formatted = `${clean.slice(0, 3)}-${clean.slice(
+        3,
+        10
+      )}-${clean.slice(10)}`;
+      query = await usersRef.where("cedula", "==", formatted).limit(1).get();
+
+      // Intento 3: Limpio
+      if (query.empty) {
+        query = await usersRef.where("cedula", "==", clean).limit(1).get();
+      }
+    }
+
+    if (!query.empty)
+      return { success: true, email: query.docs[0].data().email };
+
+    return { success: false, message: "Cédula no encontrada." };
+  } catch (error) {
+    throw new HttpsError("internal", "Error buscando usuario.");
+  }
+});
+
+// Buscar Votante (Directo por ID)
+// =========================================================================
+// FUNCIÓN CORREGIDA: BÚSQUEDA EXACTA SEGÚN TUS LOGS
+// =========================================================================
+exports.searchVotanteByCedula = onCall(async (request) => {
+  const { cedula } = request.data;
+  if (!cedula) throw new HttpsError("invalid-argument", "Cédula requerida.");
+
+  try {
+    const db = admin.firestore();
+    const votantesRef = db.collection("votantes");
+
+    // 1. Limpieza: Probamos ambos formatos (con y sin guiones)
+    const cedulaLimpia = cedula.replace(/-/g, ""); // 00100000000
+    const cedulaGuiones = cedulaLimpia.replace(
+      /^(\d{3})(\d{7})(\d{1})$/,
+      "$1-$2-$3"
+    ); // 001-0000000-0
+
+    // Intento 1: Buscar con guiones (Lo más probable según tu DB)
+    let docSnap = await votantesRef.doc(cedulaGuiones).get();
+
+    // Intento 2: Buscar sin guiones (Respaldo)
+    if (!docSnap.exists) {
+      docSnap = await votantesRef.doc(cedulaLimpia).get();
+    }
+
+    if (docSnap.exists) {
+      const data = docSnap.data();
+
+      // ¡AQUÍ ESTABA EL ERROR!
+      // Tu base de datos ya tiene el campo 'nombre' listo. No hay que inventar.
+
+      return {
+        found: true,
+        data: {
+          // Leemos 'nombre' directamente del log que me mostraste
+          nombre: data.nombre || data.NOMBRE || "NOMBRE NO REGISTRADO",
+
+          telefono: data.telefono || data.TELEFONO || "",
+          direccion: data.direccion || data.DIRECCION || "",
+
+          // En tu log el colegio viene en el campo 'origen'
+          colegioElectoral: data.origen || data.ORIGEN || data.colegio || "",
+
+          // Estos campos quizás no estén en ese documento específico, los dejamos opcionales
+          sector: data.sector || data.SECTOR || "",
+          municipio: data.municipio || data.MUNICIPIO || "",
+          provincia: data.provincia || data.PROVINCIA || "",
+          recinto: data.recinto || data.RECINTO || "",
+        },
+      };
+    }
+
+    return { found: false };
+  } catch (error) {
+    logger.error("[ERROR] Fallo en búsqueda:", error);
+    return { found: false };
+  }
+});
+
+// =========================================================================
+// 7. REGISTRO Y COMUNICACIÓN
+// =========================================================================
+
+exports.registerSimpatizante = onCall(async (request) => {
+  const data = request.data;
+  if (!data.cedula) throw new HttpsError("invalid-argument", "Falta cédula");
+
+  const ref = admin.firestore().collection("simpatizantes");
+  // Verificar duplicado (asumiendo formato consistente)
+  const dup = await ref.where("cedula", "==", data.cedula).get();
+  if (!dup.empty) return { success: false, message: "Ya registrado." };
+
+  try {
+    await ref.add({
+      ...data,
+      fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
+      ubicacion:
+        data.lat && data.lng
+          ? new admin.firestore.GeoPoint(data.lat, data.lng)
+          : null,
+    });
+    return { success: true, message: "Registro exitoso." };
+  } catch (error) {
+    logger.error("Error registro:", error);
+    throw new HttpsError("internal", "Error al guardar.");
+  }
+});
+
+exports.sendWelcomeEmail = onDocumentCreated(
+  { document: "simpatizantes/{docId}", secrets: [gmailEmail, gmailPassword] },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || !data.email) return;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: gmailEmail.value(), pass: gmailPassword.value() },
+    });
+
+    const nombreSimpatizante = data.nombre || "Simpatizante";
+    const projectId = process.env.GCLOUD_PROJECT;
+    const baseUrl = `https://${projectId}.web.app`;
+
+    try {
+      await transporter.sendMail({
+        from: `"Félix Encarnación" <${gmailEmail.value()}>`,
+        to: data.email,
+        subject: "¡Bienvenido al equipo! 🇩🇴",
+        html: getWelcomeHtml(nombreSimpatizante, baseUrl),
+      });
+      logger.info(`Email enviado a ${data.email}`);
+    } catch (e) {
+      logger.error(e);
+    }
+  }
+);
+
+// Plantilla HTML
+const getWelcomeHtml = (nombre, baseUrl) => `
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+  .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+  .header img { width: 100%; height: auto; display: block; }
+  .content { padding: 40px 30px; color: #333333; line-height: 1.6; font-size: 16px; }
+  .btn { display: inline-block; background-color: #004d99; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+  .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #888; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="${baseUrl}/images/899dfce2a4eff0d9abc920e56e8f5748.png" alt="Cabecera">
+    </div>
+    <div class="content">
+      <p><strong>Hola, ${nombre}:</strong></p>
+      <p>¡Gracias por dar el paso y unirte a nuestra plataforma!</p>
+      <p>Me llena de entusiasmo darte la bienvenida oficial. Tu registro es una señal clara de que compartimos el mismo deseo: ver a <strong>Santo Domingo Oeste</strong> desarrollarse de verdad.</p>
+      <center>
+        <a href="https://tucampana.com" class="btn">Visitar Portal Web</a>
+      </center>
+      <br>
+      <p>Un fuerte abrazo,<br><strong>Felix Encarnación</strong><br>Tu Diputado | Santo Domingo Oeste</p>
+    </div>
+    <div class="header">
+      <img src="${baseUrl}/images/d95804dd27a28dfe32433fa713acb0de.png" alt="Pie de página">
+    </div>
+    <div class="footer">
+      <p>Recibiste este correo porque te registraste en nuestra plataforma.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;

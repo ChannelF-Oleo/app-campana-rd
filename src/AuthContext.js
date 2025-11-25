@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { auth, db } from "./firebase"; 
+import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 
-// Crear el contexto
 const AuthContext = createContext({
-  user: null, // Unificamos user (auth + db data)
+  user: null,
   isAuthenticated: false,
   isLoading: true,
   logout: () => {},
@@ -17,36 +16,72 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- LÓGICA DE ACTIVIDAD (HEARTBEAT) ---
+  useEffect(() => {
+    if (!user) return;
+
+    // Función para reportar actividad a Firestore
+    const reportActivity = async () => {
+      try {
+        const userRef = doc(db, "users", user.uid);
+        // Actualizamos lastActivity con la hora del servidor
+        await updateDoc(userRef, {
+          lastActivity: serverTimestamp(),
+          forceLogout: false, // Reseteamos bandera por si acaso
+        });
+      } catch (error) {
+        console.warn("No se pudo actualizar actividad:", error);
+      }
+    };
+
+    // Debounce: Solo reportar cada 15 minutos (900,000 ms) para no saturar lecturas
+    const INTERVAL_MS = 15 * 60 * 1000;
+
+    // Reportar inmediatamente al cargar
+    reportActivity();
+
+    // Configurar intervalo
+    const intervalId = setInterval(reportActivity, INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [user]); // Se reinicia si cambia el usuario
+
+  // --- LÓGICA DE AUTENTICACIÓN EXISTENTE ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          // 1. Usuario autenticado en Firebase Auth
           const userDocRef = doc(db, "users", firebaseUser.uid);
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
-            // 2. Combinar datos de Auth y Firestore
-            setUser({ 
-              uid: firebaseUser.uid, 
-              email: firebaseUser.email, 
-              ...userDoc.data() 
-            });
+            const userData = userDoc.data();
+
+            // VERIFICACIÓN DE LOGOUT FORZADO (Desde el Backend)
+            if (userData.forceLogout) {
+              console.warn("Sesión cerrada por inactividad o administrador.");
+              await signOut(auth);
+              setUser(null);
+              // Opcional: Redirigir o mostrar alerta aquí
+            } else {
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                ...userData,
+              });
+            }
           } else {
-            // Si está en Auth pero no en DB, forzamos logout por seguridad
-            console.warn("Usuario sin perfil en base de datos. Cerrando sesión.");
+            // Usuario en Auth pero no en DB
             await signOut(auth);
             setUser(null);
           }
         } else {
-          // Usuario no autenticado
           setUser(null);
         }
       } catch (error) {
-        console.error("Error verificando sesión:", error);
+        console.error("Error sesión:", error);
         setUser(null);
       } finally {
-        // SIEMPRE desactivar carga, pase lo que pase
         setIsLoading(false);
       }
     });
@@ -72,4 +107,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export { AuthContext };
-

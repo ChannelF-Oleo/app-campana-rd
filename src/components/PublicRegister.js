@@ -31,9 +31,11 @@ const PROVINCIA_FIJA = "Santo Domingo";
 const MUNICIPIO_FIJO = "Santo Domingo Oeste";
 
 // Cargar sectores fijos de SDO una sola vez
-const provinciaSDO = ubicacionesData.find(p => p.provincia === PROVINCIA_FIJA);
-const municipioData = provinciaSDO 
-  ? provinciaSDO.municipios.find(m => m.municipio === MUNICIPIO_FIJO)
+const provinciaSDO = ubicacionesData.find(
+  (p) => p.provincia === PROVINCIA_FIJA
+);
+const municipioData = provinciaSDO
+  ? provinciaSDO.municipios.find((m) => m.municipio === MUNICIPIO_FIJO)
   : null;
 const sectoresSDO = municipioData ? municipioData.sectores : [];
 // [FIN CORRECCIÓN SDO]
@@ -64,10 +66,7 @@ const registerSimpatizanteCallable = httpsCallable(
   "registerSimpatizante"
 );
 // Callable para buscar votante
-const searchVotanteCallable = httpsCallable(
-  functions,
-  "searchVotanteByCedula"
-);
+const searchVotanteCallable = httpsCallable(functions, "searchVotanteByCedula");
 
 function PublicRegister() {
   // Form field states
@@ -78,7 +77,7 @@ function PublicRegister() {
   const [direccion, setDireccion] = useState("");
   const [colegioElectoral, setColegioElectoral] = useState("");
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
-  
+
   // Estados de carga y búsqueda
   const [loading, setLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -94,7 +93,7 @@ function PublicRegister() {
   const [coordinates, setCoordinates] = useState(initialCenter);
 
   // Notification state
-  const [notification, setNotification] = useState({ message: "", type: "" }); 
+  const [notification, setNotification] = useState({ message: "", type: "" });
 
   const queryParams = useQuery();
   const referrerId = queryParams.get("ref");
@@ -115,66 +114,91 @@ function PublicRegister() {
   }, []);
 
   // NUEVA FUNCIÓN: Buscar votante al ingresar cédula válida
+  // En PublicRegister.js y RegisterByActivist.js
+
   const handleCedulaSearch = useCallback(async (inputCedula) => {
     const cedulaNormalizada = inputCedula.replace(/-/g, "");
+
     if (cedulaNormalizada.length === 11 && validarCedula(inputCedula)) {
-        setIsSearching(true);
-        setNotification({ message: "Buscando datos del votante...", type: "info" });
-        try {
-            const result = await searchVotanteCallable({ cedula: inputCedula });
-            const { found, data } = result.data;
+      setIsSearching(true);
+      setNotification({ message: "Buscando datos...", type: "info" });
 
-            if (found) {
-                setNombre(data.nombre);
-                // No actualizamos email/telefono/direccion con data. Se dejan en blanco o se completan con lo que el votante decida
-                // Esto permite al usuario actualizar/corregir esos datos si vienen vacíos o son incorrectos.
-                setColegioElectoral(data.colegioElectoral || "");
-                
-                // CRUCIAL: Solo actualizamos el sector si coincide con un sector de SDO
-                const foundSector = sectoresSDO.includes(data.sector) ? data.sector : "";
-                setSelectedSector(foundSector);
+      try {
+        const result = await searchVotanteCallable({ cedula: inputCedula });
+        const { found, data } = result.data;
 
-                setNotification({ message: "Datos encontrados y cargados. Por favor, revisa y completa la información de contacto.", type: "success" });
-            } else {
-                // Limpiar solo campos de autocompletado si la búsqueda falla
-                setNombre("");
-                setColegioElectoral("");
-                setSelectedSector("");
-                setNotification({ message: "Cédula no encontrada en la base de votantes. Por favor, rellena los campos.", type: "error" });
-            }
-        } catch (error) {
-            console.error("Error al buscar cédula:", error);
-            setNotification({ message: "Error en la conexión al buscar la cédula.", type: "error" });
-        } finally {
-            setIsSearching(false);
+        if (found) {
+          // 1. Llenar Nombre y Colegio (Origen)
+          setNombre(data.nombre);
+          setColegioElectoral(data.colegioElectoral || "");
+
+          // 2. NUEVO: Llenar Teléfono y Dirección si existen
+          if (data.telefono) setTelefono(data.telefono);
+          if (data.direccion) setDireccion(data.direccion);
+
+          // 3. Llenar Sector (Solo si coincide con SDO)
+          const foundSector = sectoresSDO.includes(data.sector)
+            ? data.sector
+            : "";
+          setSelectedSector(foundSector);
+
+          setNotification({
+            message: "Datos cargados correctamente.",
+            type: "success",
+          });
+        } else {
+          // Si no aparece, limpiamos para que escriban manualmente
+          setNombre("");
+          setColegioElectoral("");
+          setSelectedSector("");
+          // Opcional: Limpiar o mantener tel/dir si quieres
+          setNotification({
+            message: "No encontrado en el padrón.",
+            type: "error",
+          });
         }
+      } catch (error) {
+        console.error(error);
+        setNotification({ message: "Error de conexión.", type: "error" });
+      } finally {
+        setIsSearching(false);
+      }
     }
   }, []);
 
-
   const handleCedulaChange = (e) => {
-    const value = e.target.value;
-    const normalized = value.replace(/-/g, '');
-    let formatted = '';
-    if (normalized.length > 0) formatted += normalized.substring(0, 3);
-    if (normalized.length > 3) formatted += '-' + normalized.substring(3, 10);
-    if (normalized.length > 10) formatted += '-' + normalized.substring(10, 11);
-    
-    // Solo actualizamos el estado si es diferente para evitar loops o problemas
-    if(value !== formatted) setCedula(formatted);
+    // 1. Obtener valor limpio (solo números)
+    const input = e.target.value.replace(/[^0-9]/g, "");
 
+    // 2. Limitar a 11 dígitos máximo
+    const normalized = input.slice(0, 11);
 
-    // Intentar buscar automáticamente si la cédula es válida
-    if (validarCedula(formatted)) {
+    // 3. Aplicar formato visual (XXX-XXXXXXX-X)
+    let formatted = normalized;
+    if (normalized.length > 3) {
+      formatted = `${normalized.slice(0, 3)}-${normalized.slice(3)}`;
+    }
+    if (normalized.length > 10) {
+      formatted = `${formatted.slice(0, 11)}-${formatted.slice(11)}`;
+    }
+
+    // 4. Actualizar estado SIEMPRE (Esto arregla el bloqueo)
+    setCedula(formatted);
+
+    // 5. Disparar búsqueda si está completa
+    if (normalized.length === 11) {
+      // Validamos con tu regex existente para seguridad extra
+      if (validarCedula(formatted)) {
         handleCedulaSearch(formatted);
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setNotification({ message: "", type: "" }); 
+    setNotification({ message: "", type: "" });
 
-    if (isSearching || loading) return; 
+    if (isSearching || loading) return;
 
     // Validaciones
     if (!aceptaTerminos) {
@@ -185,7 +209,7 @@ function PublicRegister() {
       return;
     }
     const cedulaNormalizada = cedula.replace(/-/g, "");
-    
+
     if (cedulaNormalizada.length !== 11) {
       setNotification({
         message: "Formato de cédula incorrecto (debe tener 11 dígitos).",
@@ -215,7 +239,7 @@ function PublicRegister() {
       return;
     }
     // VALIDACIÓN SIMPLIFICADA: Solo se revisa el Sector
-    if (!selectedSector) { 
+    if (!selectedSector) {
       setNotification({
         message: "Por favor, selecciona un Sector.",
         type: "error",
@@ -321,7 +345,8 @@ function PublicRegister() {
     return (
       <div className="register-container">
         <p className="notification error">
-          Error al cargar el mapa de Google Maps. Por favor, verifica la clave API.
+          Error al cargar el mapa de Google Maps. Por favor, verifica la clave
+          API.
         </p>
       </div>
     );
@@ -352,7 +377,7 @@ function PublicRegister() {
             id="cedula"
             placeholder="001-1234567-8"
             value={cedula}
-            onChange={handleCedulaChange} 
+            onChange={handleCedulaChange}
             required
             disabled={isSearching || loading}
           />
@@ -402,7 +427,7 @@ function PublicRegister() {
             value={selectedProvincia}
             onChange={(e) => setSelectedProvincia(e.target.value)}
             required
-            disabled={true} 
+            disabled={true}
           >
             <option value={PROVINCIA_FIJA}>{PROVINCIA_FIJA}</option>
           </select>
@@ -432,10 +457,10 @@ function PublicRegister() {
           >
             <option value="">-- Selecciona --</option>
             {sectoresSDO.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -476,7 +501,7 @@ function PublicRegister() {
           >
             <Marker
               position={coordinates}
-              draggable={true} 
+              draggable={true}
               onDragEnd={onMarkerDragEnd}
             />
           </GoogleMap>
@@ -500,7 +525,11 @@ function PublicRegister() {
         </div>
 
         <button type="submit" disabled={loading || isSearching}>
-          {loading ? "Enviando..." : isSearching ? "Buscando..." : "Firmar y Enviar"}
+          {loading
+            ? "Enviando..."
+            : isSearching
+            ? "Buscando..."
+            : "Firmar y Enviar"}
         </button>
 
         {/* Notification Area */}
