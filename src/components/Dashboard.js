@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-// NOTA: No importamos DashboardSidebar ni Navbar aquí. Eso lo maneja App.js
-
-// Componentes de Widgets
+import { useAuth } from "../AuthContext";
 import MyTeam from "./MyTeam";
 import TotalRegistrations from "./TotalRegistrations";
 import RegistrationsByDayChart from "./RegistrationsByDayChart";
@@ -9,12 +7,13 @@ import MyGoals from "./MyGoals";
 import RegistrationsByZoneChart from "./RegistrationsByZoneChart";
 import MyReferralLink from "./MyReferralLink";
 import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
+import PadronCoverageChart from "./PadronCoverageChart";
 import "./Dashboard.css";
 
 const Dashboard = ({ user }) => {
+  // 1. Lógica de Datos (IDs relevantes para seguridad)
   const [relevantUserIds, setRelevantUserIds] = useState(undefined);
 
-  // 1. Lógica para determinar qué datos ver según el rol
   useEffect(() => {
     if (!user) return;
     if (user.rol === "lider de zona") {
@@ -22,13 +21,13 @@ const Dashboard = ({ user }) => {
     } else if (user.rol === "multiplicador") {
       setRelevantUserIds([user.uid]);
     } else if (user.rol === "admin") {
-      setRelevantUserIds(undefined); // undefined = ver todo
+      setRelevantUserIds(undefined); // undefined = ver todo (Admin)
     } else {
-      setRelevantUserIds(null); // null = no ver nada
+      setRelevantUserIds(null); // null = no ver nada (Seguridad)
     }
   }, [user]);
 
-  // 2. Memorizar componentes costosos para evitar re-renders
+  // 2. Memorización de componentes estáticos
   const referralLinkSection = useMemo(
     () => <MyReferralLink key="link" user={user} />,
     [user]
@@ -42,25 +41,40 @@ const Dashboard = ({ user }) => {
     [user]
   );
 
+  // 3. Métricas Filtradas
   const filteredMetrics = useMemo(
     () => (
       <>
         <div className="metrics-grid">
-          <TotalRegistrations userIds={relevantUserIds} />
+          <TotalRegistrations filterUserIds={relevantUserIds} />
+
+          {/* CORRECCIÓN: Solo el ADMIN ve la cobertura del Padrón */}
+          {user.rol === "admin" && <PadronCoverageChart />}
         </div>
-        <RegistrationsByDayChart userIds={relevantUserIds} />
-        <RegistrationsByZoneChart userIds={relevantUserIds} />
+
+        {/* Gráficos con filtro aplicado */}
+        <div
+          className="charts-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "20px",
+            marginTop: "20px",
+          }}
+        >
+          <RegistrationsByDayChart filterUserIds={relevantUserIds} />
+          <RegistrationsByZoneChart filterUserIds={relevantUserIds} />
+        </div>
       </>
     ),
-    [relevantUserIds]
-  );
+    [relevantUserIds, user.rol]
+  ); // Agregamos user.rol a dependencias
 
   if (!user) return <div className="loading-screen">Cargando datos...</div>;
 
-  // 3. Renderizado limpio (sin layout wrappers)
   return (
     <div className="dashboard-container-inner">
-      {/* --- ROL: LÍDER DE ZONA --- */}
+      {/* VISTA LÍDER DE ZONA */}
       {user.rol === "lider de zona" && (
         <>
           <div className="dashboard-welcome">
@@ -69,16 +83,14 @@ const Dashboard = ({ user }) => {
           {referralLinkSection}
           {personalGoal}
           {myRegistrationsList}
-
           <div className="dashboard-section-title">Métricas de mi Equipo</div>
           {filteredMetrics}
-
           <div className="dashboard-section-title">Mi Pelotón Asignado</div>
           <MyTeam user={user} />
         </>
       )}
 
-      {/* --- ROL: ADMIN --- */}
+      {/* VISTA ADMIN */}
       {user.rol === "admin" && (
         <>
           <div className="dashboard-welcome">
@@ -88,7 +100,7 @@ const Dashboard = ({ user }) => {
         </>
       )}
 
-      {/* --- ROL: MULTIPLICADOR (y otros) --- */}
+      {/* VISTA MULTIPLICADOR */}
       {(user.rol === "multiplicador" ||
         !["admin", "lider de zona"].includes(user.rol)) && (
         <>
@@ -98,7 +110,6 @@ const Dashboard = ({ user }) => {
           {referralLinkSection}
           {personalGoal}
           {myRegistrationsList}
-
           <div className="dashboard-section-title">Métricas Personales</div>
           {filteredMetrics}
         </>
