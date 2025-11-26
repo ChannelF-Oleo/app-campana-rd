@@ -81,12 +81,6 @@ const Dashboard = ({ user }) => {
           {/* REEMPLAZAR EL TÍTULO DE BIENVENIDA */}
           <div
             className="dashboard-welcome-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "15px",
-              marginBottom: "20px",
-            }}
           >
             <AvatarFoto
               cedula={user.cedula}

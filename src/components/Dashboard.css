@@ -1,36 +1,41 @@
-/* src/components/Dashboard.css */
+/* src/components/Dashboard.css - FINAL & OPTIMIZADO */
 
-/* NOTA IMPORTANTE: 
-   Ya no controlamos el margen del Sidebar aquí. Eso lo hace App.css.
-   Este archivo es solo para la estética INTERNA de los widgets y textos.
+/* NOTA: 
+   Este archivo maneja la estética interna de los widgets.
+   El layout general (sidebar, márgenes) lo controla App.css.
 */
 
-/* Contenedor interno que envuelve todo el contenido del dashboard */
+/* Contenedor interno */
 .dashboard-container-inner {
   width: 100%;
-  max-width: 1600px; /* Límite para pantallas ultra anchas */
-  margin: 0 auto; /* Centrado */
+  max-width: 1600px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px; /* Espacio vertical consistente entre bloques */
+  gap: 24px; /* Espacio entre filas */
 
-  /* Animación suave al entrar */
-  animation: fadeInUp 0.5s ease-out;
+  /* Animación de entrada */
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- 1. ENCABEZADOS Y BIENVENIDA --- */
-.dashboard-welcome {
+/* --- 1. ENCABEZADO DE BIENVENIDA (Avatar + Texto) --- */
+.dashboard-welcome-row {
+  display: flex;
+  align-items: center; /* Centrado vertical con el avatar */
+  gap: 20px;
   margin-bottom: 10px;
+  padding: 10px 0;
 }
 
-.dashboard-welcome h1 {
-  font-size: 2rem;
-  font-weight: 800; /* Letra gruesa moderna */
-  color: var(--color-text-main);
+.dashboard-welcome-row h1 {
+  font-size: 2.2rem; /* Tamaño equilibrado */
+  font-weight: 800;
   margin: 0;
+  line-height: 1.1;
   letter-spacing: -0.5px;
+  color: var(--color-text-main);
 
-  /* Gradiente sutil en el texto (opcional, queda muy pro) */
+  /* Gradiente en el texto */
   background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -38,52 +43,62 @@
   display: inline-block;
 }
 
-/* Subtítulos de secciones */
+/* Estilo para el Rol (el <small> debajo del nombre) */
+.dashboard-welcome-row small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+/* --- 2. TÍTULOS DE SECCIÓN --- */
 .dashboard-section-title {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-text-muted);
   margin-top: 10px;
   margin-bottom: 15px;
-
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-/* Pequeña línea decorativa antes del título */
+/* Línea decorativa */
 .dashboard-section-title::before {
   content: "";
   display: block;
   width: 4px;
-  height: 18px;
-  background-color: var(--primary);
-  border-radius: 2px;
+  height: 20px;
+  background: linear-gradient(to bottom, var(--primary), var(--accent));
+  border-radius: 4px;
 }
 
-/* --- 2. GRID DE WIDGETS (Métricas) --- */
+/* --- 3. GRID DE WIDGETS (Métricas) --- */
 .metrics-grid {
   display: grid;
-  /* Crea columnas automáticas que nunca bajen de 280px */
+  /* Columnas responsivas automáticas */
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   width: 100%;
 }
 
-/* Si tienes tarjetas dentro que no sean componentes propios, 
-   puedes forzar el estilo cristal aquí por seguridad */
-.metrics-card-fallback {
-  background: var(--glass-bg);
-  border: var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
+/* Grid específico para gráficas (pueden necesitar más ancho) */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+  width: 100%;
 }
 
-/* --- 3. ANIMACIONES --- */
+/* --- 4. ANIMACIONES --- */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(15px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -91,10 +106,18 @@
   }
 }
 
-/* --- 4. RESPONSIVO (Móvil) --- */
+/* --- 5. RESPONSIVO (Móvil) --- */
 @media (max-width: 768px) {
-  .dashboard-welcome h1 {
-    font-size: 1.5rem; /* Texto más pequeño en celular */
+  .dashboard-welcome-row {
+    gap: 15px;
+  }
+
+  .dashboard-welcome-row h1 {
+    font-size: 1.6rem; /* Ajuste para móviles */
+  }
+
+  .dashboard-welcome-row small {
+    font-size: 0.75rem;
   }
 
   .dashboard-section-title {
@@ -102,8 +125,9 @@
     margin-top: 5px;
   }
 
-  .metrics-grid {
-    grid-template-columns: 1fr; /* Una sola columna en vertical */
+  .metrics-grid,
+  .charts-grid {
+    grid-template-columns: 1fr; /* Una sola columna */
     gap: 15px;
   }
 

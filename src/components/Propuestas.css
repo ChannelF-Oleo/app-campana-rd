@@ -1,205 +1,216 @@
-/* -------------------------------------- */
-/* 0. VARIABLES (Alineación con HomePage) */
-/* -------------------------------------- */
-:root {
-  /* Paleta */
-  --primary-blue: #004d99; /* Azul fuerte institucional */
-  --secondary-blue: #007bff; /* Azul de acento */
-  --accent-green: #28a745; /* Verde de acción */
-
-  /* Colores Funcionales */
-  --color-bg-light: #f4f7f9; /* Cambiado a convención clara */
-  --color-white: #ffffff; /* Cambiado a convención clara */
-  --color-text-dark: #333333;
-  --color-text-light: #555555;
-
-  /* Espaciado (Nuevo para consistencia) */
-  --spacing-sm: 30px;
-  --spacing-md: 30px;
-  --spacing-lg: 60px;
-  --spacing-xl: 60px;
-}
+/* src/components/Propuestas.css - FINAL (Espaciado y Tema Corregido) */
 
 /* -------------------------- */
-/* 1. CONTENEDOR Y ENCABEZADOS */
+/* 1. CONTENEDOR PRINCIPAL Y VARIABLES LOCALES */
 /* -------------------------- */
-
 .propuestas-container {
-  /* 🛑 FIX: Aplicación explícita del modo CLARO para anular la herencia */
-  background-color: var(--color-bg-light);
-  color: var(--color-text-dark); /* Color de texto principal claro */
-  margin-bottom: 30px;
+  /* DEFINICIÓN DE COLORES LOCALES (Forzar Modo Claro) */
+  --local-bg: #f4f7f9;
+  --local-card-bg: #ffffff;
+  --local-text-main: #333333;
+  --local-text-light: #555555;
+  --local-primary: #004d99;
+  --local-accent: #28a745;
+  --local-border: #e5e7eb;
+
+  /* Aplicar fondo y texto explícitamente */
+  background-color: var(--local-bg) !important;
+  color: var(--local-text-main) !important;
+
   width: 100%;
-  padding: var(--spacing-lg);
+  max-width: 100%; /* Ocupa todo el ancho disponible */
+  padding: 60px 20px; /* Espacio interno */
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
+/* -------------------------- */
+/* 2. ENCABEZADOS Y SECCIONES */
+/* -------------------------- */
 .page-header {
-  color: var(--primary-blue);
-  /* Uso de clamp para responsividad tipográfica */
-  font-size: clamp(2rem, 3.5vw, 2.5rem);
-  border-bottom: 3px solid var(--secondary-blue);
-  padding-bottom: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-  font-weight: 800;
+  color: var(--local-primary);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 60px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid #007bff;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .prop-section {
-  margin-bottom: var(--spacing-lg);
-  margin-top: var(--spacing-md);
+  /* ESPACIADO CRÍTICO ENTRE SECCIONES */
+  margin-top: 80px; /* Separa el título de las tarjetas de arriba */
+  margin-bottom: 40px; /* Separa el título de sus propias tarjetas */
+
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* El primer bloque no necesita tanto margen arriba */
+.prop-section:first-of-type {
+  margin-top: 0;
 }
 
 .prop-section h2 {
-  /* Eliminado el margin-bottom duplicado */
-  font-size: clamp(1.5rem, 2.5vw, 1.8rem);
-  color: var(--primary-blue);
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-sm);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: var(--local-primary);
+  margin-bottom: 30px;
+  padding-bottom: 15px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
-  /* Estilo del ícono y texto */
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  text-align: left; /* Asegura alineación izquierda si se usa en un contenedor centrado */
+  gap: 15px;
+  font-weight: 800;
 }
 
 .prop-section h2 svg {
-  color: var(--accent-green);
-  /* Ajuste de margen para centrar verticalmente sin romper el flujo */
+  color: var(--local-accent);
   font-size: 1.2em;
-  margin: 0;
-  margin-top: 40px;
+}
+
+/* Subtítulos (Posicionamiento Clave) */
+.prop-section h3 {
+  color: var(--local-primary);
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 60px; /* Más espacio antes del subtítulo */
   margin-bottom: 30px;
 }
 
-/* Subtítulos dentro de secciones (Posicionamiento Clave) */
-.prop-section h3 {
-  color: var(--primary-blue); /* Se cambió a Primary Blue para jerarquía */
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-top: var(--spacing-lg);
-  margin-bottom: var(--spacing-md);
-}
-
 /* -------------------------- */
-/* 2. GRID Y TARJETAS (CARDS) */
+/* 3. GRID Y TARJETAS (CARDS) */
 /* -------------------------- */
 .grid-2,
 .grid-3 {
   display: grid;
-  /* Optimización de gap: usar variable */
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  /* AUMENTO DE ESPACIO ENTRE TARJETAS */
+  gap: 40px;
+  width: 100%;
 }
 
+/* Columnas Responsivas */
 .grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+}
+.grid-3 {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
 }
 
-/* Card Styling (Usamos .prop-card para el componente reutilizable) */
+/* Estilo de la Tarjeta */
 .prop-card {
-  background-color: var(--color-white);
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out,
-    border 0.3s;
-  height: 100%;
+  background-color: var(--local-card-bg);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Sombra suave */
+  border: 1px solid var(--local-border);
+
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%; /* Altura completa de la celda */
   display: flex;
-  flex-direction: column; /* Para asegurar que el contenido se comporte bien con height: 100% */
-  text-align: justify;
-  border-bottom: 3px solid transparent; /* Línea inferior para efecto hover */
-  margin-bottom: 30px;
+  flex-direction: column;
+
+  /* Evitamos márgenes externos porque el GRID usa GAP */
+  margin: 0;
 }
 
 .prop-card:hover {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  transform: translateY(
-    -5px
-  ); /* Añadir efecto de elevación al pasar el mouse */
-  /* Corrección y simplificación de border-bottom */
-  border-bottom: 5px solid var(--primary-blue);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  border-color: var(--local-primary);
 }
 
+/* Título dentro de la tarjeta */
 .prop-card h3 {
-  /* Resetear el margin-top/bottom heredado de .prop-section h3 */
   margin-top: 0;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: 15px;
   font-size: 1.3rem;
   font-weight: 700;
-  color: var(--primary-blue); /* Títulos de tarjeta en azul primario */
-  text-align: center;
+  color: var(--local-primary);
+  line-height: 1.4;
+  text-align: left; /* Alineación limpia */
 }
 
 .prop-card p {
-  font-size: 1rem; /* Ligeramente más grande para mejor lectura */
-  color: var(--color-text-dark); /* Color más oscuro para accesibilidad */
-  flex-grow: 1; /* Permite que el párrafo se estire si hay card-detail */
+  font-size: 1rem;
+  color: var(--local-text-light);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  flex-grow: 1; /* Empuja el detalle al fondo */
 }
 
 .card-detail {
-  margin-top: var(--spacing-sm);
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
   font-style: italic;
   font-size: 0.9rem !important;
-  color: var(--accent-green); /* Color de acento para la importancia */
+  color: var(--local-accent);
   font-weight: 600;
 }
 
 /* -------------------------- */
-/* 3. ETIQUETAS (TAGS) */
+/* 4. ETIQUETAS (TAGS) */
 /* -------------------------- */
 .tag {
   display: inline-block;
-  color: var(--color-white);
-  padding: 4px 12px; /* Ligeramente más de padding horizontal */
-  border-radius: 4px; /* Ligeramente más de radio */
+  padding: 5px 12px;
+  border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 700;
-  margin-bottom: var(--spacing-sm);
   text-transform: uppercase;
+  color: white;
+  margin-bottom: 15px;
+  align-self: flex-start;
 }
 
-/* Colores de Tags por Categoría */
 .tag-infra {
-  background-color: #e07f24; /* Naranja más oscuro para mejor contraste */
+  background-color: #e07f24;
 }
 .tag-salud {
-  background-color: #c0392b; /* Rojo más profundo */
+  background-color: #c0392b;
 }
 .tag-infancia {
-  background-color: #0070a8; /* Azul más oscuro */
+  background-color: #0070a8;
 }
 .tag-comision {
-  background-color: #5d666d; /* Gris más oscuro */
+  background-color: #5d666d;
 }
 .tag-politica {
-  background-color: var(--primary-blue);
+  background-color: var(--local-primary);
 }
 
 /* -------------------------- */
-/* 4. RESPONSIVIDAD */
+/* 5. RESPONSIVIDAD */
 /* -------------------------- */
-@media (max-width: 900px) {
-  .grid-2 {
-    /* Permite que el grid use el minmax de 300px o 1fr, haciendo que se apile si no hay espacio */
-    grid-template-columns: 1fr;
-  }
-}
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .propuestas-container {
-    padding: var(--spacing-md) 0;
+    padding: 40px 15px;
   }
-  .page-header {
-    font-size: 1.8rem;
-    margin-bottom: var(--spacing-md);
+
+  .prop-section {
+    margin-top: 60px; /* Un poco menos en móvil */
   }
+
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr; /* Una sola columna */
+    gap: 30px;
+  }
+
+  .prop-card {
+    padding: 20px;
+  }
+
   .prop-section h2 {
-    font-size: 1.3rem;
-    text-align: center;
-  }
-  .prop-section h2 svg {
-    font-size: 1.1em;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 }

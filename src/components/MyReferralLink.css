@@ -1,62 +1,127 @@
+/* src/components/MyReferralLink.css - OPTIMIZADO (Cristal Mate) */
+
 .referral-link-container {
+  /* Hereda el efecto cristal del sistema global */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+
+  padding: 2rem;
+  text-align: center; /* Centrado para mayor impacto */
+  margin: 2rem 0;
+  transition: transform 0.3s ease;
+}
+
+.referral-link-container:hover {
+  transform: translateY(-3px); /* Elevación suave al pasar el mouse */
+}
+
+.referral-link-container h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--primary); /* Azul Institucional */
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.referral-link-container p {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Caja del Link (Input + Botón) */
+.link-box {
+  display: flex;
+  gap: 8px;
+  background-color: var(--color-surface); /* Fondo sólido para contraste */
+  padding: 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  max-width: 600px;
+  margin: 0 auto; /* Centrado horizontal */
+  align-items: center;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Input de solo lectura */
+.link-box input[type="text"] {
+  flex-grow: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 15px;
+  color: var(--color-text-main);
+  font-family: "Courier New", monospace; /* Estilo código para el link */
+  font-size: 0.95rem;
+  outline: none;
+  width: 100%;
+}
+
+/* Botón Copiar */
+.link-box button {
+  padding: 10px 24px;
+  border: none;
+  background-color: var(--primary);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.link-box button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 77, 153, 0.25);
+}
+
+.link-box button:active {
+  transform: scale(0.98);
+}
+
+/* Estado: Copiado (Feedback visual) */
+.link-box button:disabled {
+  background-color: var(--success); /* Verde Éxito */
+  color: white;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+/* RESPONSIVE (Móvil) */
+@media (max-width: 600px) {
+  .referral-link-container {
     padding: 1.5rem;
-    background-color: #f8f9fa; /* Un gris muy claro */
-    border-radius: 8px;
-    margin-top: 2rem; /* Espacio arriba */
-    margin-bottom: 2rem; /* Espacio abajo */
-    border: 1px solid #dee2e6; /* Borde sutil */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
-  
-  .referral-link-container h3 {
-    margin-top: 0;
-    margin-bottom: 0.75rem;
-    color: #495057; /* Gris oscuro */
-    font-size: 1.2rem;
-  }
-  
-  .referral-link-container p {
-    font-size: 0.95rem;
-    color: #6c757d; /* Gris medio */
-    margin-bottom: 1rem;
-  }
-  
+
   .link-box {
-    display: flex;
-    margin-top: 1rem;
+    flex-direction: column;
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
   }
-  
+
   .link-box input[type="text"] {
-    flex-grow: 1; /* Ocupa el espacio disponible */
-    padding: 10px 12px;
-    border: 1px solid #ced4da; /* Borde gris claro */
-    border-radius: 4px 0 0 4px; /* Bordes redondeados a la izquierda */
-    background-color: #e9ecef; /* Fondo grisáceo para indicar que es solo lectura */
-    font-family: monospace; /* Fuente monoespaciada para URLs */
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 10px;
+    text-align: center;
     font-size: 0.9rem;
-    color: #495057;
-    overflow-x: auto; /* Scroll horizontal si el enlace es muy largo */
   }
-  
+
   .link-box button {
-    padding: 10px 15px;
-    border: 1px solid #007bff; /* Borde azul */
-    background-color: #007bff; /* Fondo azul */
-    color: white;
-    border-radius: 0 4px 4px 0; /* Bordes redondeados a la derecha */
-    cursor: pointer;
-    white-space: nowrap; /* Evita que el texto del botón se parta */
-    font-weight: 500;
-    transition: background-color 0.2s, border-color 0.2s;
+    width: 100%;
+    padding: 12px;
   }
-  
-  .link-box button:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-  }
-  
-  .link-box button:disabled {
-    background-color: #28a745; /* Verde cuando está copiado */
-    border-color: #28a745;
-    cursor: default; /* Cursor no interactivo */
-  }
+}
