@@ -4,6 +4,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged } from "firebase/auth"; // Añadido onAuthStateChanged para initializeAuthAndGetUser
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions"; // Añadido getFunctions
+import { getStorage } from "firebase/storage";
 
 // Configuración de Firebase usando las variables de entorno
 const firebaseConfig = {
@@ -48,6 +49,13 @@ export const initializeAuthAndGetUser = () => {
     });
   });
 };
+
+// Diagnóstico
+if (!firebaseConfig.storageBucket) {
+  console.error("FIREBASE ERROR: Falta configurar REACT_APP_FIREBASE_STORAGE_BUCKET en el archivo .env");
+}
+// 2. EXPORTAR LA INSTANCIA DE STORAGE
+export const storage = getStorage(app);
 
 
 // Exporta la app de firebase

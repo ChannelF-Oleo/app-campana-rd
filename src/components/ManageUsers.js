@@ -1,139 +1,129 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { db, functions } from "../firebase";
-import { httpsCallable } from "firebase/functions";
+import { db } from "../firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import "./ManageUsers.css";
+import AvatarFoto from "./AvatarFoto";
 
-// Opciones de roles disponibles (capitalizadas para display)
-const ROLES_DISPONIBLES = [
-  { value: "admin", label: "Administrador" },
-  { value: "lider de zona", label: "Líder de Zona" },
-  { value: "multiplicador", label: "Multiplicador" },
-];
+// Inicializar Functions
+const functions = getFunctions();
+const deleteUserCallable = httpsCallable(functions, "deleteUserAndData");
 
-// Iconos (usando emoji para simplicidad; considera react-icons para prod)
-const ICONS = {
-  add: "➕",
-  search: "🔍",
-  filter: "🔄",
-  export: "📊",
-  edit: "✏️",
-  delete: "🗑️",
-  loading: "⏳",
-};
+const ROLES_DISPONIBLES = ["admin", "lider de zona", "multiplicador"];
 
-// Componente de Spinner para loading states
-function LoadingSpinner({ size = "small" }) {
-  return (
-    <span
-      className="loading-spinner"
-      style={{
-        display: "inline-block",
-        animation: "spin 1s linear infinite",
-        fontSize: size === "small" ? "0.8em" : "1em",
-      }}
-    >
-      {ICONS.loading}
-    </span>
-  );
-}
-
-// Define EditUserModal (mejorado con accesibilidad y validación)
+// --- MODAL DE EDICIÓN (MEJORADO) ---
 function EditUserModal({ user, onClose, onSave }) {
-  const [newRole, setNewRole] = useState(user.rol);
+  const [newRole, setNewRole] = useState(user.rol || "multiplicador");
+  const [newCedula, setNewCedula] = useState(user.cedula || "");
   const [loadingSave, setLoadingSave] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSave = useCallback(async () => {
-    if (newRole === user.rol) {
-      setError("Selecciona un rol diferente para continuar.");
+  // Formateador de Cédula en tiempo real
+  const handleCedulaChange = (e) => {
+    const input = e.target.value.replace(/[^0-9]/g, "");
+    const normalized = input.slice(0, 11);
+    let formatted = normalized;
+    if (normalized.length > 3)
+      formatted = `${normalized.slice(0, 3)}-${normalized.slice(3)}`;
+    if (normalized.length > 10)
+      formatted = `${formatted.slice(0, 11)}-${formatted.slice(11)}`;
+    setNewCedula(formatted);
+  };
+
+  const handleSave = async () => {
+    setError("");
+
+    // Validación básica
+    const cleanCedula = newCedula.replace(/-/g, "");
+    if (cleanCedula.length > 0 && cleanCedula.length !== 11) {
+      setError("La cédula debe tener 11 dígitos.");
       return;
     }
+
     setLoadingSave(true);
-    setError("");
     try {
-      await onSave(user.id, newRole, user.multiplicadoresAsignados);
-    } catch (err) {
-      console.error("Error al guardar en el modal:", err);
-      setError("Error al guardar cambios. Intenta de nuevo.");
+      await onSave(user.id, {
+        rol: newRole,
+        cedula: newCedula,
+        multiplicadoresAsignados: user.multiplicadoresAsignados,
+      });
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      setError("Error al guardar los cambios.");
       setLoadingSave(false);
     }
-  }, [newRole, user.rol, user.id, user.multiplicadoresAsignados, onSave]);
-
-  const handleKeyDown = useCallback(
-    (e) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "Enter" && !loadingSave) handleSave();
-    },
-    [onClose, loadingSave, handleSave]
-  );
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
-
-  const isLiderDeZona = newRole === "lider de zona";
+  };
 
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      open={true}
-    >
-      <div className="modal-content" role="document">
-        <h3 id="modal-title">Editando Rol de: {user.nombre}</h3>
-        <p>
-          Email: <strong>{user.email}</strong>{" "}
-          {user.numeroCedula && `(Cédula: ${user.numeroCedula})`}
-        </p>
-        {error && (
-          <div className="error-message" role="alert">
-            {error}
-          </div>
-        )}
+    <div className="modal-backdrop">
+      <div className="modal-content glass-panel">
+        <h3>Editar Usuario: {user.nombre}</h3>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            margin: "15px 0",
+          }}
+        >
+          <AvatarFoto cedula={user.cedula} nombre={user.nombre} size="80px" />
+        </div>
+
         <div className="form-group">
-          <label htmlFor="role-select">Seleccionar Nuevo Rol:</label>
+          <label>Email (No editable):</label>
+          <input
+            type="text"
+            value={user.email}
+            disabled
+            className="input-disabled"
+          />
+        </div>
+
+        {/* CAMPO CÉDULA (AHORA EDITABLE) */}
+        <div className="form-group">
+          <label>Cédula de Identidad:</label>
+          <input
+            type="text"
+            value={newCedula}
+            onChange={handleCedulaChange}
+            placeholder="001-0000000-0"
+            className="search-input" // Reusamos estilo
+          />
+          {!user.cedula && (
+            <small className="text-warning">
+              ⚠ Este usuario no tiene cédula asignada.
+            </small>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="role-select">Rol del Usuario:</label>
           <select
             id="role-select"
             value={newRole}
             onChange={(e) => setNewRole(e.target.value)}
-            className="role-select-modal"
+            className="role-filter-select" // Reusamos estilo
             disabled={loadingSave}
-            aria-describedby={isLiderDeZona ? "role-note" : undefined}
           >
-            {ROLES_DISPONIBLES.map(({ value, label }) => (
-              <option key={value} value={value}>
-                {label}
+            {ROLES_DISPONIBLES.map((role) => (
+              <option key={role} value={role}>
+                {role.charAt(0).toUpperCase() + role.slice(1)}
               </option>
             ))}
           </select>
         </div>
-        {isLiderDeZona && (
-          <p id="role-note" className="note-warning">
-            **Nota:** Al asignar 'Líder de Zona', el campo
-            `multiplicadoresAsignados` será borrado, a menos que lo manejes
-            manualmente.
-          </p>
-        )}
+
+        {error && <p className="error-message">{error}</p>}
+
         <div className="modal-actions">
           <button
             onClick={handleSave}
             className="save-button"
-            disabled={newRole === user.rol || loadingSave}
-            aria-busy={loadingSave}
+            disabled={loadingSave}
           >
-            {loadingSave ? (
-              <>
-                <LoadingSpinner size="small" /> Guardando...
-              </>
-            ) : (
-              "Guardar Cambios"
-            )}
+            {loadingSave ? "Guardando..." : "Guardar Cambios"}
           </button>
           <button
             onClick={onClose}
@@ -143,13 +133,21 @@ function EditUserModal({ user, onClose, onSave }) {
             Cancelar
           </button>
         </div>
+
+        {newRole === "lider de zona" && (
+          <p
+            className="note-warning"
+            style={{ marginTop: "10px", fontSize: "0.85rem" }}
+          >
+            Nota: Al cambiar a 'Lider de Zona', se reseteará su equipo actual.
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-// ====================================================================
-
+// --- COMPONENTE PRINCIPAL ---
 function ManageUsers() {
   const [allUsers, setAllUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -159,46 +157,93 @@ function ManageUsers() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("todos");
-  const [error, setError] = useState(""); // Estado global para errores
 
-  const remoteDeleteUser = httpsCallable(functions, "deleteUserAndData");
-
-  // Memoizado para performance
-  const roleOptions = useMemo(
-    () => [
-      { value: "todos", label: "Todos los Roles" },
-      ...ROLES_DISPONIBLES.map(({ value, label }) => ({ value, label })),
-    ],
-    []
-  );
-
-  // 🛑 FUNCIÓN OPTIMIZADA: SOLO LEE LA COLECCIÓN 'users' con manejo de errores
-  const fetchUsersAndMetrics = useCallback(async () => {
+  const fetchUsersAndMetrics = async () => {
     setLoading(true);
-    setError("");
     try {
       const usersSnapshot = await getDocs(collection(db, "users"));
-      let usersList = usersSnapshot.docs.map((doc) => {
-        const userData = doc.data();
-        return {
-          id: doc.id,
-          uid: doc.id,
-          ...userData,
-          registrationCount: userData.registrationsCount || 0,
-        };
+      let usersList = usersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        uid: doc.id,
+        ...doc.data(),
+      }));
+
+      const simpatizantesSnapshot = await getDocs(
+        collection(db, "simpatizantes")
+      );
+      const registrationCounts = {};
+
+      simpatizantesSnapshot.forEach((doc) => {
+        const registeredBy = doc.data().registradoPor;
+        if (registeredBy) {
+          registrationCounts[registeredBy] =
+            (registrationCounts[registeredBy] || 0) + 1;
+        }
       });
+
+      usersList = usersList.map((user) => ({
+        ...user,
+        registrationCount: registrationCounts[user.uid] || 0,
+      }));
+
       setAllUsers(usersList);
-      setFilteredUsers(usersList); // Inicial sin filtros
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Error al cargar usuarios. Verifica tu conexión.");
+      setFilteredUsers(usersList);
+    } catch (error) {
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // LÓGICA DE ELIMINACIÓN
+  const handleDeleteUser = async (user) => {
+    const confirm = window.confirm(
+      `¿Estás SEGURO de que quieres eliminar a ${user.nombre}?\n\nEsta acción borrará su acceso y sus datos personales permanentemente.\n(Sus registros de simpatizantes no se borrarán).`
+    );
+
+    if (confirm) {
+      setLoading(true);
+      try {
+        const result = await deleteUserCallable({ uid: user.uid });
+        if (result.data.success) {
+          alert("Usuario eliminado correctamente.");
+          fetchUsersAndMetrics(); // Recargar lista
+        } else {
+          alert("Error al eliminar usuario.");
+        }
+      } catch (error) {
+        console.error("Error eliminando:", error);
+        alert("Error de servidor al eliminar usuario.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleExport = () => {
+    if (filteredUsers.length === 0) {
+      alert("No hay usuarios filtrados para exportar.");
+      return;
+    }
+    const dataToExport = filteredUsers.map((user) => ({
+      Nombre: user.nombre || "N/A",
+      Email: user.email || "N/A",
+      Rol: user.rol || "N/A",
+      Cedula: user.cedula || "N/A",
+      Registros: user.registrationCount || 0,
+      UID: user.id,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios Filtrados");
+    XLSX.writeFile(workbook, "Usuarios_Filtrados.xlsx");
+  };
+
+  useEffect(() => {
+    fetchUsersAndMetrics();
   }, []);
 
-  // Filtro memoizado para evitar re-renders innecesarios
-  const filteredUsersMemo = useMemo(() => {
+  useEffect(() => {
     let currentUsers = [...allUsers];
     if (roleFilter !== "todos") {
       currentUsers = currentUsers.filter((user) => user.rol === roleFilter);
@@ -210,281 +255,167 @@ function ManageUsers() {
           (user.nombre &&
             user.nombre.toLowerCase().includes(lowerSearchTerm)) ||
           (user.email && user.email.toLowerCase().includes(lowerSearchTerm)) ||
-          (user.numeroCedula &&
-            user.numeroCedula.toLowerCase().includes(lowerSearchTerm))
+          (user.cedula && user.cedula.includes(searchTerm))
       );
     }
-    return currentUsers;
-  }, [allUsers, roleFilter, searchTerm]);
+    setFilteredUsers(currentUsers);
+  }, [searchTerm, roleFilter, allUsers]);
 
-  useEffect(() => {
-    setFilteredUsers(filteredUsersMemo);
-  }, [filteredUsersMemo]);
-
-  useEffect(() => {
-    fetchUsersAndMetrics();
-  }, [fetchUsersAndMetrics]);
-
-  const handleDeleteUser = useCallback(
-    async (user) => {
-      const idDisplay = user.numeroCedula
-        ? `Cédula: ${user.numeroCedula}`
-        : `Email: ${user.email}`;
-      if (
-        !window.confirm(
-          `¿Estás seguro de ELIMINAR al usuario ${user.nombre} (${idDisplay})? Esta acción es irreversible.`
-        )
-      ) {
-        return;
-      }
-      setLoading(true);
-      setError("");
-      try {
-        const response = await remoteDeleteUser({ uid: user.uid });
-        // Mejora: Usa toast en lugar de alert para UX mejor (aquí simulamos con alert)
-        alert(response.data.message || "Usuario eliminado exitosamente.");
-        await fetchUsersAndMetrics();
-      } catch (err) {
-        console.error("Error al eliminar el usuario:", err);
-        const errorMessage =
-          err.message || "Error desconocido al intentar eliminar el usuario.";
-        setError(`Error al eliminar: ${errorMessage}`);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [remoteDeleteUser, fetchUsersAndMetrics]
-  );
-
-  const handleExport = useCallback(() => {
-    if (filteredUsersMemo.length === 0) {
-      setError("No hay usuarios filtrados para exportar.");
-      return;
-    }
-
-    const dataToExport = filteredUsersMemo.map((user) => ({
-      Nombre: user.nombre || "N/A",
-      Email: user.email || "N/A",
-      Cedula: user.numeroCedula || "N/A",
-      Rol:
-        ROLES_DISPONIBLES.find((r) => r.value === user.rol)?.label ||
-        user.rol ||
-        "N/A",
-      Registros: user.registrationCount || 0,
-      UID: user.id,
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios Filtrados");
-    XLSX.writeFile(
-      workbook,
-      `Usuarios_Filtrados_${new Date().toISOString().split("T")[0]}.xlsx`
-    );
-    // Mejora: Alert con fecha para trazabilidad
-    alert(
-      `Se han exportado ${filteredUsersMemo.length} usuarios al archivo con fecha de hoy.`
-    );
-  }, [filteredUsersMemo]);
-
-  const handleEditClick = useCallback((user) => {
+  const handleEditClick = (user) => {
     setEditingUser(user);
     setIsModalOpen(true);
-  }, []);
+  };
 
-  const handleCloseModal = useCallback(() => {
+  const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingUser(null);
-  }, []);
+  };
 
-  const handleSaveRole = useCallback(
-    async (userId, newRole, asignados) => {
-      const userDocRef = doc(db, "users", userId);
-      try {
-        let dataToUpdate = {
-          rol: newRole,
-          multiplicadoresAsignados:
-            newRole === "lider de zona" ? asignados || [] : [],
-        };
-        await updateDoc(userDocRef, dataToUpdate);
-        alert("Usuario actualizado con éxito!");
-        handleCloseModal();
-        fetchUsersAndMetrics(); // Recarga para reflejar cambios
-      } catch (err) {
-        console.error("Error updating user:", err);
-        throw new Error("Hubo un error al guardar los cambios."); // Re-lanza para catch en modal
-      }
-    },
-    [handleCloseModal, fetchUsersAndMetrics]
-  );
+  // GUARDAR CAMBIOS (ROL Y CÉDULA)
+  const handleSaveUser = async (userId, data) => {
+    const userDocRef = doc(db, "users", userId);
+    try {
+      let dataToUpdate = {
+        rol: data.rol,
+        cedula: data.cedula, // Guardamos la cédula nueva/editada
+        // Si cambia a líder, mantenemos asignados, si no, vaciamos
+        multiplicadoresAsignados:
+          data.rol === "lider de zona"
+            ? data.multiplicadoresAsignados || []
+            : [],
+      };
 
-  if (loading) {
-    return (
-      <div
-        className="manage-users-container"
-        style={{ textAlign: "center", padding: "4rem" }}
-      >
-        <LoadingSpinner size="large" />
-        <p>Cargando datos de usuarios...</p>
-      </div>
-    );
-  }
+      await updateDoc(userDocRef, dataToUpdate);
+      alert("Usuario actualizado con éxito!");
+      handleCloseModal();
+      fetchUsersAndMetrics();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      alert("Hubo un error al guardar los cambios.");
+    }
+  };
+
+  if (loading) return <p className="loading-text">Cargando sistema...</p>;
 
   return (
-    <div
-      className="manage-users-container"
-      role="main"
-      aria-label="Gestión de Usuarios"
-    >
-      {/* Error Global */}
-      {error && (
-        <div className="error-message global" role="alert">
-          {error}
-          <button onClick={() => setError("")} aria-label="Cerrar error">
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* 1. Barra de control superior */}
-      <header className="manage-users-header">
-        <h1>Gestión de Usuarios</h1>
+    <div className="manage-users-container glass-panel">
+      <div className="manage-users-header">
+        <h2>Gestión de Usuarios</h2>
         <button
           onClick={() => navigate("/admin/crear-usuario")}
           className="create-user-button"
-          aria-label="Crear usuario"
-          title="Crear Usuario"
         >
-          {ICONS.add} Crear Usuario
-        </button>
-      </header>
+          + Crear Usuario</button>
+      </div>
 
-      {/* 2. Barra de Filtros (mejorada con iconos y aria-labels) */}
-      <div className="filters-bar-wrapper" role="search">
-        <div className="input-wrapper">
-          <label htmlFor="search-input" className="visually-hidden">
-            Buscar usuarios
-          </label>
-          <input
-            id="search-input"
-            type="text"
-            placeholder="Buscar por nombre, email o cédula..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-            aria-label="Buscar por nombre, email o cédula"
-          />
-          <span className="input-icon">{ICONS.search}</span>
-        </div>
-
-        <div className="select-wrapper">
-          <label htmlFor="role-filter" className="visually-hidden">
-            Filtrar por rol
-          </label>
-          <select
-            id="role-filter"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="role-filter-select"
-            aria-label="Filtrar por rol"
-          >
-            {roleOptions.map(({ value, label }) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <span className="input-icon">{ICONS.filter}</span>
-        </div>
-
+      <div className="filters-bar-wrapper">
+        <input
+          type="text"
+          placeholder="Buscar por nombre, email o cédula..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="role-filter-select"
+        >
+          <option value="todos">Todos los Roles</option>
+          <option value="admin">Administrador</option>
+          <option value="lider de zona">Lider de Zona</option>
+          <option value="multiplicador">Multiplicador</option>
+        </select>
         <button
           onClick={handleExport}
           className="export-excel-button"
-          disabled={loading || filteredUsersMemo.length === 0}
-          aria-label={`Exportar ${filteredUsersMemo.length} usuarios a Excel`}
-          title={`Exportar ${filteredUsersMemo.length} usuarios filtrados`}
+          disabled={loading || filteredUsers.length === 0}
         >
-          {ICONS.export} Exportar ({filteredUsersMemo.length}) a Excel
+          Exportar Excel
         </button>
       </div>
 
-      {/* 3. Tabla (mejorada con role="table" y data-labels para mobile) */}
-      <div
-        className="table-wrapper"
-        role="region"
-        aria-label="Tabla de usuarios"
-      >
-        <table
-          className="users-table"
-          role="table"
-          aria-describedby="table-desc"
-        >
-        
+      <div className="table-wrapper">
+        <table className="users-table">
           <thead>
             <tr>
-              <th scope="col">Nombre</th>
-              <th scope="col">Email / Cédula</th>
-              <th scope="col">Rol</th>
-              <th scope="col">Registros</th>
-              <th scope="col">Acciones</th>
+              <th>Foto</th>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Registros</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filteredUsersMemo.length > 0 ? (
-              filteredUsersMemo.map((user) => (
-                <tr key={user.id} role="row">
-                  <td data-label="Nombre">{user.nombre || "N/A"}</td>
-                  <td data-label="Email / Cédula">
-                    <strong>{user.numeroCedula || user.email || "N/A"}</strong>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <tr key={user.id}>
+                  <td data-label="Foto" style={{ width: "60px" }}>
+                    <AvatarFoto
+                      cedula={user.cedula}
+                      nombre={user.nombre}
+                      size="40px"
+                    />
                   </td>
+
+                  <td data-label="Nombre">
+                    <div style={{ fontWeight: "600" }}>
+                      {user.nombre || "N/A"}
+                    </div>
+                    {user.cedula ? (
+                      <small style={{ color: "#666" }}>{user.cedula}</small>
+                    ) : (
+                      <small style={{ color: "#e63946" }}>Sin Cédula</small>
+                    )}
+                  </td>
+
+                  <td data-label="Email">{user.email || "N/A"}</td>
+
                   <td data-label="Rol">
                     <span
-                      className={`role-badge role-${user.rol}`}
-                      title={`Rol: ${
-                        ROLES_DISPONIBLES.find((r) => r.value === user.rol)
-                          ?.label || user.rol
-                      }`}
+                      className={`role-badge role-${user.rol?.replace(
+                        /\s+/g,
+                        "-"
+                      )}`}
                     >
-                      {ROLES_DISPONIBLES.find((r) => r.value === user.rol)
-                        ?.label ||
-                        user.rol ||
-                        "N/A"}
+                      {user.rol || "N/A"}
                     </span>
                   </td>
-                  <td data-label="Registros">{user.registrationCount || 0}</td>
+
+                  <td data-label="Registros">
+                    <div className="count-badge">{user.registrationCount}</div>
+                  </td>
+
                   <td data-label="Acciones" className="actions-cell">
                     <button
                       onClick={() => handleEditClick(user)}
-                      className="edit-button"
-                      aria-label={`Editar rol de ${user.nombre}`}
-                      title="Editar rol"
-                      disabled={loading}
+                      className="edit-button icon-only"
+                      title="Editar Usuario"
                     >
-                      {ICONS.edit}
+                      ✏️
                     </button>
+
+                    {/* BOTÓN ELIMINAR RESTAURADO */}
                     <button
                       onClick={() => handleDeleteUser(user)}
-                      className="delete-button"
-                      aria-label={`Eliminar usuario ${user.nombre}`}
-                      title="Eliminar usuario (irreversible)"
-                      disabled={loading}
+                      className="delete-button icon-only"
+                      title="Eliminar Usuario Permanentemente"
+                      style={{
+                        marginLeft: "8px",
+                        borderColor: "#e63946",
+                        color: "#e63946",
+                      }}
                     >
-                      {ICONS.delete}
+                      🗑️
                     </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="empty-state" role="status">
-                  <span role="img" aria-label="No results">
-                    👥
-                  </span>
+                <td colSpan="6" className="empty-state">
                   No se encontraron usuarios con los filtros aplicados.
-                  <br />
-                  <small>
-                    Intenta ajustar la búsqueda o el filtro de roles.
-                  </small>
                 </td>
               </tr>
             )}
@@ -492,12 +423,11 @@ function ManageUsers() {
         </table>
       </div>
 
-      {/* Modal */}
       {isModalOpen && editingUser && (
         <EditUserModal
           user={editingUser}
           onClose={handleCloseModal}
-          onSave={handleSaveRole}
+          onSave={handleSaveUser}
         />
       )}
     </div>
