@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useAuth } from "../AuthContext";
+
 import MyTeam from "./MyTeam";
 import TotalRegistrations from "./TotalRegistrations";
 import RegistrationsByDayChart from "./RegistrationsByDayChart";
@@ -9,6 +9,7 @@ import MyReferralLink from "./MyReferralLink";
 import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
 import PadronCoverageChart from "./PadronCoverageChart";
 import "./Dashboard.css";
+import AvatarFoto from "./AvatarFoto";
 
 const Dashboard = ({ user }) => {
   // 1. Lógica de Datos (IDs relevantes para seguridad)
@@ -77,8 +78,28 @@ const Dashboard = ({ user }) => {
       {/* VISTA LÍDER DE ZONA */}
       {user.rol === "lider de zona" && (
         <>
-          <div className="dashboard-welcome">
-            <h1>¡Bienvenido, {user.nombre}!</h1>
+          {/* REEMPLAZAR EL TÍTULO DE BIENVENIDA */}
+          <div
+            className="dashboard-welcome-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "15px",
+              marginBottom: "20px",
+            }}
+          >
+            <AvatarFoto
+              cedula={user.cedula}
+              nombre={user.nombre}
+              size="60px"
+              allowReport={true} // <--- Activa el botón de WhatsApp
+            />
+            <div>
+              <h1 style={{ margin: 0 }}>
+                ¡Bienvenido, {user.nombre.split(" ")[0]}!
+              </h1>
+              <small style={{ color: "#666" }}>{user.rol}</small>
+            </div>
           </div>
           {referralLinkSection}
           {personalGoal}
@@ -93,8 +114,28 @@ const Dashboard = ({ user }) => {
       {/* VISTA ADMIN */}
       {user.rol === "admin" && (
         <>
-          <div className="dashboard-welcome">
-            <h1>Panel de Administrador: {user.nombre}</h1>
+          {/* REEMPLAZAR EL TÍTULO DE BIENVENIDA */}
+          <div
+            className="dashboard-welcome-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "15px",
+              marginBottom: "20px",
+            }}
+          >
+            <AvatarFoto
+              cedula={user.cedula}
+              nombre={user.nombre}
+              size="60px"
+              allowReport={true} // <--- Activa el botón de WhatsApp
+            />
+            <div>
+              <h1 style={{ margin: 0 }}>
+                ¡Bienvenido, {user.nombre.split(" ")[0]}!
+              </h1>
+              <small style={{ color: "#666" }}>{user.rol}</small>
+            </div>
           </div>
           {filteredMetrics}
         </>
@@ -104,8 +145,28 @@ const Dashboard = ({ user }) => {
       {(user.rol === "multiplicador" ||
         !["admin", "lider de zona"].includes(user.rol)) && (
         <>
-          <div className="dashboard-welcome">
-            <h1>¡Bienvenido, {user.nombre}!</h1>
+          {/* REEMPLAZAR EL TÍTULO DE BIENVENIDA */}
+          <div
+            className="dashboard-welcome-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "15px",
+              marginBottom: "20px",
+            }}
+          >
+            <AvatarFoto
+              cedula={user.cedula}
+              nombre={user.nombre}
+              size="60px"
+              allowReport={true} // <--- Activa el botón de WhatsApp
+            />
+            <div>
+              <h1 style={{ margin: 0 }}>
+                ¡Bienvenido, {user.nombre.split(" ")[0]}!
+              </h1>
+              <small style={{ color: "#666" }}>{user.rol}</small>
+            </div>
           </div>
           {referralLinkSection}
           {personalGoal}

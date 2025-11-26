@@ -1,44 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { ref, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase"; // Importamos la instancia correcta
-import { FaTimes } from 'react-icons/fa'; // Asegúrate de tener react-icons
-import './AvatarFoto.css'; // <--- IMPORTANTE: Estilos nuevos
+import { storage } from "../firebase";
+import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
+import "./AvatarFoto.css";
 
-const AvatarFoto = ({ cedula, nombre, size = "40px", className = "" }) => {
+const AvatarFoto = ({
+  cedula,
+  nombre,
+  size = "40px",
+  className = "",
+  allowReport = false,
+}) => {
   const [imageUrl, setImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- LÓGICA DE CARGA INTELIGENTE ---
+  // TU NÚMERO DE SOPORTE (Sin símbolos)
+  const ADMIN_PHONE = "18094202288"; // <--- ¡PON TU NÚMERO AQUÍ!
+
   useEffect(() => {
     let isMounted = true;
-
     const fetchImage = async () => {
       if (!cedula) {
         setLoading(false);
         return;
       }
 
-      // Normalización de cédula
       const cedulaConGuiones = cedula;
-      const cedulaSinGuiones = cedula.replace(/-/g, '');
+      const cedulaSinGuiones = cedula.replace(/-/g, "");
 
-      // Lista de intentos (fuerza bruta de extensiones)
       const pathsToTry = [
-        `padron_fotos/${cedulaConGuiones}.jpg`,
-        `padron_fotos/${cedulaConGuiones}.png`,
-        `padron_fotos/${cedulaConGuiones}.jpeg`,
-        `padron_fotos/${cedulaSinGuiones}.jpg`,
-        `padron_fotos/${cedulaSinGuiones}.png`,
-        `padron_fotos/${cedulaSinGuiones}.jpeg`
+        `votantes_fotos/${cedulaConGuiones}.jpg`,
+        `votantes_fotos/${cedulaConGuiones}.JPG`,
+        `votantes_fotos/${cedulaConGuiones}.png`,
+        `votantes_fotos/${cedulaConGuiones}.jpeg`,
+        `votantes_fotos/${cedulaSinGuiones}.jpg`,
+        `votantes_fotos/${cedulaSinGuiones}.JPG`,
+        `votantes_fotos/${cedulaSinGuiones}.png`,
+        `votantes_fotos/${cedulaSinGuiones}.jpeg`,
       ];
 
       const tryNextPath = async (index) => {
         if (index >= pathsToTry.length) {
-          if (isMounted) setLoading(false); // No se encontró
+          if (isMounted) setLoading(false);
           return;
         }
-
         try {
           const photoRef = ref(storage, pathsToTry[index]);
           const url = await getDownloadURL(photoRef);
@@ -47,28 +53,27 @@ const AvatarFoto = ({ cedula, nombre, size = "40px", className = "" }) => {
             setLoading(false);
           }
         } catch (error) {
-          tryNextPath(index + 1); // Intentar siguiente formato
+          tryNextPath(index + 1);
         }
       };
-
       setLoading(true);
       tryNextPath(0);
     };
-
     fetchImage();
-
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [cedula]);
 
   // --- UTILIDADES ---
   const stringToColor = (str) => {
-    if (!str) return '#ccc';
+    if (!str) return "#ccc";
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-    return '#' + "00000".substring(0, 6 - c.length) + c;
+    const c = (hash & 0x00ffffff).toString(16).toUpperCase();
+    return "#" + "00000".substring(0, 6 - c.length) + c;
   };
 
   const containerStyle = {
@@ -77,58 +82,80 @@ const AvatarFoto = ({ cedula, nombre, size = "40px", className = "" }) => {
     fontSize: `calc(${parseInt(size)}px * 0.4)`,
   };
 
-  // --- HANDLERS ---
   const openModal = (e) => {
-    e.stopPropagation(); // Evitar que el click se propague a la fila de la tabla
+    e.stopPropagation();
     if (imageUrl) setIsModalOpen(true);
   };
-
   const closeModal = (e) => {
     if (e) e.stopPropagation();
     setIsModalOpen(false);
   };
 
-  // --- RENDERIZADO ---
+  // Función para enviar reporte
+  const handleReport = () => {
+    const message = `Hola, soy el usuario ${nombre} (Cédula: ${cedula}). La foto que aparece en mi perfil no soy yo. Por favor corregir.`;
+    const url = `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(url, "_blank");
+  };
 
   return (
     <>
-      {/* 1. MINIATURA (Visible en tabla/perfil) */}
-      <div 
-        className={`avatar-container ${imageUrl ? 'clickable' : ''} ${className}`}
+      {/* MINIATURA */}
+      <div
+        className={`avatar-container ${
+          imageUrl ? "clickable" : ""
+        } ${className}`}
         style={containerStyle}
         onClick={openModal}
-        title={imageUrl ? "Clic para ampliar" : nombre}
       >
         {imageUrl ? (
-          <img 
-            src={imageUrl} 
-            alt={nombre || "Usuario"} 
+          <img
+            src={imageUrl}
+            alt={nombre}
             className="avatar-img"
-            onError={() => setImageUrl(null)} // Fallback si la imagen está rota
+            onError={() => setImageUrl(null)}
           />
         ) : (
-          <div 
+          <div
             className="avatar-placeholder"
-            style={{ backgroundColor: nombre ? stringToColor(nombre) : '#e0e0e0' }}
+            style={{
+              backgroundColor: nombre ? stringToColor(nombre) : "#e0e0e0",
+            }}
           >
-            {loading ? "..." : (nombre ? nombre.charAt(0).toUpperCase() : "?")}
+            {loading ? "..." : nombre ? nombre.charAt(0).toUpperCase() : "?"}
           </div>
         )}
       </div>
 
-      {/* 2. MODAL DE ZOOM (Solo si hay imagen y está abierto) */}
+      {/* MODAL (LIGHTBOX) */}
       {isModalOpen && imageUrl && (
         <div className="avatar-modal-overlay" onClick={closeModal}>
-          <div className="avatar-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="avatar-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="avatar-modal-close" onClick={closeModal}>
               <FaTimes />
             </button>
-            
             <img src={imageUrl} alt={nombre} className="avatar-modal-image" />
-            
+
             <div className="avatar-modal-footer">
               <h3>{nombre}</h3>
               <p>{cedula}</p>
+
+              {/* BOTÓN DE REPORTE (Solo si se activa la prop) */}
+              {allowReport && (
+                <div className="report-section">
+                  <p className="report-text">
+                    <FaExclamationTriangle /> ¿Este no eres tú?
+                  </p>
+                  <button onClick={handleReport} className="report-button">
+                    <FaWhatsapp /> Comunicar a Soporte
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -138,4 +165,3 @@ const AvatarFoto = ({ cedula, nombre, size = "40px", className = "" }) => {
 };
 
 export default AvatarFoto;
-

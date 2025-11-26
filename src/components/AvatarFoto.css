@@ -138,3 +138,41 @@
   from { transform: scale(0.8); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* Estilos del Reporte */
+.report-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.report-text {
+  color: #ffdd57; /* Amarillo alerta */
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.report-button {
+  background-color: #25D366; /* Verde WhatsApp */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.report-button:hover {
+  transform: scale(1.05);
+  background-color: #1ebc57;
+}

@@ -10,9 +10,7 @@ import {
 import * as XLSX from "xlsx";
 import { FaFileExcel } from "react-icons/fa";
 import "./MyRegisteredSimpatizantes.css";
-
-// Importar el mapa de zonas para traducir si es necesario (opcional)
-// import { MAPA_CENTROS_POR_ZONA } from './ZonasElectorales';
+import AvatarFoto from "./AvatarFoto"; // <--- IMPORTAR COMPONENTE
 
 function MyRegisteredSimpatizantes({ user }) {
   const [simpatizantes, setSimpatizantes] = useState([]);
@@ -98,25 +96,29 @@ function MyRegisteredSimpatizantes({ user }) {
   }
 
   return (
-    <div className="my-registrations-container">
+    <div className="my-registrations-container glass-panel">
       {/* Barra de Acciones y Botón de Exportar */}
-      <div className="registration-actions-bar">
-        {simpatizantes.length > 0 && (
+      {simpatizantes.length > 0 && (
+        <div className="registration-actions-bar">
+          <p className="registration-count">
+             Total Registrados: <strong>{simpatizantes.length}</strong>
+          </p>
           <button
             onClick={handleExport}
             className="export-registros-button"
             title="Exportar mis registros a Excel"
           >
-            <FaFileExcel /> Exportar ({simpatizantes.length})
+            <FaFileExcel /> Exportar Excel
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {simpatizantes.length > 0 ? (
         <div className="table-wrapper">
           <table className="registrations-table">
             <thead>
               <tr>
+                <th>Foto</th> {/* Nueva Columna */}
                 <th>Nombre</th>
                 <th>Sector</th>
                 <th>Fecha de Registro</th>
@@ -125,8 +127,27 @@ function MyRegisteredSimpatizantes({ user }) {
             <tbody>
               {simpatizantes.map((simpatizante) => (
                 <tr key={simpatizante.id}>
-                  <td>{simpatizante.nombre}</td>
+                  {/* Célula de Foto */}
+                  <td style={{ width: '60px' }}>
+                    <AvatarFoto 
+                        cedula={simpatizante.cedula} 
+                        nombre={simpatizante.nombre} 
+                        size="40px" 
+                        allowReport={true}
+                    />
+                  </td>
+
+                  <td>
+                    <div style={{fontWeight: '600'}}>{simpatizante.nombre}</div>
+                    {simpatizante.cedula ? (
+                        <small style={{color: '#666'}}>{simpatizante.cedula}</small>
+                    ) : (
+                        <small style={{color: '#e63946'}}>Sin Cédula</small>
+                    )}
+                  </td>
+
                   <td>{simpatizante.sector}</td>
+                  
                   <td>
                     {simpatizante.fechaRegistro
                       ?.toDate()
@@ -142,12 +163,14 @@ function MyRegisteredSimpatizantes({ user }) {
           </table>
         </div>
       ) : (
-        <p className="empty-state">
-          Aún no has registrado ningún simpatizante.
-        </p>
+        <div className="empty-state">
+          <p>Aún no has registrado ningún simpatizante.</p>
+          <p style={{fontSize: '0.9rem', color: '#666'}}>¡Empieza hoy mismo usando el formulario de registro!</p>
+        </div>
       )}
     </div>
   );
 }
 
 export default MyRegisteredSimpatizantes;
+

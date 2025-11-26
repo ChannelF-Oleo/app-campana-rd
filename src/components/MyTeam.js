@@ -7,8 +7,9 @@ import {
   onSnapshot,
   getDocs,
 } from "firebase/firestore";
-import * as XLSX from "xlsx"; // Importamos la librería de Excel
+import * as XLSX from "xlsx";
 import "./MyTeam.css";
+import AvatarFoto from "./AvatarFoto"; // <--- IMPORTAR COMPONENTE
 
 function MyTeam({ user }) {
   const [teamMembersWithMetrics, setTeamMembersWithMetrics] = useState([]);
@@ -92,9 +93,9 @@ function MyTeam({ user }) {
       return;
     }
     
-    // Mapear solo los campos relevantes para el Excel
     const dataToExport = teamMembersWithMetrics.map((member) => ({
       Nombre: member.nombre || "N/A",
+      Cedula: member.cedula || "N/A",
       Email: member.email || "N/A",
       Rol: member.rol || "N/A",
       Registros: member.registrationCount || 0,
@@ -118,7 +119,6 @@ function MyTeam({ user }) {
     return <p>Cargando información del peloton...</p>;
   }
 
-  // Si el usuario no es líder de zona, le mostramos un mensaje
   if (user.rol !== "lider de zona") {
     return (
       <div className="my-team-container">
@@ -128,12 +128,12 @@ function MyTeam({ user }) {
   }
 
   return (
-    <div className="my-team-container">
+    <div className="my-team-container glass-panel">
       {/* Botón de Exportar */}
       {teamMembersWithMetrics.length > 0 && (
         <div className="team-actions-bar">
           <p className="team-size">
-            Miembros del Pelotón: {teamMembersWithMetrics.length}
+            Miembros del Pelotón: <strong>{teamMembersWithMetrics.length}</strong>
           </p>
           <button
             onClick={handleExport}
@@ -147,26 +147,52 @@ function MyTeam({ user }) {
       
       {/* Tabla del Equipo */}
       {teamMembersWithMetrics.length > 0 ? (
-        <table className="team-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Rol</th>
-              <th>Registros Personales</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teamMembersWithMetrics.map((member) => (
-              <tr key={member.id}>
-                <td>{member.nombre}</td>
-                <td>{member.email}</td>
-                <td>{member.rol}</td>
-                <td>{member.registrationCount}</td>
+        <div className="table-wrapper">
+          <table className="team-table">
+            <thead>
+              <tr>
+                <th>Foto</th> {/* Nueva Columna */}
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Registros</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {teamMembersWithMetrics.map((member) => (
+                <tr key={member.id}>
+                  {/* Célula de Foto */}
+                  <td style={{ width: '50px' }}>
+                    <AvatarFoto 
+                        cedula={member.cedula} 
+                        nombre={member.nombre} 
+                        size="40px" 
+                    />
+                  </td>
+
+                  <td>
+                    <div style={{fontWeight: '600'}}>{member.nombre}</div>
+                    {member.cedula ? (
+                        <small style={{color: '#666'}}>{member.cedula}</small>
+                    ) : (
+                        <small style={{color: '#e63946'}}>Sin Cédula</small>
+                    )}
+                  </td>
+
+                  <td>{member.email}</td>
+                  <td>
+                    <span className={`role-badge role-${member.rol?.replace(/\s+/g, '-')}`}>
+                        {member.rol}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="count-badge">{member.registrationCount}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         user.rol === "lider de zona" && (
           <p className="empty-team-message">
@@ -179,4 +205,5 @@ function MyTeam({ user }) {
 }
 
 export default MyTeam;
+
 
