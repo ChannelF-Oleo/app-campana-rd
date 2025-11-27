@@ -12,16 +12,16 @@
 /* Contenido */
 .dashboard-content {
   flex-grow: 1;
-  
+
   /* Layout */
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
   padding: 20px;
   box-sizing: border-box;
-  
+
   /* Transiciones de layout (no de color, eso va en body) */
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Sidebar Colapsado */
@@ -32,11 +32,38 @@
 
 /* Móvil */
 @media (max-width: 768px) {
-  .dashboard-layout { flex-direction: column; }
-  
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
   .dashboard-content {
     margin-left: 0 !important;
     width: 100% !important;
     padding-bottom: 85px; /* Espacio para bottom nav */
   }
 }
+
+/* --- CORRECCIÓN DE ESPACIADO PARA EL NAVBAR FIJO --- */
+
+/* Contenedor para páginas públicas (Home, Propuestas, Login) */
+.public-content-wrapper {
+  /* padding-top = Altura del Navbar (70px) + Espacio extra (20px)
+     Esto garantiza que el título nunca quede tapado.
+  */
+  padding-top: 90px;
+
+  /* Asegurar que ocupe el alto mínimo para empujar el footer */
+  min-height: calc(100vh - 60px);
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--page-bg);
+}
+
+/* Ajuste específico para móviles si el navbar cambia de altura */
+@media (max-width: 768px) {
+  .public-content-wrapper {
+    padding-top: 85px; /* Ajuste fino para pantallas pequeñas */
+  }
+}
+
+/* --- (El resto de tu App.css para el Dashboard se mantiene igual) --- */
