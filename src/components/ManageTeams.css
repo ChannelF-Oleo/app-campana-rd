@@ -1,115 +1,403 @@
-.manage-container {
-  width: 90%;
-  max-width: 1200px;
-  margin: 0 auto;
+/* src/components/ManageTeams.css - FINAL & OPTIMIZADO */
+
+.manage-teams-container {
+  width: 100%;
+  /* FIX MARGEN DERECHO: Aseguramos que respete el padding */
+  box-sizing: border-box;
   padding: 30px;
-  margin-right: 70px;
+  /* Max width controlado */
+  max-width: 1400px;
+  margin: 0 auto;
+
+  animation: fadeIn 0.5s ease-out;
 }
 
-/* ACORDEÓN (idéntico a Comandos.css) */
-.nivel-section {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* HEADER */
+.manage-teams-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.manage-teams-header h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.export-teams-button,
+.print-btn {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s;
+  color: white;
+}
+
+.export-teams-button {
+  background-color: var(--success);
+}
+.print-btn {
+  background-color: var(--color-text-muted);
+}
+.export-teams-button:hover,
+.print-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+/* ACORDEÓN */
+.leaders-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.leader-item {
   background-color: var(--color-surface);
-  border-radius: 12px;
-  margin-bottom: 20px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   overflow: hidden;
+  transition: all 0.2s;
+}
+.leader-item.expanded {
+  border-color: var(--primary);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
 }
 
-.nivel-header {
-  padding: 15px 20px;
+.leader-header {
+  padding: 15px 25px;
   background-color: rgba(0, 0, 0, 0.02);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background 0.2s;
 }
-.nivel-header:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+.leader-header:hover {
+  background-color: rgba(0, 77, 153, 0.05);
 }
 
-.counter-badge {
+.team-count-badge {
   background-color: var(--color-bg);
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.8rem;
   color: var(--color-text-muted);
   border: 1px solid var(--color-border);
+  margin-left: 10px;
 }
 
-/* Animación del acordeón */
-.nivel-content {
-  max-height: 0;
-  overflow: hidden;
-  padding: 0 20px;
-  opacity: 0;
-  transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease;
-}
-.nivel-content.expanded {
-  max-height: 1000px;
-  opacity: 1;
-  padding: 20px;
-}
-
-/* LISTA (idéntico a Comandos) */
-.renglones-list {
+/* BOTONES MINI EN FILA DE LÍDER */
+.actions-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 10px;
 }
 
-.comando-item-view {
+.icon-button {
+  background: transparent;
+  border: 1px solid transparent;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  background-color: var(--color-bg);
-  padding: 12px 20px;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  gap: 15px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.comando-item-view:hover {
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  justify-content: center;
+  transition: all 0.2s;
+  color: var(--color-text-muted);
 }
 
-.col-avatar {
-  flex-shrink: 0;
+.excel-mini:hover {
+  color: var(--success);
+  background-color: rgba(34, 197, 94, 0.1);
 }
-.col-info {
-  flex: 1;
+.print-mini:hover {
+  color: var(--primary);
+  background-color: rgba(0, 77, 153, 0.1);
+}
+.expand-icon {
+  margin-left: 5px;
+  font-size: 0.8rem;
+}
+
+/* CONTENIDO DEL LÍDER */
+.leader-content {
+  display: none;
+  padding: 25px;
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+.leader-content.expanded {
+  display: block;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-title {
+  margin: 0 0 15px 0;
+  color: var(--primary);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 5px;
+}
+
+/* LISTA DE SOLDADOS */
+/* Listas de Soldados */
+.team-section,
+.available-section {
+  margin-bottom: 25px;
+}
+
+/* 1. CONTENEDOR PADRE: Cambiamos de Grid a Flex Columna */
+.multiplicadores-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex; /* Flexbox en lugar de Grid */
+  flex-direction: column; /* Elementos uno debajo del otro */
+  width: 100%; /* Asegura ancho total */
+  gap: 0; /* Quitamos huecos, usamos bordes */
+}
+
+/* 2. ITEM INDIVIDUAL: Ajustado para ancho completo */
+.multiplicador-item {
+  width: 100%; /* Ocupar todo el espacio horizontal */
+  box-sizing: border-box; /* El padding no aumenta el ancho total */
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+
+  /* Estilo limpio de lista (sin tarjetas) */
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0; /* Recto para lista continua */
+  transition: background-color 0.2s;
+}
+
+/* Efecto Hover suave en la fila completa */
+.multiplicador-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Quitar borde al último elemento para limpieza visual */
+.multiplicador-item:last-child {
+  border-bottom: none;
+}
+
+.multiplicador-item:hover {
+  border-color: var(--accent);
+}
+
+.multiplicador-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.info-text {
   display: flex;
   flex-direction: column;
 }
-.info-name {
-  font-weight: 700;
+.info-text .name {
+  font-weight: 600;
   color: var(--color-text-main);
+  font-size: 0.95rem;
 }
-.sector-text {
+.info-text .cedula {
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
-.col-actions {
-  display: flex;
-  gap: 8px;
+
+.assign-button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.assign-button.add {
+  background-color: rgba(0, 77, 153, 0.1);
+  color: var(--primary);
+  width: fit-content;
+}
+.assign-button.add:hover {
+  background-color: var(--primary);
+  color: white;
+}
+.assign-button.remove {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  width: fit-content;
+}
+.assign-button.remove:hover {
+  background-color: var(--danger);
+  color: white;
 }
 
-.empty-level {
+.empty-state {
   text-align: center;
   padding: 20px;
   color: var(--color-text-muted);
   font-style: italic;
 }
 
-/* IMPRESIÓN */
+/* --- ESTILOS DE IMPRESIÓN --- */
+.print-header {
+  display: none;
+}
+
 @media print {
+  /* Ocultar elementos de UI */
   .no-print,
   .navbar,
-  .sidebar {
+  .sidebar,
+  .header-actions,
+  .assign-button,
+  .expand-icon {
     display: none !important;
   }
 
-  .manage-container {
+  /* Layout */
+  .manage-teams-container {
     padding: 0;
     margin: 0;
+    max-width: 100%;
+    background: white;
+    box-shadow: none;
+  }
+
+  /* --- LÓGICA DE IMPRESIÓN INDIVIDUAL --- */
+
+  /* Si estamos imprimiendo SOLO UNO (clase .printing-single activa) */
+  .printing-single .leader-item {
+    display: none; /* Ocultar todos por defecto */
+  }
+
+  /* Mostrar SOLO el objetivo */
+  .printing-single .leader-item.print-target {
+    display: block !important;
+    border: none;
+    box-shadow: none;
+    margin: 0;
+  }
+
+  /* Forzar expansión del contenido */
+  .leader-content {
+    display: block !important;
+    padding: 0;
+    border: none;
+  }
+
+  /* Header de impresión */
+  .print-header {
+    display: block;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+  }
+  .print-leader-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 10px;
+  }
+  .print-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #000;
+  }
+  .print-leader-info h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #000;
+  }
+
+  /* Lista en papel */
+  .multiplicadores-list {
+    display: block; /* Lista vertical */
+  }
+  .multiplicador-item {
+    border: none;
+    border-bottom: 1px solid #ddd;
+    padding: 8px 0;
+    background: transparent;
+    page-break-inside: avoid;
+  }
+
+  .available-section {
+    display: none;
+  } /* No imprimir los disponibles */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .manage-teams-container {
+    padding: 15px;
+  }
+  .manage-teams-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .leader-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .actions-row {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px dashed var(--color-border);
+    padding-top: 10px;
+  }
+  .multiplicadores-list {
+    grid-template-columns: 1fr;
   }
 }

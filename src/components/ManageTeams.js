@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import {
   collection,
-  getDocs,
+  onSnapshot,
   doc,
   updateDoc,
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
-import { FaFileExcel, FaPrint } from "react-icons/fa";
+import { FaFileExcel, FaPrint, FaUserTie } from "react-icons/fa";
 import "./ManageTeams.css";
 import AvatarFoto from "./AvatarFoto";
 
@@ -17,331 +17,312 @@ function ManageTeams() {
   const [leaders, setLeaders] = useState([]);
   const [multipliers, setMultipliers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(null);
+  const [expandedLeaderId, setExpandedLeaderId] = useState(null);
   const [notification, setNotification] = useState({ message: "", type: "" });
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "users"));
-        const users = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // Estado para controlar qué se imprime (null = todo, ID = solo un líder)
+  const [printTargetId, setPrintTargetId] = useState(null);
 
-        setLeaders(users.filter((u) => u.rol === "lider de zona"));
-        setMultipliers(users.filter((u) => u.rol === "multiplicador"));
-      } catch (err) {
-        setNotification({ message: "Error cargando usuarios", type: "error" });
-      } finally {
+  // 1. CARGA DE DATOS EN TIEMPO REAL
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const allUsers = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setLeaders(allUsers.filter((user) => user.rol === "lider de zona"));
+        setMultipliers(allUsers.filter((user) => user.rol === "multiplicador"));
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error:", error);
+        setNotification({ message: "Error de conexión.", type: "error" });
         setLoading(false);
       }
-    };
-
-    fetchUsers();
+    );
+    return () => unsubscribe();
   }, []);
 
-  const getAssigned = (leader) => {
-    const ids = leader.multiplicadoresAsignados || [];
-    return multipliers.filter((m) => ids.includes(m.id));
-  };
-
-  const available = multipliers.filter((m) => !m.liderAsignado);
-
-  const assign = async (leaderId, mId) => {
+  // --- LÓGICA DE ASIGNACIÓN ---
+  const assignMultiplier = async (leaderId, multiplierId) => {
     try {
       await updateDoc(doc(db, "users", leaderId), {
-        multiplicadoresAsignados: arrayUnion(mId),
+        multiplicadoresAsignados: arrayUnion(multiplierId),
       });
-
-      await updateDoc(doc(db, "users", mId), {
+      await updateDoc(doc(db, "users", multiplierId), {
         liderAsignado: leaderId,
       });
-
-      setNotification({ message: "Soldado asignado", type: "success" });
-    } catch {
-      setNotification({ message: "Error asignando", type: "error" });
+      setNotification({ message: "Soldado asignado.", type: "success" });
+    } catch (error) {
+      setNotification({ message: "Error al asignar.", type: "error" });
     }
   };
 
-  const unassign = async (leaderId, mId) => {
+  const unassignMultiplier = async (leaderId, multiplierId) => {
     try {
       await updateDoc(doc(db, "users", leaderId), {
-        multiplicadoresAsignados: arrayRemove(mId),
+        multiplicadoresAsignados: arrayRemove(multiplierId),
       });
-
-      await updateDoc(doc(db, "users", mId), {
-        liderAsignado: null,
-      });
-
-      setNotification({ message: "Soldado quitado", type: "success" });
-    } catch {
-      setNotification({ message: "Error quitando", type: "error" });
+      await updateDoc(doc(db, "users", multiplierId), { liderAsignado: null });
+      setNotification({ message: "Soldado desasignado.", type: "success" });
+    } catch (error) {
+      setNotification({ message: "Error al desasignar.", type: "error" });
     }
   };
 
-  /** -----------------------------------------------------------------------------
-   *                  IMPRESIÓN GLOBAL
-   ------------------------------------------------------------------------------*/
-  const handlePrintGlobal = () => {
-    const html = document.getElementById("print-area-global").innerHTML;
-    const original = document.body.innerHTML;
-
-    document.body.innerHTML = html;
-    window.print();
-    document.body.innerHTML = original;
-    window.location.reload();
+  const handleToggleExpand = (leaderId) => {
+    setExpandedLeaderId((prevId) => (prevId === leaderId ? null : leaderId));
   };
 
-  /** -----------------------------------------------------------------------------
-   *                  IMPRESIÓN INDIVIDUAL POR LÍDER
-   ------------------------------------------------------------------------------*/
-  const handlePrintTeam = (leader) => {
-    const container = document.getElementById("print-area-single");
-    const assigned = getAssigned(leader);
-
-    container.innerHTML = `
-      <div style="padding:20px; color: black;">
-        <h2>${leader.nombre}</h2>
-        <p><strong>Cédula:</strong> ${leader.cedula}</p>
-
-        <h3>Soldados asignados</h3>
-        ${
-          assigned.length
-            ? `<ul>${assigned
-                .map((m) => `<li>${m.nombre} — ${m.cedula}</li>`)
-                .join("")}</ul>`
-            : "<p>Sin soldados asignados</p>"
-        }
-      </div>
-    `;
-
-    const html = container.innerHTML;
-    const original = document.body.innerHTML;
-
-    document.body.innerHTML = html;
-    window.print();
-    document.body.innerHTML = original;
-    window.location.reload();
+  // --- HELPERS ---
+  const availableMultipliers = multipliers.filter((m) => !m.liderAsignado);
+  const getAssignedMultipliers = (leader) => {
+    const assignedIds = leader.multiplicadoresAsignados || [];
+    return multipliers.filter((multiplier) =>
+      assignedIds.includes(multiplier.id)
+    );
   };
 
-  /** -----------------------------------------------------------------------------
-   *                                   EXPORTAR EXCEL
-   ------------------------------------------------------------------------------*/
+  // --- EXPORTACIÓN EXCEL ---
+  const exportAllTeams = () => {
+    if (leaders.length === 0) return;
+    const data = leaders.map((leader) => {
+      const assigned = getAssignedMultipliers(leader);
+      return {
+        Líder: leader.nombre,
+        Cédula: leader.cedula || "N/A",
+        "Total Soldados": assigned.length,
+        Nombres: assigned.map((m) => m.nombre).join(", "),
+      };
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Resumen");
+    XLSX.writeFile(wb, "Equipos_Global.xlsx");
+  };
+
   const exportIndividualTeam = (leader) => {
-    const assigned = getAssigned(leader);
-
-    if (!assigned.length) {
-      setNotification({
-        message: `El pelotón de ${leader.nombre} está vacío.`,
-        type: "error",
-      });
+    const assigned = getAssignedMultipliers(leader);
+    if (assigned.length === 0) {
+      setNotification({ message: `Pelotón vacío.`, type: "error" });
       return;
     }
-
-    const rows = assigned.map((m) => ({
+    const data = assigned.map((m) => ({
       Líder: leader.nombre,
       Soldado: m.nombre,
       Cédula: m.cedula || "N/A",
       Email: m.email,
     }));
-
-    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Peloton_${leader.nombre}`);
-    XLSX.writeFile(wb, `Peloton_${leader.nombre.replace(/\s/g, "_")}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Pelotón");
+    XLSX.writeFile(wb, `Peloton_${leader.nombre}.xlsx`);
   };
 
-  if (loading) return <p>Cargando…</p>;
+  // --- IMPRESIÓN ---
+  const handlePrintGlobal = () => {
+    setPrintTargetId(null); // Imprimir todo
+    setTimeout(() => window.print(), 100);
+  };
+
+  const handlePrintIndividual = (leaderId) => {
+    setPrintTargetId(leaderId); // Marcar solo este líder para imprimir
+    // Abrimos el acordeón automáticamente para que salga el contenido
+    setExpandedLeaderId(leaderId);
+    setTimeout(() => {
+      window.print();
+      setPrintTargetId(null); // Resetear después de imprimir
+    }, 500);
+  };
+
+  if (loading) return <p className="loading-text">Cargando pelotones...</p>;
 
   return (
-    <div className="manage-container comandos-container">
-      <div className="comandos-header">
+    // Añadimos clase condicional para controlar estilos de impresión
+    <div
+      className={`manage-teams-container glass-panel ${
+        printTargetId ? "printing-single" : ""
+      }`}
+    >
+      <div className="manage-teams-header no-print">
         <h2>Gestión de Pelotones</h2>
-
-        <div className="no-print" style={{ display: "flex", gap: "10px" }}>
+        <div className="header-actions">
           <button
-            className="action-btn excel-btn"
-            onClick={() => {
-              const data = leaders.map((l) => ({
-                Líder: l.nombre,
-                Cédula: l.cedula,
-                "Total Soldados": getAssigned(l).length,
-              }));
-
-              const ws = XLSX.utils.json_to_sheet(data);
-              const wb = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(wb, ws, "Global");
-              XLSX.writeFile(wb, "Resumen_Global_Equipos.xlsx");
-            }}
+            onClick={exportAllTeams}
+            className="export-teams-button"
+            disabled={leaders.length === 0}
           >
-            <FaFileExcel /> Exportar Global
+            <FaFileExcel /> Exportar Todo
           </button>
-
-          <button className="action-btn print-btn" onClick={handlePrintGlobal}>
-            <FaPrint /> Imprimir Global
+          <button onClick={handlePrintGlobal} className="action-btn print-btn">
+            <FaPrint /> Imprimir Todo
           </button>
         </div>
       </div>
 
-      {leaders.map((leader) => {
-        const assigned = getAssigned(leader);
-        const isOpen = expanded === leader.id;
+      {notification.message && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
 
-        return (
-          <div key={leader.id} className="nivel-section">
+      <div className="leaders-accordion">
+        {leaders.length === 0 && (
+          <p className="empty-state-global">No hay líderes de zona.</p>
+        )}
+        {leaders.map((leader) => {
+          const assigned = getAssignedMultipliers(leader);
+          const isExpanded = expandedLeaderId === leader.id;
+          // Verificar si este líder es el objetivo de impresión (o si no hay objetivo, se muestran todos)
+          const isPrintingThis = printTargetId === leader.id;
+
+          return (
             <div
-              className="nivel-header"
-              onClick={() => setExpanded(isOpen ? null : leader.id)}
+              key={leader.id}
+              className={`leader-item ${isExpanded ? "expanded" : ""} ${
+                isPrintingThis ? "print-target" : ""
+              }`}
             >
               <div
-                style={{ display: "flex", alignItems: "center", gap: "15px" }}
+                className="leader-header no-print"
+                onClick={() => handleToggleExpand(leader.id)}
               >
-                <AvatarFoto
-                  cedula={leader.cedula}
-                  nombre={leader.nombre}
-                  size="45px"
-                />
-                <div>
-                  <strong>{leader.nombre}</strong>
-                  <div className="counter-badge">
-                    {assigned.length}{" "}
-                    {assigned.length === 1 ? "soldado" : "soldados"}
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "15px" }}
+                >
+                  <AvatarFoto
+                    cedula={leader.cedula}
+                    nombre={leader.nombre}
+                    size="50px"
+                  />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "1.1rem" }}>
+                      {leader.nombre}
+                    </h3>
+                    <span className="team-count-badge">
+                      {assigned.length} soldados
+                    </span>
                   </div>
                 </div>
+
+                <div
+                  className="actions-row"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => exportIndividualTeam(leader)}
+                    className="icon-button excel-mini"
+                    title="Descargar Excel"
+                    disabled={assigned.length === 0}
+                  >
+                    <FaFileExcel />
+                  </button>
+
+                  {/* BOTÓN RESTAURADO: IMPRIMIR UN SOLO PELOTÓN */}
+                  <button
+                    onClick={() => handlePrintIndividual(leader.id)}
+                    className="icon-button print-mini"
+                    title="Imprimir este Pelotón"
+                    disabled={assigned.length === 0}
+                  >
+                    <FaPrint />
+                  </button>
+
+                  <span
+                    className="expand-icon"
+                    onClick={() => handleToggleExpand(leader.id)}
+                  >
+                    {isExpanded ? "▲" : "▼"}
+                  </span>
+                </div>
               </div>
 
-              <span>{isOpen ? "▲" : "▼"}</span>
-            </div>
-
-            <div className={`nivel-content ${isOpen ? "expanded" : ""}`}>
-              {/* ------------------ SOLDADOS ASIGNADOS ------------------ */}
-              <h4>Soldados Asignados</h4>
-
-              {assigned.length ? (
-                <div className="renglones-list">
-                  {assigned.map((m) => (
-                    <div className="comando-item-view" key={m.id}>
-                      <div className="col-avatar">
-                        <AvatarFoto
-                          cedula={m.cedula}
-                          nombre={m.nombre}
-                          size="35px"
-                        />
-                      </div>
-
-                      <div className="col-info">
-                        <span className="info-name">{m.nombre}</span>
-                        <span className="sector-text">{m.cedula}</span>
-                      </div>
-
-                      <div className="col-actions no-print">
-                        <button
-                          className="icon-btn delete"
-                          onClick={() => unassign(leader.id, m.id)}
-                        >
-                          Quitar
-                        </button>
-                      </div>
+              {/* Contenido del Líder */}
+              <div className={`leader-content ${isExpanded ? "expanded" : ""}`}>
+                {/* Título solo visible al imprimir */}
+                <div className="print-header">
+                  <h2>Reporte de Pelotón</h2>
+                  <div className="print-leader-info">
+                    <AvatarFoto
+                      cedula={leader.cedula}
+                      nombre={leader.nombre}
+                      size="60px"
+                    />
+                    <div>
+                      <h3>{leader.nombre}</h3>
+                      <p>Líder de Zona • {assigned.length} Soldados</p>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              ) : (
-                <p className="empty-level">Sin soldados asignados</p>
-              )}
 
-              {/* ------------------ DISPONIBLES ------------------ */}
-              <h4 style={{ marginTop: "25px" }}>
-                Asignar Soldados Disponibles
-              </h4>
-
-              {available.length ? (
-                <div className="renglones-list">
-                  {available.map((m) => (
-                    <div className="comando-item-view" key={m.id}>
-                      <div className="col-avatar">
-                        <AvatarFoto
-                          cedula={m.cedula}
-                          nombre={m.nombre}
-                          size="35px"
-                        />
-                      </div>
-
-                      <div className="col-info">
-                        <span className="info-name">{m.nombre}</span>
-                        <span className="sector-text">{m.cedula}</span>
-                      </div>
-
-                      <div className="col-actions no-print">
-                        <button
-                          className="icon-btn edit"
-                          onClick={() => assign(leader.id, m.id)}
-                        >
-                          Asignar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="team-section">
+                  <h4 className="section-title">Soldados Asignados</h4>
+                  {assigned.length > 0 ? (
+                    <ul className="multiplicadores-list">
+                      {assigned.map((m) => (
+                        <li key={m.id} className="multiplicador-item">
+                          <div className="multiplicador-info">
+                            <AvatarFoto
+                              cedula={m.cedula}
+                              nombre={m.nombre}
+                              size="40px"
+                            />
+                            <div className="info-text">
+                              <span className="name">{m.nombre}</span>
+                              <span className="cedula">
+                                {m.cedula || "Sin Cédula"}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => unassignMultiplier(leader.id, m.id)}
+                            className="assign-button remove no-print"
+                          >
+                            Quitar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="empty-state">Sin asignaciones.</p>
+                  )}
                 </div>
-              ) : (
-                <p className="empty-level">No hay soldados disponibles</p>
-              )}
 
-              {/* ------------------ ACCIONES INDIVIDUALES ------------------ */}
-              <div
-                className="no-print"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginTop: "20px",
-                  gap: "10px",
-                }}
-              >
-                <button
-                  className="action-btn excel-btn"
-                  onClick={() => exportIndividualTeam(leader)}
-                >
-                  <FaFileExcel /> Exportar Pelotón
-                </button>
-
-                <button
-                  className="action-btn print-btn"
-                  onClick={() => handlePrintTeam(leader)}
-                >
-                  <FaPrint /> Imprimir Pelotón
-                </button>
+                <div className="available-section no-print">
+                  <h4 className="section-title">Disponible para Asignar</h4>
+                  {availableMultipliers.length > 0 ? (
+                    <ul className="multiplicadores-list">
+                      {availableMultipliers.map((m) => (
+                        <li key={m.id} className="multiplicador-item">
+                          <div className="multiplicador-info">
+                            <AvatarFoto
+                              cedula={m.cedula}
+                              nombre={m.nombre}
+                              size="40px"
+                            />
+                            <div className="info-text">
+                              <span className="name">{m.nombre}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => assignMultiplier(leader.id, m.id)}
+                            className="assign-button add"
+                          >
+                            Asignar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="empty-state">No hay soldados libres.</p>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* ÁREA PARA IMPRESIÓN GLOBAL */}
-      <div id="print-area-global" style={{ display: "none" }}>
-        {leaders.map((leader) => {
-          const assigned = getAssigned(leader);
-          return (
-            <div key={leader.id} style={{ marginBottom: "40px" }}>
-              <h2>{leader.nombre}</h2>
-              <p>Cédula: {leader.cedula}</p>
-
-              {assigned.length ? (
-                <ul>
-                  {assigned.map((m) => (
-                    <li key={m.id}>
-                      {m.nombre} — {m.cedula}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>Sin soldados asignados</p>
-              )}
-
-              <hr />
             </div>
           );
         })}
       </div>
-
-      {/* ÁREA PARA IMPRESIÓN INDIVIDUAL */}
-      <div id="print-area-single" style={{ display: "none" }}></div>
     </div>
   );
 }

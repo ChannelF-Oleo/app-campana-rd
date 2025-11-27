@@ -9,7 +9,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const PadronCoverageChart = () => {
   // 1. CONFIGURACIÓN: Define aquí tu meta total de electores
-  const TOTAL_PADRON_META = 24000; // Ajusta este número al real
+  const TOTAL_PADRON_META = 244000; // Ajusta este número al real
 
   const [totalSimpatizantes, setTotalSimpatizantes] = useState(0);
   const [loading, setLoading] = useState(true);
