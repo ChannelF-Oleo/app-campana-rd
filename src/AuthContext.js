@@ -16,37 +16,34 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- LÓGICA DE ACTIVIDAD (HEARTBEAT) ---
+  // --- 1. LÓGICA DE ACTIVIDAD (Heartbeat) ---
   useEffect(() => {
     if (!user) return;
 
-    // Función para reportar actividad a Firestore
     const reportActivity = async () => {
       try {
         const userRef = doc(db, "users", user.uid);
-        // Actualizamos lastActivity con la hora del servidor
+        // Confirmamos que estamos activos y quitamos el bloqueo
         await updateDoc(userRef, {
           lastActivity: serverTimestamp(),
-          forceLogout: false, // Reseteamos bandera por si acaso
+          forceLogout: false,
         });
       } catch (error) {
-        console.warn("No se pudo actualizar actividad:", error);
+        console.warn("Error reportando actividad:", error);
       }
     };
 
-    // Debounce: Solo reportar cada 15 minutos (900,000 ms) para no saturar lecturas
-    const INTERVAL_MS = 15 * 60 * 1000;
-
-    // Reportar inmediatamente al cargar
+    // Reportar inmediatamente al entrar
     reportActivity();
 
-    // Configurar intervalo
+    // Y luego cada 15 minutos
+    const INTERVAL_MS = 15 * 60 * 1000;
     const intervalId = setInterval(reportActivity, INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [user]); // Se reinicia si cambia el usuario
+  }, [user]);
 
-  // --- LÓGICA DE AUTENTICACIÓN EXISTENTE ---
+  // --- 2. VERIFICACIÓN DE SESIÓN ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
@@ -57,13 +54,22 @@ export const AuthProvider = ({ children }) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
 
-            // VERIFICACIÓN DE LOGOUT FORZADO (Desde el Backend)
-            if (userData.forceLogout) {
-              console.warn("Sesión cerrada por inactividad o administrador.");
+            // --- FIX CRÍTICO: DETECCIÓN DE LOGIN FRESCO ---
+            // Verificamos cuándo se autenticó por última vez en Firebase Auth
+            const lastSignInTime = new Date(
+              firebaseUser.metadata.lastSignInTime
+            ).getTime();
+            const now = Date.now();
+            const isFreshLogin = now - lastSignInTime < 60 * 1000; // Menos de 1 minuto
+
+            // Si está marcado para salir, PERO acaba de loguearse, lo perdonamos y reseteamos
+            if (userData.forceLogout && !isFreshLogin) {
+              console.warn("Sesión cerrada por inactividad.");
               await signOut(auth);
               setUser(null);
-              // Opcional: Redirigir o mostrar alerta aquí
             } else {
+              // Si es un login fresco, el useEffect de arriba (Heartbeat)
+              // se encargará de poner forceLogout: false en breve.
               setUser({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -71,9 +77,13 @@ export const AuthProvider = ({ children }) => {
               });
             }
           } else {
-            // Usuario en Auth pero no en DB
-            await signOut(auth);
-            setUser(null);
+            // Usuario sin perfil (Google nuevo sin trigger ejecutado aún)
+            // No cerramos sesión inmediatamente, esperamos al trigger o UI
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              rol: "invitado",
+            });
           }
         } else {
           setUser(null);
@@ -96,12 +106,7 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(false);
   };
 
-  const value = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    logout,
-  };
+  const value = { user, isAuthenticated: !!user, isLoading, logout };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

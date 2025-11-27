@@ -7,23 +7,19 @@ service cloud.firestore {
     // 1. FUNCIONES DE AYUDA (REUTILIZABLES)
     // ==========================================================
     
-    // Verifica si el usuario ha iniciado sesión
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Verifica si el usuario es el dueño del documento
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Verifica si el usuario tiene rol de 'admin' en su perfil
     function isAdmin() {
       return isSignedIn() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
     }
 
-    // Verifica si el usuario es el líder asignado de este perfil (Jerarquía)
     function isMyAssignedLeader(leaderId) {
       return isSignedIn() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.liderAsignado == leaderId;
@@ -33,72 +29,62 @@ service cloud.firestore {
     // 2. COLECCIÓN: USERS (Perfiles de Equipo)
     // ==========================================================
     match /users/{userId} {
-      // LEER: 
-      // - El propio usuario
-      // - Administradores
-      // - El líder que tiene asignado a este usuario (para ver su equipo)
+      // LEER: El usuario, Admin o su Líder.
       allow get: if isOwner(userId) || isAdmin() || isMyAssignedLeader(userId);
       
-      // LISTAR: Solo Admins (para la pantalla ManageUsers)
+      // LISTAR: Solo Admins.
       allow list: if isAdmin();
 
-      // CREAR: BLOQUEADO. 
-      // Los usuarios se crean automáticamente desde el Backend (Trigger de Google Auth)
-      // para garantizar que nadie cree perfiles falsos directamente.
+      // CREAR: Bloqueado (Lo hace el Backend automáticamente).
       allow create: if false;
       
-      // ACTUALIZAR: 
-      // - Admin: Puede editar todo (roles, asignaciones).
-      // - Dueño: Puede editar SOLO campos de "Actividad" (para el logout automático), "Meta" y "Fotos".
+      // ACTUALIZAR: Admin (todo) o Dueño (campos limitados).
       allow update: if isAdmin() 
                     || (isOwner(userId) && 
                         request.resource.data.diff(resource.data).affectedKeys()
                         .hasOnly(['lastActivity', 'forceLogout', 'goal', 'fotoUrl', 'customPhotoUrl']));
 
-      // BORRAR: Solo el Admin puede eliminar usuarios.
+      // BORRAR: Solo Admin.
       allow delete: if isAdmin();
     }
 
     // ==========================================================
-    // 3. COLECCIÓN: SIMPATIZANTES (Base de Datos de Votos)
+    // 3. COLECCIÓN: SIMPATIZANTES (Registros)
     // ==========================================================
     match /simpatizantes/{docId} {
-      // CREAR: BLOQUEADO (Seguridad)
-      // El formulario público usa la Cloud Function 'registerSimpatizante'.
-      // Esa función tiene permiso total, así que no necesitamos abrir esto aquí.
-      // Esto evita que hackers inyecten datos basura directamente.
+      // CREAR: Bloqueado (Se usa Cloud Functions para validar).
       allow create: if false;
 
-      // LEER: Permitido a todo el equipo logueado (Líderes, Multiplicadores, Admin).
-      // (La privacidad de "quién ve qué" se filtra en el Frontend, pero aquí validamos acceso).
+      // LEER: Todo el equipo logueado.
       allow read: if isSignedIn();
 
-      // EDICIÓN/BORRADO: Solo Admin (o futuras funciones de sistema).
+      // EDICIÓN/BORRADO: Solo Admin.
       allow update, delete: if isAdmin();
     }
 
     // ==========================================================
-    // 4. COLECCIÓN: VOTANTES (Padrón Electoral - Solo Lectura)
+    // 4. COLECCIÓN: VOTANTES (Padrón - Solo Lectura)
     // ==========================================================
     match /votantes/{cedula} {
-      // LEER: Solo usuarios autenticados pueden consultar el padrón directamente.
-      // (La búsqueda pública usa la Cloud Function 'searchVotanteByCedula').
+      // LEER: Usuarios logueados (para búsqueda).
       allow get: if isSignedIn();
       
-      // LISTAR/ESCRIBIR: Solo Admin (o futuras funciones de sistema).
-      allow list: if true; 
-      allow write: if true;
+      // LISTAR/ESCRIBIR: Bloqueado. Nadie debe modificar el padrón directamente.
+      allow list: if false;
+      allow write: if false;
     }
     
     // ==========================================================
-    // 5. COLECCIÓN: COMANDOS (Nueva Estructura)
+    // 5. COLECCIÓN: ORGANIGRAMA (Gestión de Comandos)
     // ==========================================================
-    match /comandos/{comandoId} {
-      // LEER: Todo el equipo puede ver los comandos.
+    // CORRECCIÓN CRÍTICA: Coincide con Comandos.js
+    match /organigrama/{docId} {
+      // LEER: Todo el equipo puede ver la estructura.
       allow read: if isSignedIn();
       
-      // ESCRIBIR: Solo el Admin puede crear o editar comandos.
+      // ESCRIBIR: Solo el Admin puede editar la estructura.
       allow write: if isAdmin();
     }
   }
 }
+

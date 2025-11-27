@@ -1,583 +1,443 @@
-// Componente accesible solo por el rol 'admin' para organizar el organigrama (Comandos).
-
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import {
   collection,
-  doc,
   getDocs,
+  doc,
   setDoc,
   onSnapshot,
 } from "firebase/firestore";
-import * as XLSX from "xlsx"; // IMPORTAR XLSX
+// ✅ FIX: Agregados FaFileExcel y FaPrint a los imports
 import {
-  FaEdit,
-  FaFileExcel,
   FaSave,
-  FaTimes,
   FaPlus,
-  FaAngleDown,
   FaTrashAlt,
-  FaFilter,
+  FaEdit,
+  FaUserTie,
+  FaMapMarkerAlt,
+  FaLayerGroup,
+  FaTimes,
+  FaFileExcel,
+  FaPrint,
 } from "react-icons/fa";
+import * as XLSX from "xlsx";
+import AvatarFoto from "./AvatarFoto";
 import "./Comandos.css";
 
-// 1. IMPORTAR LA ESTRUCTURA ZONAL COMPLETA
-import { ZONAS_DISPONIBLES, MAPA_CENTROS_POR_ZONA } from "./ZonasElectorales";
+// Importación de datos (Asegúrate de que el archivo esté en src/data)
+import zonasData from "../data/zonas.json";
 
-// Estructura de datos predefinida para la jerarquía de comandos
-const JERARQUIA = ["Municipal", "Zonal", "Sectorial"];
+const NIVELES = ["Municipal", "Zonal", "Sectorial"];
+const LISTA_ZONAS = zonasData.map((z) => z.zona).sort();
 
-// Nombre de la colección en Firestore para guardar el organigrama
-const COLECCION_COMANDOS = "organigrama";
+const OBTIENE_SECTORES = (zonaNombre) => {
+  const zona = zonasData.find((z) => z.zona === zonaNombre);
+  return zona ? zona.centros.map((c) => c.nombre) : [];
+};
 
-// ⚠️ Se eliminan las constantes de ejemplo ZONAS_EJEMPLO y SECTORES_EJEMPLO,
-// y se usa ZONAS_DISPONIBLES y una función que usa MAPA_CENTROS_POR_ZONA si se requiere.
+// --- SUBCOMPONENTE: MODAL DE EDICIÓN/CREACIÓN ---
+const ComandoModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  initialData,
+  users,
+  nivel,
+}) => {
+  const [formData, setFormData] = useState({
+    id: Date.now(),
+    cargo: "",
+    userId: "",
+    zona: "",
+    sector: "",
+  });
 
-function Comandos() {
-  const [organigrama, setOrganigrama] = useState({});
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [expandedSection, setExpandedSection] = useState(JERARQUIA[0]);
-
-  const [filtros, setFiltros] = useState({ rol: "", zona: "", sector: "" });
-
-  // Lógica para obtener Centros/Sectores basada en el filtro Zonal
-  const getSectoresDisponibles = (zona) => {
-    // Si hay una zona filtrada, devuelve solo los centros de esa zona.
-    if (zona && MAPA_CENTROS_POR_ZONA[zona]) {
-      return MAPA_CENTROS_POR_ZONA[zona];
-    }
-    // Si no, aplanar todos los centros de votación para el filtro Sectorial general
-    // Opcional: si la lista es muy grande, es mejor no aplanarla.
-    // Para simplificar, si no hay zona seleccionada, se muestra una lista general de ejemplo
-    // o se pide al usuario filtrar primero por zona. Usaremos solo una lista aplanada para fines de demostración:
-    return Object.values(MAPA_CENTROS_POR_ZONA).flat();
-  };
-
-  // ... [El resto de useEffects y funciones (handleSave, getUsername, handleExport) se mantienen igual,
-  // ya que solo usan las variables de estado y la lógica interna.]
-
+  // Cargar datos al abrir
   useEffect(() => {
-    const fetchUsuarios = async () => {
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const userList = usersSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          uid: doc.id,
-          ...doc.data(),
-          displayName: `${doc.data().nombre} (${doc.data().rol})`,
-        }));
-        setUsuarios(userList);
-      } catch (error) {
-        console.error("Error al cargar usuarios:", error);
-      }
-    };
-    fetchUsuarios();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, COLECCION_COMANDOS),
-      (snapshot) => {
-        const data = {};
-        snapshot.docs.forEach((doc) => {
-          data[doc.id] = doc.data().renglones || [];
-        });
-        setOrganigrama(data);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error al suscribirse al organigrama:", error);
-        setLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, []);
-
-  const handleAddField = (nivel) => {
-    let newRenglon = { rol: "", usuarioId: "" };
-    if (nivel === "Zonal") {
-      newRenglon = { ...newRenglon, zona: "" };
-    } else if (nivel === "Sectorial") {
-      newRenglon = { ...newRenglon, sector: "" };
-    }
-    setOrganigrama((prev) => ({
-      ...prev,
-      [nivel]: [...(prev[nivel] || []), newRenglon],
-    }));
-    setIsEditing(true);
-  };
-
-  const handleChange = (nivel, index, field, value) => {
-    setOrganigrama((prev) => {
-      const newRenglones = [...(prev[nivel] || [])];
-      newRenglones[index] = { ...newRenglones[index], [field]: value };
-      return { ...prev, [nivel]: newRenglones };
-    });
-  };
-
-  const handleRemoveField = (nivel, index) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este renglón?")) {
-      setOrganigrama((prev) => {
-        const newRenglones = (prev[nivel] || []).filter((_, i) => i !== index);
-        return { ...prev, [nivel]: newRenglones };
-      });
-    }
-  };
-
-  const handleSave = async (nivel) => {
-    try {
-      setNotification(null);
-      setLoading(true);
-
-      const renglonesLimpios = (organigrama[nivel] || []).filter(
-        (r) => r.rol && r.usuarioId
-      );
-
-      await setDoc(doc(db, COLECCION_COMANDOS, nivel), {
-        renglones: renglonesLimpios,
-      });
-
-      setNotification({
-        message: `Comando ${nivel} guardado con éxito.`,
-        type: "success",
-      });
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Error al guardar el organigrama:", error);
-      setNotification({
-        message: `Error al guardar el Comando ${nivel}.`,
-        type: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getUsername = (userId) => {
-    const user = usuarios.find((u) => u.uid === userId);
-    return user ? user.displayName : "Usuario no asignado/No encontrado";
-  };
-
-  const getSimpleUsername = (userId) => {
-    const user = usuarios.find((u) => u.uid === userId);
-    return user ? user.nombre : "N/A";
-  };
-
-  const filteredRenglones = useMemo(() => {
-    return (nivel) => {
-      const renglones = organigrama[nivel] || [];
-      const { rol, zona, sector } = filtros;
-
-      return renglones.filter((renglon) => {
-        const rolMatch =
-          !rol || renglon.rol.toLowerCase().includes(rol.toLowerCase());
-        let zonaMatch = true;
-        let sectorMatch = true;
-
-        if (nivel === "Zonal") {
-          zonaMatch = !zona || renglon.zona === zona;
-        } else if (nivel === "Sectorial") {
-          sectorMatch = !sector || renglon.sector === sector;
+    if (isOpen) {
+      setFormData(
+        initialData || {
+          id: Date.now(),
+          cargo: "",
+          userId: "",
+          zona: "",
+          sector: "",
         }
-
-        return rolMatch && zonaMatch && sectorMatch;
-      });
-    };
-  }, [organigrama, filtros]);
-
-  const handleFilterChange = (field, value) => {
-    // Si cambia la zona, reseteamos el sector para forzar el filtrado en cascada
-    if (field === "zona") {
-      setFiltros((prev) => ({ ...prev, zona: value, sector: "" }));
-    } else {
-      setFiltros((prev) => ({ ...prev, [field]: value }));
+      );
     }
-  };
+  }, [isOpen, initialData]);
 
-  const handleExport = (nivel) => {
-    const dataToExport = filteredRenglones(nivel).map((renglon) => {
-      const baseData = {
-        Rol: renglon.rol || "N/A",
-        UsuarioAsignado: getSimpleUsername(renglon.usuarioId),
-      };
-
-      if (nivel === "Zonal") {
-        baseData.Zona = renglon.zona || "Sin asignar";
-      } else if (nivel === "Sectorial") {
-        baseData.Sector = renglon.sector || "Sin asignar";
-      }
-      return baseData;
-    });
-
-    if (dataToExport.length === 0) {
-      alert("No hay datos filtrados para exportar en este nivel.");
-      return;
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, `Comando ${nivel}`);
-
-    const fileName = `Organigrama_${nivel}_Filtrado.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-
-    setNotification({
-      message: `Exportado ${dataToExport.length} renglones del Comando ${nivel}.`,
-      type: "success",
+  const handleChange = (field, value) => {
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      if (field === "zona") newData.sector = ""; // Reset sector al cambiar zona
+      return newData;
     });
   };
 
-  if (loading && !Object.keys(organigrama).length)
-    return <p className="loading-state">Cargando módulo de Comandos...</p>;
+  if (!isOpen) return null;
+
+  const selectedUser = users.find((u) => u.uid === formData.userId);
 
   return (
-    <div className="comandos-container">
-      <h2>Gestión de Comandos</h2>
-      <p className="subtitle-comandos">
-        Organigrama jerárquico de la campaña (Roles, Asignación de Soldados,
-        Zona/Sector).
-      </p>
-
-      {notification && (
-        <div className={`notification ${notification.type}`}>
-          {notification.message}
+    <div className="modal-backdrop">
+      <div className="modal-content glass-panel">
+        <div className="modal-header">
+          <h3>
+            {initialData ? "Editar Cargo" : "Agregar Nuevo Cargo"} ({nivel})
+          </h3>
+          <button className="close-btn" onClick={onClose}>
+            <FaTimes />
+          </button>
         </div>
-      )}
 
-      <div className="accordion-comandos">
-        {JERARQUIA.map((nivel) => (
-          <div key={nivel} className="comando-section">
-            {/* Cabecera Desplegable */}
-            <div
-              className={`comando-header ${
-                expandedSection === nivel ? "expanded" : ""
-              }`}
-              onClick={() =>
-                setExpandedSection(expandedSection === nivel ? null : nivel)
-              }
+        <div className="modal-body">
+          {/* Previsualización Foto */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "20px",
+            }}
+          >
+            <AvatarFoto
+              cedula={selectedUser?.cedula}
+              nombre={selectedUser?.nombre}
+              size="80px"
+            />
+          </div>
+
+          {/* Formulario */}
+          <div className="form-group">
+            <label>
+              <FaUserTie /> Cargo *
+            </label>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Ej: Director de Operaciones"
+              value={formData.cargo}
+              onChange={(e) => handleChange("cargo", e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Responsable *</label>
+            <select
+              className="role-filter-select"
+              value={formData.userId}
+              onChange={(e) => handleChange("userId", e.target.value)}
             >
-              <h3>Comando {nivel}</h3>
-              <div className="header-actions">
-                {/* BOTÓN DE EXPORTAR */}
-                {organigrama[nivel] && organigrama[nivel].length > 0 && (
-                  <button
-                    className="icon-button export-button"
-                    title={`Exportar Comando ${nivel} (Filtrado)`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleExport(nivel);
-                    }}
-                  >
-                    <FaFileExcel />
-                  </button>
-                )}
+              <option value="">-- Seleccionar Persona --</option>
+              {users.map((u) => (
+                <option key={u.uid} value={u.uid}>
+                  {u.nombre} ({u.rol})
+                </option>
+              ))}
+            </select>
+          </div>
 
-                <button
-                  className="icon-button edit-button"
-                  title="Editar Organización"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                    setExpandedSection(nivel);
-                  }}
-                  disabled={isEditing}
-                >
-                  <FaEdit />
-                </button>
+          {nivel !== "Municipal" && (
+            <div className="form-group">
+              <label>
+                <FaMapMarkerAlt /> Zona
+              </label>
+              <select
+                className="role-filter-select"
+                value={formData.zona}
+                onChange={(e) => handleChange("zona", e.target.value)}
+              >
+                <option value="">-- Seleccionar Zona --</option>
+                {LISTA_ZONAS.map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-                <FaAngleDown
-                  className={`expand-icon ${
-                    expandedSection === nivel ? "rotate" : ""
-                  }`}
-                />
-              </div>
+          {nivel === "Sectorial" && (
+            <div className="form-group">
+              <label>
+                <FaLayerGroup /> Recinto/Sector
+              </label>
+              <select
+                className="role-filter-select"
+                value={formData.sector}
+                onChange={(e) => handleChange("sector", e.target.value)}
+                disabled={!formData.zona}
+              >
+                <option value="">-- Seleccionar Recinto --</option>
+                {formData.zona &&
+                  OBTIENE_SECTORES(formData.zona).map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-actions">
+          <button
+            className="save-button"
+            onClick={() => onSave(formData)}
+            disabled={!formData.cargo || !formData.userId}
+          >
+            <FaSave /> Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENTE PRINCIPAL ---
+function Comandos() {
+  const [users, setUsers] = useState([]);
+  const [organigrama, setOrganigrama] = useState({
+    Municipal: [],
+    Zonal: [],
+    Sectorial: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [expandedLevel, setExpandedLevel] = useState("Municipal");
+
+  // Estado del Modal
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingLevel, setEditingLevel] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        const usersList = usersSnap.docs
+          .map((d) => ({ uid: d.id, ...d.data() }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
+        setUsers(usersList);
+
+        const unsub = onSnapshot(
+          doc(db, "organigrama", "estructura"),
+          (docSnap) => {
+            if (docSnap.exists()) setOrganigrama(docSnap.data());
+            setLoading(false);
+          }
+        );
+        return () => unsub();
+      } catch (error) {
+        console.error("Error:", error);
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // --- ACCIONES ---
+
+  const openModal = (nivel, item = null, index = null) => {
+    setEditingLevel(nivel);
+    setEditingItem(item); // Si es null, el modal sabrá que es "Crear"
+    setEditingIndex(index);
+    setModalOpen(true);
+  };
+
+  const handleSaveFromModal = async (data) => {
+    // 1. Copiar el array actual
+    const newList = [...(organigrama[editingLevel] || [])];
+
+    if (editingIndex !== null) {
+      // Editar existente
+      newList[editingIndex] = data;
+    } else {
+      // Crear nuevo (Agregar al principio)
+      newList.unshift(data);
+    }
+
+    const newOrganigrama = { ...organigrama, [editingLevel]: newList };
+
+    // 2. Guardar en Firestore
+    try {
+      await setDoc(doc(db, "organigrama", "estructura"), newOrganigrama);
+      setModalOpen(false);
+    } catch (error) {
+      alert("Error al guardar en la base de datos.");
+    }
+  };
+
+  const handleDelete = async (nivel, index) => {
+    if (!window.confirm("¿Seguro que deseas eliminar este cargo?")) return;
+
+    const newList = [...organigrama[nivel]];
+    newList.splice(index, 1);
+    const newOrganigrama = { ...organigrama, [nivel]: newList };
+
+    try {
+      await setDoc(doc(db, "organigrama", "estructura"), newOrganigrama);
+    } catch (error) {
+      alert("Error al eliminar.");
+    }
+  };
+
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new();
+    NIVELES.forEach((nivel) => {
+      const data = (organigrama[nivel] || []).map((item) => {
+        const u = users.find((user) => user.uid === item.userId);
+        return {
+          Cargo: item.cargo,
+          Responsable: u ? u.nombre : "Sin asignar",
+          Cédula: u ? u.cedula : "N/A",
+          Teléfono: u ? u.telefono : "N/A",
+          Zona: item.zona || "N/A",
+          Sector: item.sector || "N/A",
+        };
+      });
+      if (data.length > 0) {
+        const ws = XLSX.utils.json_to_sheet(data);
+        XLSX.utils.book_append_sheet(wb, ws, nivel);
+      }
+    });
+    XLSX.writeFile(wb, "Estructura_Comandos.xlsx");
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  if (loading)
+    return <div className="loading-text">Cargando estructura...</div>;
+
+  return (
+    <div className="comandos-container glass-panel">
+      <div className="comandos-header no-print">
+        <div>
+          <h2>Gestión de Comandos</h2>
+          <p>Define la estructura jerárquica y asigna responsables.</p>
+        </div>
+
+        <div className="header-actions">
+          <button
+            onClick={handleExportExcel}
+            className="action-btn excel-btn"
+            title="Exportar Excel"
+          >
+            <FaFileExcel /> Exportar
+          </button>
+          <button
+            onClick={handlePrint}
+            className="action-btn print-btn"
+            title="Imprimir"
+          >
+            <FaPrint /> Imprimir
+          </button>
+        </div>
+      </div>
+
+      {NIVELES.map((nivel) => (
+        <div
+          key={nivel}
+          className={`nivel-section ${expandedLevel === nivel ? "active" : ""}`}
+        >
+          <div
+            className="nivel-header"
+            onClick={() =>
+              setExpandedLevel(nivel === expandedLevel ? null : nivel)
+            }
+          >
+            <h3>Comando {nivel}</h3>
+            <span className="counter-badge">
+              {organigrama[nivel]?.length || 0} Cargos
+            </span>
+          </div>
+
+          {/* Contenido visible */}
+          <div
+            className={`nivel-content ${
+              expandedLevel === nivel ? "expanded" : ""
+            }`}
+          >
+            {/* BOTÓN AGREGAR (Arriba) */}
+            <div className="level-actions-top no-print">
+              <button className="add-row-btn" onClick={() => openModal(nivel)}>
+                <FaPlus /> Agregar Cargo
+              </button>
             </div>
 
-            {/* Contenido (Desplegable) */}
-            {expandedSection === nivel && (
-              <div className="comando-content">
-                {/* Controles de Filtrado Condicionales */}
-                <div className="filter-controls">
-                  <FaFilter className="filter-icon" />
-                  <input
-                    type="text"
-                    placeholder="Filtrar por Rol..."
-                    value={filtros.rol}
-                    onChange={(e) => handleFilterChange("rol", e.target.value)}
-                    className="filter-input"
-                  />
+            {/* LISTA DE ITEMS */}
+            <div className="renglones-list">
+              {organigrama[nivel]?.map((item, index) => {
+                const u = users.find((user) => user.uid === item.userId);
+                return (
+                  <div key={item.id} className="comando-item-view">
+                    {/* Foto */}
+                    <div className="col-avatar">
+                      <AvatarFoto
+                        cedula={u?.cedula}
+                        nombre={u?.nombre}
+                        size="45px"
+                      />
+                    </div>
 
-                  {/* FILTRO ZONAL: USA LA CONSTANTE REAL */}
-                  {nivel === "Zonal" && (
-                    <select
-                      value={filtros.zona}
-                      onChange={(e) =>
-                        handleFilterChange("zona", e.target.value)
-                      }
-                      className="filter-select"
-                    >
-                      <option value="">Todas las Zonas</option>
-                      {ZONAS_DISPONIBLES.map((z) => (
-                        <option key={z} value={z}>
-                          {z}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                    {/* Info */}
+                    <div className="col-info">
+                      <div className="info-name">
+                        {u?.nombre || "Sin asignar"}
+                      </div>
+                      <div className="info-cargo">{item.cargo}</div>
+                    </div>
 
-                  {/* FILTRO SECTORIAL: USA LA LÓGICA DE CENTROS */}
-                  {nivel === "Sectorial" && (
-                    <>
-                      {/* Se recomienda filtrar primero por Zona si el Sectorial es largo */}
-                      <select
-                        value={filtros.zona}
-                        onChange={(e) =>
-                          handleFilterChange("zona", e.target.value)
-                        }
-                        className="filter-select"
-                      >
-                        <option value="">Filtrar por Zona...</option>
-                        {ZONAS_DISPONIBLES.map((z) => (
-                          <option key={z} value={z}>
-                            {z}
-                          </option>
-                        ))}
-                      </select>
-
-                      <select
-                        value={filtros.sector}
-                        onChange={(e) =>
-                          handleFilterChange("sector", e.target.value)
-                        }
-                        className="filter-select"
-                        disabled={!filtros.zona} // Deshabilitar si no hay zona seleccionada
-                      >
-                        <option value="">Todos los Sectores/Centros</option>
-                        {filtros.zona &&
-                          getSectoresDisponibles(filtros.zona).map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                      </select>
-                    </>
-                  )}
-                </div>
-
-                <div className="renglones-list">
-                  {filteredRenglones(nivel).map((renglon, index) => (
-                    <div
-                      key={index}
-                      className={`renglon-item ${
-                        isEditing ? "editing" : "viewing"
-                      }`}
-                    >
-                      {isEditing ? (
-                        <>
-                          {/* Campo de Rol */}
-                          <input
-                            type="text"
-                            placeholder="Rol (Ej: Encargado de Multiplicación)"
-                            value={renglon.rol}
-                            onChange={(e) =>
-                              handleChange(
-                                nivel,
-                                organigrama[nivel].findIndex(
-                                  (r) => r === renglon
-                                ),
-                                "rol",
-                                e.target.value
-                              )
-                            }
-                            className="rol-input"
-                          />
-
-                          {/* Campo de Zona (Solo para Zonal) */}
-                          {nivel === "Zonal" && (
-                            <select
-                              value={renglon.zona || ""}
-                              onChange={(e) =>
-                                handleChange(
-                                  nivel,
-                                  organigrama[nivel].findIndex(
-                                    (r) => r === renglon
-                                  ),
-                                  "zona",
-                                  e.target.value
-                                )
-                              }
-                              className="zona-select"
-                            >
-                              <option value="">-- Asignar Zona --</option>
-                              {ZONAS_DISPONIBLES.map((z) => (
-                                <option key={z} value={z}>
-                                  {z}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-
-                          {/* Campo de Sector (Solo para Sectorial) */}
-                          {nivel === "Sectorial" && (
-                            <>
-                              <select
-                                value={renglon.zona || ""}
-                                onChange={(e) =>
-                                  handleChange(
-                                    nivel,
-                                    organigrama[nivel].findIndex(
-                                      (r) => r === renglon
-                                    ),
-                                    "zona",
-                                    e.target.value
-                                  )
-                                }
-                                className="zona-select"
-                              >
-                                <option value="">-- Seleccionar Zona --</option>
-                                {ZONAS_DISPONIBLES.map((z) => (
-                                  <option key={z} value={z}>
-                                    {z}
-                                  </option>
-                                ))}
-                              </select>
-
-                              <select
-                                value={renglon.sector || ""}
-                                onChange={(e) =>
-                                  handleChange(
-                                    nivel,
-                                    organigrama[nivel].findIndex(
-                                      (r) => r === renglon
-                                    ),
-                                    "sector",
-                                    e.target.value
-                                  )
-                                }
-                                className="sector-select"
-                                disabled={!renglon.zona}
-                              >
-                                <option value="">
-                                  -- Asignar Sector/Centro --
-                                </option>
-                                {renglon.zona &&
-                                  MAPA_CENTROS_POR_ZONA[renglon.zona].map(
-                                    (s) => (
-                                      <option key={s} value={s}>
-                                        {s}
-                                      </option>
-                                    )
-                                  )}
-                              </select>
-                            </>
-                          )}
-
-                          {/* Campo de Soldado */}
-                          <select
-                            value={renglon.usuarioId}
-                            onChange={(e) =>
-                              handleChange(
-                                nivel,
-                                organigrama[nivel].findIndex(
-                                  (r) => r === renglon
-                                ),
-                                "usuarioId",
-                                e.target.value
-                              )
-                            }
-                            className="usuario-select"
-                          >
-                            <option value="">-- Asignar Soldado --</option>
-                            {usuarios.map((u) => (
-                              <option key={u.uid} value={u.uid}>
-                                {u.displayName}
-                              </option>
-                            ))}
-                          </select>
-
-                          {/* Botón de Eliminar */}
-                          <button
-                            onClick={() =>
-                              handleRemoveField(
-                                nivel,
-                                organigrama[nivel].findIndex(
-                                  (r) => r === renglon
-                                )
-                              )
-                            }
-                            className="remove-field-button"
-                            title="Eliminar Renglón"
-                          >
-                            <FaTrashAlt />
-                          </button>
-                        </>
-                      ) : (
-                        // Vista de Lectura (Read Only)
-                        <div className="view-mode">
-                          <strong className="view-rol">{renglon.rol}</strong>
-                          {nivel === "Zonal" && (
-                            <span className="view-zona">
-                              ({renglon.zona || "Sin Zona"})
-                            </span>
-                          )}
-                          {nivel === "Sectorial" && (
-                            <span className="view-sector">
-                              ({renglon.sector || "Sin Sector"})
-                            </span>
-                          )}
-                          <span className="view-separator">asignado a:</span>
-                          <span className="view-user">
-                            {getUsername(renglon.usuarioId)}
-                          </span>
-                        </div>
+                    {/* Zona/Sector */}
+                    <div className="col-zone">
+                      {item.zona && (
+                        <span className="zone-tag">{item.zona}</span>
+                      )}
+                      {item.sector && (
+                        <div className="sector-text">{item.sector}</div>
                       )}
                     </div>
-                  ))}
 
-                  {/* Botones de Edición */}
-                  {isEditing && (
-                    <div className="editing-actions">
+                    {/* Acciones */}
+                    <div className="col-actions no-print">
                       <button
-                        onClick={() => handleAddField(nivel)}
-                        className="add-field-button"
+                        onClick={() => openModal(nivel, item, index)}
+                        className="icon-btn edit"
+                        title="Editar"
                       >
-                        <FaPlus /> Añadir Renglón
+                        <FaEdit />
                       </button>
                       <button
-                        onClick={() => handleSave(nivel)}
-                        className="save-changes-button"
-                        disabled={loading}
+                        onClick={() => handleDelete(nivel, index)}
+                        className="icon-btn delete"
+                        title="Eliminar"
                       >
-                        <FaSave />{" "}
-                        {loading ? "Guardando..." : "Guardar Comando"}
-                      </button>
-                      <button
-                        onClick={() => setIsEditing(false)}
-                        className="cancel-button"
-                      >
-                        <FaTimes /> Cancelar
+                        <FaTrashAlt />
                       </button>
                     </div>
-                  )}
+                  </div>
+                );
+              })}
+            </div>
 
-                  {/* Mensaje de vacío */}
-                  {filteredRenglones(nivel).length === 0 && (
-                    <p className="empty-state">
-                      {isEditing
-                        ? "Aún no hay renglones. Añade uno para comenzar."
-                        : "No se encontraron renglones que coincidan con los filtros."}
-                    </p>
-                  )}
-                </div>
-              </div>
+            {(!organigrama[nivel] || organigrama[nivel].length === 0) && (
+              <p className="empty-level">No hay cargos definidos.</p>
             )}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
+
+      {/* MODAL FLOTANTE */}
+      <ComandoModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveFromModal}
+        initialData={editingItem}
+        nivel={editingLevel}
+        users={users}
+      />
     </div>
   );
 }
