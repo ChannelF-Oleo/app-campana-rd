@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 const AuthContext = createContext({
   user: null,
@@ -23,7 +29,6 @@ export const AuthProvider = ({ children }) => {
     const reportActivity = async () => {
       try {
         const userRef = doc(db, "users", user.uid);
-        // Confirmamos que estamos activos y quitamos el bloqueo
         await updateDoc(userRef, {
           lastActivity: serverTimestamp(),
           forceLogout: false,
@@ -33,10 +38,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // Reportar inmediatamente al entrar
     reportActivity();
-
-    // Y luego cada 15 minutos
     const INTERVAL_MS = 15 * 60 * 1000;
     const intervalId = setInterval(reportActivity, INTERVAL_MS);
 
@@ -52,24 +54,19 @@ export const AuthProvider = ({ children }) => {
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
+            // --- USUARIO EXISTENTE ---
             const userData = userDoc.data();
-
-            // --- FIX CRÍTICO: DETECCIÓN DE LOGIN FRESCO ---
-            // Verificamos cuándo se autenticó por última vez en Firebase Auth
             const lastSignInTime = new Date(
               firebaseUser.metadata.lastSignInTime
             ).getTime();
             const now = Date.now();
-            const isFreshLogin = now - lastSignInTime < 60 * 1000; // Menos de 1 minuto
+            const isFreshLogin = now - lastSignInTime < 60 * 1000;
 
-            // Si está marcado para salir, PERO acaba de loguearse, lo perdonamos y reseteamos
             if (userData.forceLogout && !isFreshLogin) {
               console.warn("Sesión cerrada por inactividad.");
               await signOut(auth);
               setUser(null);
             } else {
-              // Si es un login fresco, el useEffect de arriba (Heartbeat)
-              // se encargará de poner forceLogout: false en breve.
               setUser({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -77,13 +74,36 @@ export const AuthProvider = ({ children }) => {
               });
             }
           } else {
-            // Usuario sin perfil (Google nuevo sin trigger ejecutado aún)
-            // No cerramos sesión inmediatamente, esperamos al trigger o UI
-            setUser({
+            // --- USUARIO NUEVO ---
+            // Intentamos crear el perfil automáticamente
+            const newUserProfile = {
               uid: firebaseUser.uid,
+              nombre: firebaseUser.displayName || "Activista Google",
               email: firebaseUser.email,
-              rol: "invitado",
-            });
+              rol: "multiplicador", // Rol por defecto
+              cedula: null,
+              fechaRegistro: new Date().toISOString(),
+              metodoRegistro: "Google Auth Automático",
+            };
+
+            try {
+              // Creamos el documento en Firestore
+              await setDoc(userDocRef, newUserProfile);
+              // Actualizamos el estado con el perfil creado
+              setUser(newUserProfile);
+            } catch (createError) {
+              console.error("Error creando perfil de Google:", createError);
+
+              // --- FALLBACK ROBUSTO (Para evitar crash en Dashboard) ---
+              // Si falla la escritura (ej. por permisos), cargamos un usuario temporal seguro en memoria
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                rol: "invitado", // Rol seguro
+                nombre: firebaseUser.displayName || "Usuario Google", // Evita error .split()
+                fechaRegistro: new Date().toISOString(), // Evita error de fecha
+              });
+            }
           }
         } else {
           setUser(null);
