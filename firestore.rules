@@ -20,6 +20,7 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
     }
 
+    // Permite ver el perfil de TU LÍDER (Subordinado -> Jefe)
     function isMyAssignedLeader(leaderId) {
       return isSignedIn() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.liderAsignado == leaderId;
@@ -29,14 +30,27 @@ service cloud.firestore {
     // 2. COLECCIÓN: USERS (Perfiles de Equipo)
     // ==========================================================
     match /users/{userId} {
-      // LEER: El usuario, Admin o su Líder.
-      allow get: if isOwner(userId) || isAdmin() || isMyAssignedLeader(userId);
       
-      // LISTAR: Solo Admins.
-      allow list: if isAdmin();
+      // Nueva función auxiliar local:
+      // ¿El documento que intentas leer dice que TÚ eres su líder?
+      function isAssignedToMe() {
+        return isSignedIn() && resource.data.liderAsignado == request.auth.uid;
+      }
 
-      // CREAR: Bloqueado (Lo hace el Backend automáticamente).
-      allow create: if false;
+      // LEER (get): 
+      // 1. Es mi perfil (isOwner)
+      // 2. Soy Admin (isAdmin)
+      // 3. Es el perfil de mi jefe (isMyAssignedLeader)
+      // 4. NUEVO: Es el perfil de alguien de mi equipo (isAssignedToMe)
+      allow get: if isOwner(userId) || isAdmin() || isMyAssignedLeader(userId) || isAssignedToMe();
+      
+      // LISTAR (consultas): 
+      // 1. Admin
+      // 2. NUEVO: Consultas donde filtro por "liderAsignado == mi ID"
+      allow list: if isAdmin() || isAssignedToMe();
+
+      // CREAR: Permitido si el UID coincide (Login Google/AuthContext)
+      allow create: if isOwner(userId);
       
       // ACTUALIZAR: Admin (todo) o Dueño (campos limitados).
       allow update: if isAdmin() 
@@ -52,8 +66,8 @@ service cloud.firestore {
     // 3. COLECCIÓN: SIMPATIZANTES (Registros)
     // ==========================================================
     match /simpatizantes/{docId} {
-      // CREAR: Bloqueado (Se usa Cloud Functions para validar).
-      allow create: if false;
+      // CREAR: Usuarios logueados.
+      allow create: if isSignedIn();
 
       // LEER: Todo el equipo logueado.
       allow read: if isSignedIn();
@@ -66,10 +80,7 @@ service cloud.firestore {
     // 4. COLECCIÓN: VOTANTES (Padrón - Solo Lectura)
     // ==========================================================
     match /votantes/{cedula} {
-      // LEER: Usuarios logueados (para búsqueda).
       allow get: if isSignedIn();
-      
-      // LISTAR/ESCRIBIR: Bloqueado. Nadie debe modificar el padrón directamente.
       allow list: if false;
       allow write: if false;
     }
@@ -77,12 +88,8 @@ service cloud.firestore {
     // ==========================================================
     // 5. COLECCIÓN: ORGANIGRAMA (Gestión de Comandos)
     // ==========================================================
-    // CORRECCIÓN CRÍTICA: Coincide con Comandos.js
     match /organigrama/{docId} {
-      // LEER: Todo el equipo puede ver la estructura.
       allow read: if isSignedIn();
-      
-      // ESCRIBIR: Solo el Admin puede editar la estructura.
       allow write: if isAdmin();
     }
   }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom"; // 1. IMPORTANTE: Agregamos useNavigate
 import {
   FaBars,
   FaTimes,
@@ -15,10 +15,20 @@ import "./BottomNavBar.css";
 function BottomNavBar({ user, onSetGoalClick, onLogout }) {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate(); // 2. Inicializamos el hook
+
+  // 3. NUEVA FUNCIÓN DE LOGOUT SEGURO
+  const handleLogout = async () => {
+    try {
+      await onLogout(); // Esperamos a que Firebase cierre sesión
+    } catch (error) {
+      console.error("Error al salir:", error);
+    } finally {
+      navigate("/login"); // 4. Forzamos la redirección inmediata
+    }
+  };
 
   const allItems = getVisibleNavItems(user);
-
-  // Dividimos items: 3 principales + resto
   const mainItems = allItems.slice(0, 3);
   const overflowItems = allItems.slice(3);
 
@@ -27,15 +37,10 @@ function BottomNavBar({ user, onSetGoalClick, onLogout }) {
 
   return (
     <>
-      {/* --- MENÚ EXPANDIBLE (Action Sheet) --- */}
-      {/* Renderizamos siempre, pero controlamos visibilidad con la clase 'open' */}
+      {/* MENÚ EXPANDIBLE */}
       <div className={`bottom-nav-expandable ${isMenuOpen ? "open" : ""}`}>
-        {/* 1. Overlay oscuro para cerrar al hacer clic fuera */}
         <div className="expandable-overlay" onClick={closeMenu} />
-
-        {/* 2. Contenido del menú (Tarjeta flotante) */}
         <div className="expandable-content">
-          {/* A. Items de Navegación Extra */}
           {overflowItems.map((item) => (
             <NavLink
               key={item.id}
@@ -53,10 +58,8 @@ function BottomNavBar({ user, onSetGoalClick, onLogout }) {
             </NavLink>
           ))}
 
-          {/* Separador si hay items arriba */}
           {overflowItems.length > 0 && <div className="expandable-divider" />}
 
-          {/* B. MODO OSCURO */}
           <button
             onClick={() => {
               toggleDarkMode();
@@ -70,8 +73,8 @@ function BottomNavBar({ user, onSetGoalClick, onLogout }) {
             <span>{isDarkMode ? "Modo Claro" : "Modo Oscuro"}</span>
           </button>
 
-          {/* C. CERRAR SESIÓN */}
-          <button onClick={onLogout} className="expandable-item logout">
+          {/* 5. USAMOS LA NUEVA FUNCIÓN AQUÍ */}
+          <button onClick={handleLogout} className="expandable-item logout">
             <span className="expand-icon">
               <FaSignOutAlt />
             </span>
@@ -80,7 +83,7 @@ function BottomNavBar({ user, onSetGoalClick, onLogout }) {
         </div>
       </div>
 
-      {/* --- BARRA INFERIOR FIJA --- */}
+      {/* BARRA INFERIOR */}
       <nav className="bottom-nav-bar">
         {mainItems.map((item) => {
           if (item.id === "set-goal") {
@@ -115,7 +118,6 @@ function BottomNavBar({ user, onSetGoalClick, onLogout }) {
           );
         })}
 
-        {/* Botón MENÚ (4to botón) */}
         <button
           onClick={toggleMenu}
           className={`nav-item ${isMenuOpen ? "active-menu" : ""}`}
