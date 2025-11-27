@@ -1,90 +1,99 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { 
-  FaBars, FaTimes, FaSignOutAlt, FaSun, FaMoon, FaChevronUp 
-} from 'react-icons/fa';
-import { useTheme } from '../ThemeContext';
-import { getVisibleNavItems } from '../data/navConfig';
-import './BottomNavBar.css';
+import React, { useState } from "react";
+import { NavLink } from "react-router-dom";
+import {
+  FaBars,
+  FaTimes,
+  FaSignOutAlt,
+  FaSun,
+  FaMoon,
+  FaChevronRight,
+} from "react-icons/fa";
+import { useTheme } from "../ThemeContext";
+import { getVisibleNavItems } from "../data/navConfig";
+import "./BottomNavBar.css";
 
 function BottomNavBar({ user, onSetGoalClick, onLogout }) {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Obtenemos todos los items
   const allItems = getVisibleNavItems(user);
-  const isAdmin = user.rol === 'admin';
 
-  // --- LÓGICA DE VISUALIZACIÓN ---
-  let mainItems = [];
-  let moreItems = [];
-
-  if (isAdmin) {
-    // ADMIN: Mostramos Inicio, Registro, Usuarios en la barra.
-    // El resto va al menú "Más".
-    mainItems = allItems.slice(0, 3); // Índices 0, 1, 2
-    moreItems = allItems.slice(3);    // El resto (Pelotones, Comandos...)
-  } else {
-    // OTROS: Mostramos todo en la barra (generalmente son 3 o 4 items)
-    mainItems = allItems;
-  }
+  // Dividimos items: 3 principales + resto
+  const mainItems = allItems.slice(0, 3);
+  const overflowItems = allItems.slice(3);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <>
-      {/* --- MENÚ EXPANDIBLE (POPUP) --- */}
-      {/* Se muestra solo si es Admin y el menú está abierto */}
-      {isAdmin && (
-        <div className={`bottom-nav-expandable ${isMenuOpen ? 'open' : ''}`}>
-          <div className="expandable-content">
-            
-            {/* Items extra del Admin (Pelotones, Comandos) */}
-            {moreItems.map((item) => (
-              <NavLink
-                key={item.id}
-                to={item.path}
-                className="expandable-item"
-                onClick={closeMenu}
-              >
-                <item.icon className="expand-icon" />
-                <span>{item.label}</span>
-              </NavLink>
-            ))}
+      {/* --- MENÚ EXPANDIBLE (Action Sheet) --- */}
+      {/* Renderizamos siempre, pero controlamos visibilidad con la clase 'open' */}
+      <div className={`bottom-nav-expandable ${isMenuOpen ? "open" : ""}`}>
+        {/* 1. Overlay oscuro para cerrar al hacer clic fuera */}
+        <div className="expandable-overlay" onClick={closeMenu} />
 
-            <hr className="expandable-divider" />
-
-            {/* Opciones de Sistema (Tema y Salir) */}
-            <button 
-              onClick={() => { toggleDarkMode(); closeMenu(); }} 
+        {/* 2. Contenido del menú (Tarjeta flotante) */}
+        <div className="expandable-content">
+          {/* A. Items de Navegación Extra */}
+          {overflowItems.map((item) => (
+            <NavLink
+              key={item.id}
+              to={item.path}
               className="expandable-item"
+              onClick={closeMenu}
             >
-              {isDarkMode ? <FaSun className="expand-icon"/> : <FaMoon className="expand-icon"/>}
-              <span>{isDarkMode ? 'Modo Claro' : 'Modo Oscuro'}</span>
-            </button>
+              <span className="expand-icon">
+                <item.icon />
+              </span>
+              <span>{item.label}</span>
+              <FaChevronRight
+                style={{ marginLeft: "auto", opacity: 0.3, fontSize: "0.8rem" }}
+              />
+            </NavLink>
+          ))}
 
-            <button onClick={onLogout} className="expandable-item logout">
-              <FaSignOutAlt className="expand-icon" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </div>
-          {/* Fondo oscuro para cerrar al hacer click fuera */}
-          <div className="expandable-overlay" onClick={closeMenu}></div>
+          {/* Separador si hay items arriba */}
+          {overflowItems.length > 0 && <div className="expandable-divider" />}
+
+          {/* B. MODO OSCURO */}
+          <button
+            onClick={() => {
+              toggleDarkMode();
+              closeMenu();
+            }}
+            className="expandable-item"
+          >
+            <span className="expand-icon">
+              {isDarkMode ? <FaSun /> : <FaMoon />}
+            </span>
+            <span>{isDarkMode ? "Modo Claro" : "Modo Oscuro"}</span>
+          </button>
+
+          {/* C. CERRAR SESIÓN */}
+          <button onClick={onLogout} className="expandable-item logout">
+            <span className="expand-icon">
+              <FaSignOutAlt />
+            </span>
+            <span>Cerrar Sesión</span>
+          </button>
         </div>
-      )}
+      </div>
 
-      {/* --- BARRA FIJA INFERIOR --- */}
+      {/* --- BARRA INFERIOR FIJA --- */}
       <nav className="bottom-nav-bar">
-        
-        {/* 1. Items Principales (Inicio, Registro, Usuarios...) */}
         {mainItems.map((item) => {
-          const Icon = item.icon;
-
-          if (item.isAction && item.id === 'meta') {
+          if (item.id === "set-goal") {
             return (
-              <button key={item.id} onClick={onSetGoalClick} className="nav-item action-button">
-                <Icon className="nav-icon" />
+              <button
+                key={item.id}
+                onClick={() => {
+                  onSetGoalClick();
+                  closeMenu();
+                }}
+                className="nav-item action-button"
+              >
+                <item.icon className="nav-icon" />
                 <span className="nav-label">{item.label}</span>
               </button>
             );
@@ -94,32 +103,30 @@ function BottomNavBar({ user, onSetGoalClick, onLogout }) {
             <NavLink
               key={item.id}
               to={item.path}
-              end={item.end} // Lee la propiedad 'end' desde navConfig
-              className="nav-item"
-              onClick={closeMenu} // Cierra el menú si cambias de pestaña ppal
+              end={item.end}
+              className={({ isActive }) =>
+                `nav-item ${isActive ? "active" : ""}`
+              }
+              onClick={closeMenu}
             >
-              <Icon className="nav-icon" />
+              <item.icon className="nav-icon" />
               <span className="nav-label">{item.label}</span>
             </NavLink>
           );
         })}
 
-        {/* 2. Botón "MÁS" (Solo Admin) o "SALIR/TEMA" (Otros) */}
-        {isAdmin ? (
-          <button 
-            onClick={toggleMenu} 
-            className={`nav-item ${isMenuOpen ? 'active-menu' : ''}`}
-          >
-            {isMenuOpen ? <FaTimes className="nav-icon" /> : <FaBars className="nav-icon" />}
-            <span className="nav-label">{isMenuOpen ? 'Cerrar' : 'Más'}</span>
-          </button>
-        ) : (
-          // Si NO es admin, mostramos Salir directamente (o Tema, según prefieras)
-          <button onClick={onLogout} className="nav-item logout-button">
-            <FaSignOutAlt className="nav-icon" />
-            <span className="nav-label">Salir</span>
-          </button>
-        )}
+        {/* Botón MENÚ (4to botón) */}
+        <button
+          onClick={toggleMenu}
+          className={`nav-item ${isMenuOpen ? "active-menu" : ""}`}
+        >
+          {isMenuOpen ? (
+            <FaTimes className="nav-icon" />
+          ) : (
+            <FaBars className="nav-icon" />
+          )}
+          <span className="nav-label">{isMenuOpen ? "Cerrar" : "Menú"}</span>
+        </button>
       </nav>
     </>
   );

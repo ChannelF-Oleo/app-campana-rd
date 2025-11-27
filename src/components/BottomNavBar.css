@@ -146,3 +146,15 @@ body.dark-mode .nav-item.active {
 body.dark-mode .expandable-overlay {
   background-color: rgba(0, 0, 0, 0.6);
 }
+
+/* Agrega esto al final de BottomNavBar.css */
+.menu-separator {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 5px 15px;
+}
+
+/* Ajuste opcional para que el botón de menú activo se vea diferente */
+.nav-item.active-menu {
+  color: #2563eb; /* O tu color primario */
+}
