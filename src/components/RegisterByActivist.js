@@ -73,7 +73,7 @@ function RegisterByActivist({ user }) {
   // NUEVO: Estado para las coordenadas (ubicación pineada)
   const [coordinates, setCoordinates] = useState(initialCenter);
   // Estado para el mapa (referencia)
-  const [map, setMap] = useState(null);
+  const [, setMap] = useState(null);
 
   // Cargar script de Google Maps
   const { isLoaded, loadError } = useLoadScript({

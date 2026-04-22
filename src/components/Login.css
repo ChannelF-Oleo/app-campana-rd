@@ -1,4 +1,4 @@
-:root {
+.login-container {
   /* Brand Colors - Basados en tus clases */
   --color-primary: #2563eb;
   --color-primary-hover: #1d4ed8;
@@ -34,7 +34,7 @@
   /* Centrado perfecto en 2 líneas */
   min-height: 100vh;
   padding: 1.5rem;
-  background-color: var(--page-bg);
+  background-color: transparent;
   font-family: 'Inter', system-ui, sans-serif;
   margin-top: 2.5rem;
 

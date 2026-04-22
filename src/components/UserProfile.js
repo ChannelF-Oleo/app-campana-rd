@@ -3,7 +3,7 @@ import { useAuth } from "../AuthContext";
 import AvatarFoto from "./AvatarFoto";
 import { auth } from "../firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { FaUser, FaEnvelope, FaIdBadge, FaLock, FaCheckCircle } from "react-icons/fa";
+import { FaEnvelope, FaIdBadge, FaLock, FaCheckCircle } from "react-icons/fa";
 import "./UserProfile.css";
 
 const UserProfile = () => {

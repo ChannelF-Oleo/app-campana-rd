@@ -1,7 +1,7 @@
 /* -------------------------- */
 /* 1. VARIABLES Y RESET       */
 /* -------------------------- */
-:root {
+.propuestas-page {
   --primary: #003366;
   --primary-light: #004a94;
   --accent: #d4af37;
@@ -13,9 +13,7 @@
   --white: #ffffff;
   --shadow: 0 4px 20px rgba(0, 43, 85, 0.08);
   --border-light: #e1e8ed;
-}
 
-.propuestas-page {
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-main);
   background-color: var(--white);

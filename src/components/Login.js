@@ -156,7 +156,7 @@ function Login() {
 
         <div className="extra-links">
           <p>
-            ¿No tienes cuenta? <Link to="/registro">Regístrate aquí</Link>
+            ¿No tienes cuenta? <Link to="/registro-app">Regístrate aquí</Link>
           </p>
         </div>
       </form>

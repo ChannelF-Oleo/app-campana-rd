@@ -57,7 +57,7 @@
   min-height: calc(100vh - 60px);
   width: 100%;
   box-sizing: border-box;
-  background-color: var(--page-bg);
+  background-color: #ffffff;
 }
 
 /* Ajuste específico para móviles si el navbar cambia de altura */

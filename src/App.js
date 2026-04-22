@@ -25,6 +25,7 @@ import BottomNavBar from "./components/BottomNavBar";
 import HomePage from "./components/Home";
 import Login from "./components/Login";
 import PublicRegister from "./components/PublicRegister";
+import RegisterAppUser from "./components/RegisterAppUser";
 import ProposalsPage from "./components/Propuestas";
 
 // --- PÁGINAS PROTEGIDAS ---
@@ -145,6 +146,7 @@ function AppRoutes() {
           <Route element={<PublicOnlyRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<PublicRegister />} />
+            <Route path="/registro-app" element={<RegisterAppUser />} />
           </Route>
         </Route>
 
