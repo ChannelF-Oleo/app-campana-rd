@@ -1,0 +1,124 @@
+.profile-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background-color: transparent; /* Hereda del layout */
+    min-height: 80vh;
+}
+
+.profile-card {
+    background: var(--color-surface);
+    width: 100%;
+    max-width: 500px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+}
+
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.profile-header h2 {
+    margin: 15px 0 5px;
+    color: var(--color-text-main);
+}
+
+.badge-rol {
+    background: #007bff;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.profile-info {
+    margin-bottom: 25px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.info-item .icon {
+    font-size: 1.5rem;
+    color: var(--color-text-muted);
+    margin-right: 15px;
+}
+
+.info-item label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+}
+
+.info-item p {
+    margin: 0;
+    font-weight: 500;
+    color: var(--color-text-main);
+}
+
+.profile-settings h3 {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-main);
+}
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--color-bg);
+    color: var(--color-text-main);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.btn-save {
+    width: 100%;
+    padding: 12px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-save:hover {
+    background-color: #218838;
+}
+
+.status-msg {
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.status-msg.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-msg.success {
+    background: #d4edda;
+    color: #155724;
+}

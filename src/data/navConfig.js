@@ -1,7 +1,7 @@
 // src/data/navConfig.js
 // src/data/navConfig.js
 import { 
-  FaHome, FaUserPlus, FaUsers, FaTasks, FaBullseye, FaLayerGroup 
+  FaHome, FaUserPlus, FaUsers, FaTasks, FaBullseye, FaLayerGroup, FaUser
 } from 'react-icons/fa';
 
 export const getVisibleNavItems = (user) => {
@@ -21,6 +21,12 @@ export const getVisibleNavItems = (user) => {
       label: 'Registro',
       path: '/dashboard/registrar', // Ruta hija
       icon: FaUserPlus,
+    },
+    {
+      id: 'perfil',
+      label: 'Perfil',
+      path: '/dashboard/perfil',
+      icon: FaUser,
     }
   ];
 

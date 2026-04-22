@@ -30,6 +30,7 @@ import ProposalsPage from "./components/Propuestas";
 // --- PÁGINAS PROTEGIDAS ---
 import Dashboard from "./components/Dashboard";
 import RegisterByActivist from "./components/RegisterByActivist";
+import UserProfile from "./components/UserProfile";
 import ManageUsers from "./components/ManageUsers";
 import ManageTeams from "./components/ManageTeams";
 import CreateUser from "./components/CreateUser";
@@ -155,6 +156,7 @@ function AppRoutes() {
               path="/dashboard/registrar"
               element={<RegisterByActivist user={user} />}
             />
+            <Route path="/dashboard/perfil" element={<UserProfile />} />
 
             {/* Admin */}
             {user?.rol === "admin" && (
