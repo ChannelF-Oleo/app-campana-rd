@@ -1,216 +1,232 @@
-/* src/components/Propuestas.css - FINAL (Espaciado y Tema Corregido) */
-
 /* -------------------------- */
-/* 1. CONTENEDOR PRINCIPAL Y VARIABLES LOCALES */
+/* 1. VARIABLES Y RESET       */
 /* -------------------------- */
-.propuestas-container {
-  /* DEFINICIÓN DE COLORES LOCALES (Forzar Modo Claro) */
-  --local-bg: #f4f7f9;
-  --local-card-bg: #ffffff;
-  --local-text-main: #333333;
-  --local-text-light: #555555;
-  --local-primary: #004d99;
-  --local-accent: #28a745;
-  --local-border: #e5e7eb;
+:root {
+  --primary: #003366;
+  --primary-light: #004a94;
+  --accent: #d4af37;
+  /* Dorado para iconos */
+  --accent-success: #28a745;
+  --text-main: #2d3436;
+  --text-light: #636e72;
+  --bg-alt: #f4f7f9;
+  --white: #ffffff;
+  --shadow: 0 4px 20px rgba(0, 43, 85, 0.08);
+  --border-light: #e1e8ed;
+}
 
-  /* Aplicar fondo y texto explícitamente */
-  background-color: var(--local-bg) !important;
-  color: var(--local-text-main) !important;
-
-  width: 100%;
-  max-width: 100%; /* Ocupa todo el ancho disponible */
-  padding: 60px 20px; /* Espacio interno */
-  box-sizing: border-box;
-  overflow-x: hidden;
+.propuestas-page {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text-main);
+  background-color: var(--white);
 }
 
 /* -------------------------- */
-/* 2. ENCABEZADOS Y SECCIONES */
+/* 2. HEADER Y SECCIONES      */
 /* -------------------------- */
-.page-header {
-  color: var(--local-primary);
-  font-size: clamp(2rem, 4vw, 2.8rem);
-  font-weight: 900;
+.header-section {
   text-align: center;
-  margin-bottom: 60px;
-  padding-bottom: 20px;
-  border-bottom: 3px solid #007bff;
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+  padding: 60px 20px;
+  background: var(--white);
 }
 
-.prop-section {
-  /* ESPACIADO CRÍTICO ENTRE SECCIONES */
-  margin-top: 80px; /* Separa el título de las tarjetas de arriba */
-  margin-bottom: 40px; /* Separa el título de sus propias tarjetas */
-
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* El primer bloque no necesita tanto margen arriba */
-.prop-section:first-of-type {
-  margin-top: 0;
-}
-
-.prop-section h2 {
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  color: var(--local-primary);
-  margin-bottom: 30px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-  display: flex;
-  align-items: center;
-  gap: 15px;
+.page-header {
+  color: var(--primary);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  margin-bottom: 15px;
   font-weight: 800;
 }
 
-.prop-section h2 svg {
-  color: var(--local-accent);
-  font-size: 1.2em;
+.header-subtitle {
+  color: var(--text-light);
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
-/* Subtítulos (Posicionamiento Clave) */
-.prop-section h3 {
-  color: var(--local-primary);
-  font-size: 1.6rem;
+.prop-section {
+  padding: 60px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bg-alt {
+  background-color: var(--bg-alt);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  max-width: 100%;
+  /* Para que el fondo ocupe todo el ancho */
+}
+
+.prop-section h2 {
+  font-size: 1.8rem;
+  color: var(--primary);
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-weight: 700;
-  margin-top: 60px; /* Más espacio antes del subtítulo */
-  margin-bottom: 30px;
+}
+
+.prop-section h2 svg {
+  color: var(--accent);
 }
 
 /* -------------------------- */
-/* 3. GRID Y TARJETAS (CARDS) */
+/* 3. GRID Y LAYOUT           */
 /* -------------------------- */
-.grid-2,
-.grid-3 {
-  display: grid;
-  /* AUMENTO DE ESPACIO ENTRE TARJETAS */
-  gap: 40px;
-  width: 100%;
-}
-
-/* Columnas Responsivas */
+.grid-3,
 .grid-2 {
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  display: grid;
+  gap: 32px;
+  /* Espacio uniforme horizontal y vertical */
+  padding: 10px 0;
 }
+
 .grid-3 {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
-/* Estilo de la Tarjeta */
-.prop-card {
-  background-color: var(--local-card-bg);
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Sombra suave */
-  border: 1px solid var(--local-border);
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+}
 
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: 100%; /* Altura completa de la celda */
+/* -------------------------- */
+/* 4. TARJETAS (CARDS)        */
+/* -------------------------- */
+.prop-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 35px 25px 25px 25px;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
   display: flex;
   flex-direction: column;
-
-  /* Evitamos márgenes externos porque el GRID usa GAP */
-  margin: 0;
+  position: relative;
+  border: 1px solid transparent;
+  box-sizing: border-box;
 }
 
 .prop-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-  border-color: var(--local-primary);
+  border-color: var(--primary-light);
+  box-shadow: 0 12px 30px rgba(0, 43, 85, 0.15);
 }
 
-/* Título dentro de la tarjeta */
+.card-accent-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: var(--primary);
+  border-radius: 12px 12px 0 0;
+}
+
 .prop-card h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1.3rem;
+  margin-top: 10px;
+  margin-bottom: 12px;
+  color: var(--primary);
+  font-size: 1.25rem;
+  line-height: 1.3;
   font-weight: 700;
-  color: var(--local-primary);
-  line-height: 1.4;
-  text-align: left; /* Alineación limpia */
 }
 
 .prop-card p {
-  font-size: 1rem;
-  color: var(--local-text-light);
+  color: var(--text-light);
   line-height: 1.6;
+  font-size: 0.95rem;
   margin-bottom: 20px;
-  flex-grow: 1; /* Empuja el detalle al fondo */
-}
-
-.card-detail {
-  margin-top: auto;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-  font-style: italic;
-  font-size: 0.9rem !important;
-  color: var(--local-accent);
-  font-weight: 600;
+  flex-grow: 1;
+  /* Empuja el detalle al fondo */
 }
 
 /* -------------------------- */
-/* 4. ETIQUETAS (TAGS) */
+/* 5. BLOQUE DE IMPORTANCIA   */
+/* -------------------------- */
+.card-detail {
+  margin-top: auto;
+  padding: 15px;
+  background-color: #f0f7ff;
+  /* Azul suave no morado */
+  border-left: 5px solid var(--primary);
+  border-radius: 6px;
+  font-size: 0.88rem !important;
+  color: var(--primary) !important;
+  line-height: 1.5;
+}
+
+.card-detail strong {
+  display: block;
+  color: var(--primary);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+  opacity: 0.9;
+}
+
+/* -------------------------- */
+/* 6. ETIQUETAS (TAGS)        */
 /* -------------------------- */
 .tag {
   display: inline-block;
-  padding: 5px 12px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
   text-transform: uppercase;
-  color: white;
-  margin-bottom: 15px;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
   align-self: flex-start;
 }
 
-.tag-infra {
-  background-color: #e07f24;
-}
-.tag-salud {
-  background-color: #c0392b;
-}
-.tag-infancia {
-  background-color: #0070a8;
-}
+.tag-infra,
 .tag-comision {
-  background-color: #5d666d;
+  background: #e0e7ff;
+  color: #3730a3;
 }
+
+.tag-salud {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.tag-infancia {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .tag-politica {
-  background-color: var(--local-primary);
+  background: #f1f5f9;
+  color: #475569;
 }
 
 /* -------------------------- */
-/* 5. RESPONSIVIDAD */
+/* 7. RESPONSIVIDAD           */
 /* -------------------------- */
 @media (max-width: 768px) {
-  .propuestas-container {
+  .header-section {
     padding: 40px 15px;
   }
 
-  .prop-section {
-    margin-top: 60px; /* Un poco menos en móvil */
+  .page-header {
+    font-size: 2rem;
   }
 
-  .grid-2,
-  .grid-3 {
-    grid-template-columns: 1fr; /* Una sola columna */
+  .prop-section {
+    padding: 40px 15px;
+  }
+
+  .grid-3,
+  .grid-2 {
+    grid-template-columns: 1fr;
     gap: 30px;
+    /* Asegura que no se peguen verticalmente */
   }
 
   .prop-card {
-    padding: 20px;
-  }
-
-  .prop-section h2 {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    padding: 25px 20px;
   }
 }

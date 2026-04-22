@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -7,8 +7,14 @@ import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { ubicacionesData } from "../data/ubicaciones.js";
 import "./PublicRegister.css";
 import logo from "../Felix/Inscribete.png";
+import {
+  PROVINCIA_FIJA,
+  MUNICIPIO_FIJO,
+  MAP_INITIAL_CENTER,
+  MAP_DEFAULT_ZOOM,
+  CEDULA_REGEX,
+} from "../constants";
 
-// ⚠️ DEBES REEMPLAZAR 'TU_GOOGLE_MAPS_API_KEY' CON TU CLAVE REAL DE LA API
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
 // Configuración del Mapa
@@ -18,17 +24,11 @@ const mapContainerStyle = {
   marginBottom: "20px",
   borderRadius: "8px",
 };
-// Centro inicial: Santo Domingo
-const initialCenter = {
-  lat: 18.4861,
-  lng: -69.9309,
-};
-const defaultZoom = 12;
+const initialCenter = MAP_INITIAL_CENTER;
+const defaultZoom = MAP_DEFAULT_ZOOM;
 const libraries = ["places"];
 
-// [INICIO CORRECCIÓN SDO]
-const PROVINCIA_FIJA = "Santo Domingo";
-const MUNICIPIO_FIJO = "Santo Domingo Oeste";
+// [INICIO CORRECCIÓN SDO] — Valores cargados desde constants.js
 
 // Cargar sectores fijos de SDO una sola vez
 const provinciaSDO = ubicacionesData.find(
@@ -50,10 +50,7 @@ function useQuery() {
 }
 
 // Validation Functions
-const validarCedula = (cedula) => {
-  const cedulaRegex = /^\d{3}-?\d{7}-?\d{1}$/;
-  return cedulaRegex.test(cedula);
-};
+const validarCedula = (cedula) => CEDULA_REGEX.test(cedula);
 const validarTelefono = (telefono) => {
   const telefonoRegex = /^[\d\s-]{7,}$/;
   return telefono === "" || telefonoRegex.test(telefono);

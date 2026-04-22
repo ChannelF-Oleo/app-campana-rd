@@ -7,12 +7,26 @@ import { ref, uploadBytes } from "firebase/storage"; // Funciones de Storage
 import * as XLSX from "xlsx";
 import "./ManageUsers.css";
 import AvatarFoto from "./AvatarFoto";
+import {
+  ROLES_DISPONIBLES,
+  USUARIOS_POR_PAGINA,
+} from "../constants";
 
 // Inicializar Functions
 const functions = getFunctions();
 const deleteUserCallable = httpsCallable(functions, "deleteUserAndData");
 
-const ROLES_DISPONIBLES = ["admin", "lider de zona", "multiplicador"];
+// --- SPINNER DE CARGA ---
+function LoadingSpinner({ message = "Cargando..." }) {
+  return (
+    <div className="loading-overlay">
+      <div className="spinner-container">
+        <div className="spinner" aria-label="Cargando"></div>
+        <p className="spinner-text">{message}</p>
+      </div>
+    </div>
+  );
+}
 
 // --- MODAL DE EDICIÓN (Con Cambio de Foto) ---
 function EditUserModal({ user, onClose, onSave }) {
@@ -208,6 +222,21 @@ function ManageUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("todos");
 
+  // --- PAGINACIÓN ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredUsers.length / USUARIOS_POR_PAGINA);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * USUARIOS_POR_PAGINA,
+    currentPage * USUARIOS_POR_PAGINA
+  );
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    // Regresar al top de la tabla suavemente
+    document.querySelector(".table-wrapper")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const fetchUsersAndMetrics = async () => {
     setLoading(true);
     try {
@@ -306,6 +335,7 @@ function ManageUsers() {
       );
     }
     setFilteredUsers(currentUsers);
+    setCurrentPage(1); // Resetear a página 1 al filtrar
   }, [searchTerm, roleFilter, allUsers]);
 
   const handleEditClick = (user) => {
@@ -340,10 +370,11 @@ function ManageUsers() {
     }
   };
 
-  if (loading) return <p className="loading-text">Cargando sistema...</p>;
-
   return (
     <div className="manage-users-container glass-panel">
+      {/* SPINNER GLOBAL (Overlay) */}
+      {loading && <LoadingSpinner message="Cargando usuarios..." />}
+
       <div className="manage-users-header">
         <h2>Gestión de Usuarios</h2>
         <button
@@ -381,6 +412,22 @@ function ManageUsers() {
         </button>
       </div>
 
+      {/* Resumen de resultados */}
+      <div className="results-summary">
+        {filteredUsers.length > 0 ? (
+          <span>
+            Mostrando{" "}
+            <strong>
+              {(currentPage - 1) * USUARIOS_POR_PAGINA + 1}–
+              {Math.min(currentPage * USUARIOS_POR_PAGINA, filteredUsers.length)}
+            </strong>{" "}
+            de <strong>{filteredUsers.length}</strong> usuarios
+          </span>
+        ) : (
+          !loading && <span>No se encontraron usuarios.</span>
+        )}
+      </div>
+
       <div className="table-wrapper">
         <table className="users-table">
           <thead>
@@ -394,8 +441,8 @@ function ManageUsers() {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
+            {paginatedUsers.length > 0 ? (
+              paginatedUsers.map((user) => (
                 <tr key={user.id}>
                   <td data-label="Foto" style={{ width: "60px" }}>
                     <AvatarFoto
@@ -452,15 +499,89 @@ function ManageUsers() {
                 </tr>
               ))
             ) : (
-              <tr>
-                <td colSpan="6" className="empty-state">
-                  No se encontraron usuarios.
-                </td>
-              </tr>
+              !loading && (
+                <tr>
+                  <td colSpan="6" className="empty-state">
+                    No se encontraron usuarios.
+                  </td>
+                </tr>
+              )
             )}
           </tbody>
         </table>
       </div>
+
+      {/* --- CONTROLES DE PAGINACIÓN --- */}
+      {totalPages > 1 && (
+        <div className="pagination-controls">
+          <button
+            className="pagination-btn"
+            onClick={() => handlePageChange(1)}
+            disabled={currentPage === 1}
+            title="Primera página"
+          >
+            «
+          </button>
+          <button
+            className="pagination-btn"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            title="Página anterior"
+          >
+            ‹
+          </button>
+
+          {/* Números de página */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(
+              (page) =>
+                page === 1 ||
+                page === totalPages ||
+                Math.abs(page - currentPage) <= 1
+            )
+            .reduce((acc, page, idx, arr) => {
+              if (idx > 0 && page - arr[idx - 1] > 1) {
+                acc.push("...");
+              }
+              acc.push(page);
+              return acc;
+            }, [])
+            .map((item, idx) =>
+              item === "..." ? (
+                <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                  …
+                </span>
+              ) : (
+                <button
+                  key={item}
+                  className={`pagination-btn ${
+                    item === currentPage ? "active" : ""
+                  }`}
+                  onClick={() => handlePageChange(item)}
+                >
+                  {item}
+                </button>
+              )
+            )}
+
+          <button
+            className="pagination-btn"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            title="Página siguiente"
+          >
+            ›
+          </button>
+          <button
+            className="pagination-btn"
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            title="Última página"
+          >
+            »
+          </button>
+        </div>
+      )}
 
       {isModalOpen && editingUser && (
         <EditUserModal

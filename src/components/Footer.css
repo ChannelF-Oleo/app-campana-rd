@@ -1,92 +1,116 @@
-:root {
-  --footer-bg: #022340; /* Azul Marino Oscuro */
-  --footer-text: #cccccc;
-  --footer-accent: #007bff;
-}
-
 .main-footer {
-  background-color: var(--footer-bg);
-  color: var(--footer-text);
-  padding: 40px 0;
-  margin-top: auto; /* Asegura que el footer se mantenga al final de la página */
+  background-color: #022340;
+  /* Azul marino profundo para contraste */
+  color: #ffffff;
+  padding: 60px 0 40px;
+  border-top: 4px solid #10b981;
+  /* Detalle en el verde de acento de Felix */
 }
 
 .footer-content {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 30px;
-  flex-wrap: wrap; /* Permite que las columnas se apilen en móvil */
+  gap: 40px;
 }
 
 .footer-section {
   flex: 1;
-  min-width: 200px; /* Ancho mínimo para cada sección antes de apilar */
+  min-width: 250px;
 }
 
-.footer-section h3 {
-  color: var(--footer-accent);
-  font-size: 1.1rem;
-  margin-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 5px;
+.footer-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #93c5fd;
+  /* Azul claro para títulos */
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-/* --- Estilos de Descarga --- */
-.download-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.footer-copy,
+.dev-credit {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 8px;
+}
 
-  color: white;
-  padding: 10px 15px;
-  border-radius: 5px;
+.dev-credit a {
+  color: #10b981;
   text-decoration: none;
   font-weight: 600;
-  transition: background-color 0.2s;
+  transition: color 0.3s ease;
 }
 
-.download-button:hover {
-  color: var(--footer-accent);
+.dev-credit a:hover {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
-.download-button svg {
-  font-size: 1.2rem;
+/* Botón de descarga estilizado */
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: #ffffff;
+  text-decoration: none;
+  transition: all 0.3s ease;
 }
 
-/* --- Estilos de Redes Sociales --- */
-.social-icons {
+.download-btn:hover {
+  background-color: #ef4444;
+  /* Rojo PDF al hacer hover */
+  border-color: #ef4444;
+  transform: translateY(-3px);
+}
+
+.download-btn svg {
+  font-size: 1.4rem;
+}
+
+/* Redes Sociales */
+.social-grid {
   display: flex;
   gap: 15px;
 }
 
-.social-icons a {
-  color: var(--footer-text);
-  font-size: 1.5rem;
-  transition: color 0.2s;
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 1.3rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.social-icons a:hover {
-  color: var(--footer-accent);
+.social-icon:hover {
+  background-color: #3b82f6;
+  transform: scale(1.15) rotate(5deg);
+  color: #ffffff;
 }
 
-/* --- Responsividad --- */
+/* Media Query para móviles */
 @media (max-width: 768px) {
   .footer-content {
     flex-direction: column;
-    align-items: center;
     text-align: center;
   }
 
-  .footer-section {
-    margin-bottom: 20px;
-    min-width: 100%;
+  .social-grid {
+    justify-content: center;
   }
 
-  .footer-section h3 {
-    text-align: center;
-  }
-
-  .social-icons {
+  .download-btn {
+    width: 90%;
     justify-content: center;
   }
 }

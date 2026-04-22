@@ -9,9 +9,20 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
-import { FaFileExcel, FaPrint, FaUserTie } from "react-icons/fa";
+import { FaFileExcel, FaPrint } from "react-icons/fa";
 import "./ManageTeams.css";
 import AvatarFoto from "./AvatarFoto";
+
+// --- Spinner de carga ---
+function LoadingSpinner({ message = "Cargando..." }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "200px", gap: "16px" }}>
+      <div style={{ width: "48px", height: "48px", border: "4px solid rgba(0,77,153,0.15)", borderTopColor: "#004d99", borderRadius: "50%", animation: "spinTeams 0.75s linear infinite" }} />
+      <p style={{ color: "#666", fontSize: "0.9rem", margin: 0 }}>{message}</p>
+      <style>{`@keyframes spinTeams { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
 
 function ManageTeams() {
   const [leaders, setLeaders] = useState([]);
@@ -136,7 +147,7 @@ function ManageTeams() {
     }, 500);
   };
 
-  if (loading) return <p className="loading-text">Cargando pelotones...</p>;
+  if (loading) return <LoadingSpinner message="Cargando pelotones..." />;
 
   return (
     // Añadimos clase condicional para controlar estilos de impresión

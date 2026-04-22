@@ -9,7 +9,7 @@ import {
 
 // --- CONTEXTOS ---
 import { AuthProvider, useAuth } from "./AuthContext";
-import { ThemeProvider, useTheme } from "./ThemeContext";
+import { ThemeProvider } from "./ThemeContext";
 
 // --- COMPONENTES GLOBALES ---
 import Navbar from "./components/Navbar";

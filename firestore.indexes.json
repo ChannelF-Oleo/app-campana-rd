@@ -1,0 +1,37 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "simpatizantes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "registradoPor", "order": "ASCENDING" },
+        { "fieldPath": "fechaRegistro", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "simpatizantes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sector", "order": "ASCENDING" },
+        { "fieldPath": "fechaRegistro", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "simpatizantes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "municipio", "order": "ASCENDING" },
+        { "fieldPath": "fechaRegistro", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "rol", "order": "ASCENDING" },
+        { "fieldPath": "nombre", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

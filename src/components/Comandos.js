@@ -309,7 +309,13 @@ function Comandos() {
   };
 
   if (loading)
-    return <div className="loading-text">Cargando estructura...</div>;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "200px", gap: "16px" }}>
+        <div style={{ width: "48px", height: "48px", border: "4px solid rgba(0,77,153,0.15)", borderTopColor: "#004d99", borderRadius: "50%", animation: "spinC 0.75s linear infinite" }} />
+        <p style={{ color: "#666", fontSize: "0.9rem", margin: 0 }}>Cargando estructura...</p>
+        <style>{`@keyframes spinC { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
 
   return (
     <div className="comandos-container glass-panel">

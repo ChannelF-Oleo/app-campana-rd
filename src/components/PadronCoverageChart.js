@@ -4,12 +4,12 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import "./Metrics.css"; // Reutilizamos tus estilos
+import { TOTAL_PADRON_META } from "../constants";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const PadronCoverageChart = () => {
-  // 1. CONFIGURACIÓN: Define aquí tu meta total de electores
-  const TOTAL_PADRON_META = 244000; // Ajusta este número al real
+  // TOTAL_PADRON_META se lee desde .env (REACT_APP_PADRON_META) vía constants.js
 
   const [totalSimpatizantes, setTotalSimpatizantes] = useState(0);
   const [loading, setLoading] = useState(true);

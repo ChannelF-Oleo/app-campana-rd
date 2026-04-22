@@ -5,204 +5,165 @@ import {
   FaUserShield,
   FaCrosshairs,
 } from "react-icons/fa";
-// Las demás se eliminan del import si no se usan directamente como FaRoad, FaBabyCarriage, FaShip
 import "./Propuestas.css";
 
-// 1. Componente Reutilizable para Tarjetas de Propuesta
-const ProposalCard = ({ tag, title, description, detail, citation }) => (
-  // Se asume que los "cite_start" y "cite" son placeholders para referencias
-  <div className="prop-card" data-citation={citation}>
+// 1. Componente Reutilizable para Tarjetas
+const ProposalCard = ({ tag, title, description, detail }) => (
+  <div className="prop-card">
+    <div className="card-accent-line"></div>
     {tag && <span className={`tag ${tag.class}`}>{tag.text}</span>}
     <h3 dangerouslySetInnerHTML={{ __html: title }} />
     <p dangerouslySetInnerHTML={{ __html: description }} />
-    {detail && <p className="card-detail">Importancia: {detail}</p>}
+    {detail && (
+      <p className="card-detail">
+        <strong>Importancia:</strong> {detail}
+      </p>
+    )}
   </div>
 );
 
-// 2. Datos de Proyectos Legislativos extraídos
+// --- DATOS INTEGRADOS PARA EVITAR EL ERROR 'NO-UNDEF' ---
+
 const legislativeProjects = [
   {
-    tag: { class: "tag-infra", text: "Infraestructura y Vías" },
+    tag: { class: "tag-infra", text: "Infraestructura" },
     title: "Asfaltado y Construcción Vial para SDO",
-    description:
-      "Solicita al Presidente Abinader la asignación de fondos para la construcción y asfaltado de calles en Hato Nuevo, Caballona, Bienvenido, Juan Guzmán, Mango Fresco y Palavé.",
-    detail:
-      "Beneficia a más de 30 mil personas en zonas de expansión, promoviendo salud y progreso.",
-    citation: "cite: 67, 72, 76",
+    description: "Solicitud de fondos para la construcción y asfaltado en Hato Nuevo, Caballona, Bienvenido, Juan Guzmán, Mango Fresco y Palavé.",
+    detail: "Beneficia a más de 30 mil personas en zonas de expansión.",
   },
   {
-    tag: { class: "tag-salud", text: "Salud y Seguridad Escolar" },
-    title: "Implementación de Primeros Auxilios en Escuelas",
-    description:
-      'Propuesta para integrar los cursos de "Primeros Auxilios Básicos" como materia en las escuelas de Jornada Escolar Extendida, debido a la alta tasa de accidentes de tránsito.',
-    detail:
-      "Fortalecer la cultura de prevención y empoderar a los jóvenes como agentes de cambio.",
-    citation: "cite: 85, 92, 94",
+    tag: { class: "tag-salud", text: "Salud Escolar" },
+    title: "Primeros Auxilios en Escuelas",
+    description: 'Integrar "Primeros Auxilios Básicos" como materia en la Jornada Escolar Extendida.',
+    detail: "Fortalece la cultura de prevención ante accidentes de tránsito.",
   },
   {
     tag: { class: "tag-infancia", text: "Primera Infancia" },
-    title: "Centros CAIPI en Zonas Vulnerables",
-    description:
-      "Solicita la instalación de Centros de Atención Integral a la Primera Infancia (CAIPI) en Las Caobas, Hato Nuevo y Palavé, SDO, para mitigar la vulnerabilidad infantil.",
-    detail:
-      "Garantiza cuidado, protección y oportunidades para miles de niños.",
-    citation: "cite: 99, 102, 103, 107",
+    title: "Centros CAIPI en SDO",
+    description: "Instalación de centros en Las Caobas, Hato Nuevo y Palavé para mitigar la vulnerabilidad infantil.",
+    detail: "Garantiza cuidado y protección para miles de niños.",
   },
 ];
 
-// 3. Datos de Comisiones y Rol Legislativo extraídos
 const commissionRoles = [
   {
-    tag: { class: "tag-comision", text: "Obras Públicas y Comunicaciones" },
+    tag: { class: "tag-comision", text: "Obras Públicas" },
     title: "Fomento del Desarrollo Sostenible",
-    description:
-      "Analiza propuestas de ley que impactan la movilidad y seguridad vial, fiscalizando la ejecución de obras y el uso eficiente de recursos.",
-    citation: "cite: 204, 205",
+    description: "Fiscalización de obras y análisis de leyes de movilidad y seguridad vial.",
   },
   {
     tag: { class: "tag-comision", text: "Asuntos Marítimos" },
     title: "Defensa de la Soberanía Jurídica",
-    description:
-      "Estudia iniciativas sobre comercio marítimo y soberanía. Participó en el análisis de la Sentencia TC/0547/24 (RD vs. Países Bajos).",
-    citation: "cite: 180, 190",
+    description: "Estudio de iniciativas sobre comercio marítimo y soberanía territorial.",
   },
 ];
 
-// 4. Datos de Posicionamiento Clave extraídos
 const keyPositions = [
   {
-    tag: { class: "tag-politica", text: "Reforma Constitucional" },
-    title: "Reforma Constitucional", // Título simplificado ya que la tarjeta no lo usa
-    description:
-      'Apoyó la reciente modificación constitucional, reafirmando que "la democracia no se defiende en discursos, se protege en hechos".',
-    citation: "cite: 121, 123",
+    tag: { class: "tag-politica", text: "Constitución" },
+    title: "Reforma Constitucional",
+    description: "Apoyo a la modernización de la carta magna para proteger la democracia con hechos.",
   },
   {
-    tag: { class: "tag-politica", text: "Política Migratoria" },
-    title: "Política Migratoria", // Título simplificado
-    description:
-      "Respalda las medidas migratorias del Presidente Abinader, buscando proteger la soberanía y velar por una convivencia pacífica y justa.",
-    citation: "cite: 143, 149",
+    tag: { class: "tag-politica", text: "Soberanía" },
+    title: "Política Migratoria",
+    description: "Respaldo a medidas que protejan la frontera y velen por una convivencia justa.",
   },
   {
-    tag: { class: "tag-politica", text: "Postura Conservadora" },
-    title: "Postura Conservadora", // Título simplificado
-    description:
-      "Defiende los valores tradicionales y la vida desde la concepción, oponiéndose a legislaciones que promuevan el aborto y la ideologia de genero.",
-    citation: "cite: 143, 149",
+    tag: { class: "tag-politica", text: "Valores" },
+    title: "Postura Conservadora",
+    description: "Defensa de los valores tradicionales y la vida desde la concepción.",
   },
 ];
 
-// 5. Datos de Acción Comunitaria extraídos
 const communityActions = [
   {
-    title: "Apoyo al Emprendimiento Femenino",
-    description:
-      "Apoyo a la Fundación Emprendedoras Virtuosas, promoviendo el empoderamiento económico de las mujeres en el municipio.",
-    citation: "cite: 295, 302",
+    title: "Emprendimiento Femenino",
+    description: "Apoyo a la Fundación Emprendedoras Virtuosas para el empoderamiento económico.",
   },
   {
-    title: "Deporte como Inclusión",
-    description:
-      "Impulsa actividades y políticas que integran el deporte, buscando prevenir la violencia y enaltecer el talento juvenil en los barrios.",
-    citation: "cite: 242, 245",
+    title: "Deporte e Inclusión",
+    description: "Impulso de actividades deportivas para prevenir la violencia juvenil.",
   },
   {
     title: "Salud en el Territorio",
-    description:
-      "Acuerdo de colaboración con el Área 7 de Salud Pública y FUNDECOH para fortalecer la seguridad y salud comunitaria.",
-    citation: "cite: 324, 325",
+    description: "Alianzas con Salud Pública para fortalecer la seguridad comunitaria.",
   },
   {
     title: "Vivienda Digna",
-    description:
-      "Celebró la entrega del proyecto Guajimia VI (144 apartamentos), considerado un hito para la vivienda digna y la inclusión en SDO.",
-    citation: "cite: 377",
+    description: "Gestión y celebración de la entrega del proyecto Guajimia VI.",
   },
 ];
 
+// --- COMPONENTE PRINCIPAL ---
+
 function Propuestas() {
   return (
-    <div className="propuestas-container container">
-      <h1 className="page-header">Gestión y Propuestas 2024-2025</h1>
-
-      {/* SECCIÓN: PROYECTOS LEGISLATIVOS */}
-      <div className="prop-section">
-        <h2>
-          <FaGraduationCap /> Proyectos de Resolución e Iniciativas
-        </h2>
-        <div className="grid-3">
-          {/* 6. Mapeo de datos para renderizar */}
-          {legislativeProjects.map((prop, index) => (
-            <ProposalCard
-              key={index}
-              tag={prop.tag}
-              title={prop.title}
-              description={prop.description}
-              detail={prop.detail}
-              citation={prop.citation}
-            />
-          ))}
-        </div>
+    <div className="propuestas-page">
+      <div className="header-section">
+        <h1 className="page-header">Gestión y Propuestas 2024-2025</h1>
+        <p className="header-subtitle">Trabajo legislativo con transparencia y compromiso social</p>
       </div>
 
-      {/* SECCIÓN: COMISIONES Y ROL EN EL CONGRESO */}
-      <div className="prop-section">
-        <h2>
-          <FaUserShield /> Comisiones y Rol Legislativo
-        </h2>
-        <div className="grid-2">
-          {commissionRoles.map((role, index) => (
-            <ProposalCard
-              key={`role-${index}`}
-              tag={role.tag}
-              title={role.title}
-              description={role.description}
-              citation={role.citation}
-            />
-          ))}
-        </div>
-
-        <div className="prop-section">
-          <h2 style={{ marginTop: "40px" }}>
-            {" "}
-            <FaCrosshairs />
-            Posicionamiento Clave
+      {/* SECCIÓN 1: Fondo Blanco */}
+      <section className="prop-section bg-white">
+        <div className="container">
+          <h2 className="section-title">
+            <FaGraduationCap /> Proyectos de Resolución
           </h2>
-          <div className="grid-2">
-            {keyPositions.map((pos, index) => (
-              <ProposalCard
-                key={`pos-${index}`}
-                tag={pos.tag}
-                title={pos.title}
-                description={pos.description}
-                citation={pos.citation}
-              />
+          <div className="grid-3">
+            {legislativeProjects.map((prop, index) => (
+              <ProposalCard key={`leg-${index}`} {...prop} />
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* SECCIÓN: ACCIÓN COMUNITARIA */}
-      <div className="prop-section">
-        <h2>
-          <FaHeart /> Acción Comunitaria y Social
-        </h2>
-        <div className="grid-2">
-          {communityActions.map((action, index) => (
-            // Para este caso, podemos usar el mismo ProposalCard omitiendo el tag
-            <ProposalCard
-              key={`action-${index}`}
-              title={action.title}
-              description={action.description}
-              citation={action.citation}
-            />
-          ))}
+      {/* SECCIÓN 2: Fondo Alterno (Gris/Azul tenue) */}
+      <section className="prop-section bg-alt">
+        <div className="container">
+          <h2 className="section-title">
+            <FaUserShield /> Rol Legislativo
+          </h2>
+          <div className="grid-2">
+            {commissionRoles.map((role, index) => (
+              <ProposalCard key={`role-${index}`} {...role} />
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* SECCIÓN 3: Fondo Blanco */}
+      <section className="prop-section bg-white">
+        <div className="container">
+          <h2 className="section-title">
+            <FaCrosshairs /> Posicionamiento
+          </h2>
+          <div className="grid-3">
+            {keyPositions.map((pos, index) => (
+              <ProposalCard key={`pos-${index}`} {...pos} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN 4: Fondo Alterno */}
+      <section className="prop-section bg-alt">
+        <div className="container">
+          <h2 className="section-title">
+            <FaHeart /> Acción Comunitaria
+          </h2>
+          <div className="grid-2">
+            {communityActions.map((action, index) => (
+              <ProposalCard key={`act-${index}`} {...action} />
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-// 7. Asegurar la exportación del nombre del componente
 export default Propuestas;
+
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
@@ -99,28 +99,7 @@ function RegisterByActivist({ user }) {
     setMap(null);
   }, []);
 
-  // Función para geocodificar una dirección y centrar el mapa
-  const geocodeAddress = useCallback(
-    (address) => {
-      if (!isLoaded || !map) return;
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode(
-        { address: `${address}, República Dominicana` },
-        (results, status) => {
-          if (status === "OK" && results[0]) {
-            const location = results[0].geometry.location;
-            map.panTo(location);
-          } else {
-            console.error(
-              `La geocodificación falló por la siguiente razón: ${status}`
-            );
-          }
-        }
-      );
-    },
-    [isLoaded, map]
-  );
-  // Notification state
+
   const [notification, setNotification] = useState({ message: "", type: "" });
 
   // NUEVA FUNCIÓN: Buscar votante al ingresar cédula válida
