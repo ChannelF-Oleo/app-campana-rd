@@ -1,7 +1,6 @@
 import React from "react";
 import { FaFacebook, FaInstagram, FaXTwitter, FaFilePdf } from "react-icons/fa6"; // FaXTwitter es más actual que FaTimes
 import "./Footer.css";
-import pdfPath from "./Rendicion de cuenta Felix Encarnacion COPIA 2.pdf";
 
 const SOCIAL_LINKS = [
   { id: "facebook", icon: <FaFacebook />, url: "https://www.facebook.com/felixencarnacion", label: "Facebook" },
@@ -32,7 +31,7 @@ function Footer() {
         <div className="footer-section">
           <h3 className="footer-title">Transparencia</h3>
           <a
-            href={pdfPath}
+            href={process.env.PUBLIC_URL + "/Rendicion_de_cuenta.pdf"}
             target="_blank"
             rel="noopener noreferrer"
             className="download-btn"
