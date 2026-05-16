@@ -8,10 +8,18 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const { defineSecret } = require("firebase-functions/params");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 // Importación específica para Triggers de Auth (Aún usan v1)
 const { user } = require("firebase-functions/v1/auth");
+
+// Importar plantillas de email
+const {
+  getSimpatizanteWelcomeTemplate,
+  getUserWelcomeTemplate,
+  getPasswordResetTemplate,
+  getGoalNotificationTemplate
+} = require("./emailTemplates");
 
 admin.initializeApp();
 
@@ -22,11 +30,14 @@ setGlobalOptions({
   cors: true,
 });
 
-const gmailEmail = defineSecret("GMAIL_EMAIL");
-const gmailPassword = defineSecret("GMAIL_PASSWORD");
+// Secretos para Resend
+const resendApiKey = defineSecret("RESEND_API_KEY");
+
+// Configuración de Resend
+let resendClient;
 
 // =========================================================================
-// 1. AUTH TRIGGER: CREAR PERFIL AUTOMÁTICO (Google/Apple)
+// 1. AUTH TRIGGER: CREAR PERFIL AUTOMÁTICO Y ENVIAR CORREO DE BIENVENIDA
 // =========================================================================
 exports.createProfileForProvider = user().onCreate(async (userRecord) => {
   const db = admin.firestore();
@@ -35,7 +46,7 @@ exports.createProfileForProvider = user().onCreate(async (userRecord) => {
   try {
     const doc = await userRef.get();
     if (!doc.exists) {
-      await userRef.set({
+      const userData = {
         uid: userRecord.uid,
         nombre: userRecord.displayName || "Usuario Sin Nombre",
         email: userRecord.email,
@@ -46,8 +57,19 @@ exports.createProfileForProvider = user().onCreate(async (userRecord) => {
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         lastActivity: admin.firestore.FieldValue.serverTimestamp(),
         metodoRegistro: "google",
-      });
+      };
+      
+      await userRef.set(userData);
       logger.info(`Perfil creado automáticamente para: ${userRecord.email}`);
+      
+      // Enviar correo de bienvenida para usuario registrado
+      if (userRecord.email) {
+        await sendUserWelcomeEmail(
+          userRecord.email,
+          userData.nombre,
+          userData.rol
+        );
+      }
     }
   } catch (error) {
     logger.error("Error creando perfil automático:", error);
@@ -159,7 +181,7 @@ exports.deleteUserAndData = onCall(async (request) => {
 });
 
 // =========================================================================
-// 5. CALLABLE: CREAR USUARIO ADMIN (CreateUserAdmin)
+// 4. CALLABLE: CREAR USUARIO ADMIN Y ENVIAR CORREO DE BIENVENIDA
 // =========================================================================
 exports.createUserAdmin = onCall(async (request) => {
   const { nombre, email, password, rol, cedula } = request.data;
@@ -176,7 +198,7 @@ exports.createUserAdmin = onCall(async (request) => {
       disabled: false,
     });
 
-    await admin.firestore().collection("users").doc(userRecord.uid).set({
+    const userData = {
       uid: userRecord.uid,
       nombre,
       email,
@@ -185,7 +207,9 @@ exports.createUserAdmin = onCall(async (request) => {
       registrationCount: 0,
       lastActivity: admin.firestore.FieldValue.serverTimestamp(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    };
+
+    await admin.firestore().collection("users").doc(userRecord.uid).set(userData);
 
     // Espejo en Simpatizantes
     const simpRef = admin.firestore().collection("simpatizantes");
@@ -204,6 +228,9 @@ exports.createUserAdmin = onCall(async (request) => {
         direccion: "N/A",
       });
     }
+
+    // Enviar correo de bienvenida para usuario creado por admin
+    await sendUserWelcomeEmail(email, nombre, rol);
 
     return { success: true };
   } catch (error) {
@@ -339,75 +366,168 @@ exports.registerSimpatizante = onCall(async (request) => {
   }
 });
 
-exports.sendWelcomeEmail = onDocumentCreated(
-  { document: "simpatizantes/{docId}", secrets: [gmailEmail, gmailPassword] },
+// =========================================================================
+// 7. CORREOS ELECTRÓNICOS CON RESEND
+// =========================================================================
+
+// Función auxiliar para inicializar Resend
+const getResendClient = () => {
+  if (!resendClient) {
+    resendClient = new Resend(resendApiKey.value());
+  }
+  return resendClient;
+};
+
+// Función para enviar correo de bienvenida a simpatizantes
+const sendSimpatizanteWelcomeEmail = async (email, nombre, additionalData = {}) => {
+  try {
+    const resend = getResendClient();
+    const htmlContent = getSimpatizanteWelcomeTemplate(nombre, additionalData);
+    
+    const result = await resend.emails.send({
+      from: 'Félix Encarnación <notificaciones@felixencarnacion.com>',
+      to: [email],
+      subject: '¡Bienvenido al movimiento FE28! 🇩🇴',
+      html: htmlContent,
+    });
+    
+    logger.info(`Correo de bienvenida enviado a simpatizante: ${email}`, { messageId: result.id });
+    return result;
+  } catch (error) {
+    logger.error(`Error enviando correo a simpatizante ${email}:`, error);
+    throw error;
+  }
+};
+
+// Función para enviar correo de bienvenida a usuarios registrados
+const sendUserWelcomeEmail = async (email, nombre, rol = 'multiplicador') => {
+  try {
+    const resend = getResendClient();
+    const htmlContent = getUserWelcomeTemplate(nombre, email, rol);
+    
+    const result = await resend.emails.send({
+      from: 'Félix Encarnación <notificaciones@felixencarnacion.com>',
+      to: [email],
+      subject: '¡Bienvenido al equipo FE28! 🚀',
+      html: htmlContent,
+    });
+    
+    logger.info(`Correo de bienvenida enviado a usuario: ${email}`, { messageId: result.id });
+    return result;
+  } catch (error) {
+    logger.error(`Error enviando correo a usuario ${email}:`, error);
+    throw error;
+  }
+};
+
+// Trigger: Enviar correo de bienvenida cuando se registra un simpatizante
+exports.sendWelcomeEmailToSimpatizante = onDocumentCreated(
+  { 
+    document: "simpatizantes/{docId}", 
+    secrets: [resendApiKey] 
+  },
   async (event) => {
     const data = event.data?.data();
-    if (!data || !data.email) return;
+    if (!data || !data.email) {
+      logger.info("Simpatizante sin email, no se envía correo");
+      return;
+    }
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: gmailEmail.value(), pass: gmailPassword.value() },
-    });
-
-    const nombreSimpatizante = data.nombre || "Simpatizante";
-    const projectId = process.env.GCLOUD_PROJECT;
-    const baseUrl = `https://${projectId}.web.app`;
-
+    const nombre = data.nombre || "Simpatizante";
+    
     try {
-      await transporter.sendMail({
-        from: `"Félix Encarnación" <${gmailEmail.value()}>`,
-        to: data.email,
-        subject: "¡Bienvenido al equipo! 🇩🇴",
-        html: getWelcomeHtml(nombreSimpatizante, baseUrl),
+      await sendSimpatizanteWelcomeEmail(data.email, nombre, {
+        provincia: data.provincia,
+        municipio: data.municipio,
+        sector: data.sector,
+        registradoPor: data.registradoPor
       });
-      logger.info(`Email enviado a ${data.email}`);
-    } catch (e) {
-      logger.error(e);
+    } catch (error) {
+      logger.error("Error en trigger de correo para simpatizante:", error);
     }
   }
 );
 
-// Plantilla HTML
-const getWelcomeHtml = (nombre, baseUrl) => `
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
-  .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-  .header img { width: 100%; height: auto; display: block; }
-  .content { padding: 40px 30px; color: #333333; line-height: 1.6; font-size: 16px; }
-  .btn { display: inline-block; background-color: #004d99; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
-  .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #888; }
-</style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="${baseUrl}/images/899dfce2a4eff0d9abc920e56e8f5748.png" alt="Cabecera">
-    </div>
-    <div class="content">
-      <p><strong>Hola, ${nombre}:</strong></p>
-      <p>¡Gracias por dar el paso y unirte a nuestra plataforma!</p>
-      <p>Me llena de entusiasmo darte la bienvenida oficial. Tu registro es una señal clara de que compartimos el mismo deseo: ver a <strong>Santo Domingo Oeste</strong> desarrollarse de verdad.</p>
-      <center>
-        <a href="https://tucampana.com" class="btn">Visitar Portal Web</a>
-      </center>
-      <br>
-      <p>Un fuerte abrazo,<br><strong>Felix Encarnación</strong><br>Tu Diputado | Santo Domingo Oeste</p>
-    </div>
-    <div class="header">
-      <img src="${baseUrl}/images/d95804dd27a28dfe32433fa713acb0de.png" alt="Pie de página">
-    </div>
-    <div class="footer">
-      <p>Recibiste este correo porque te registraste en nuestra plataforma.</p>
-    </div>
-  </div>
-</body>
-</html>
-`;
+// Trigger: Enviar correo de bienvenida cuando se crea un usuario
+exports.sendWelcomeEmailToUser = onDocumentCreated(
+  { 
+    document: "users/{userId}", 
+    secrets: [resendApiKey] 
+  },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || !data.email) {
+      logger.info("Usuario sin email, no se envía correo");
+      return;
+    }
+
+    // Solo enviar si no es un registro automático de Google/Apple
+    // (esos ya se manejan en el auth trigger)
+    if (data.metodoRegistro === "google" || data.metodoRegistro === "apple") {
+      logger.info("Usuario de proveedor externo, correo ya enviado en auth trigger");
+      return;
+    }
+
+    const nombre = data.nombre || "Usuario";
+    const rol = data.rol || "multiplicador";
+    
+    try {
+      await sendUserWelcomeEmail(data.email, nombre, rol);
+    } catch (error) {
+      logger.error("Error en trigger de correo para usuario:", error);
+    }
+  }
+);
+
+// Función callable para enviar correos personalizados
+exports.sendCustomEmail = onCall(
+  { secrets: [resendApiKey] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Debes estar autenticado.");
+    }
+
+    const { to, subject, template, data } = request.data;
+    
+    if (!to || !subject || !template) {
+      throw new HttpsError("invalid-argument", "Faltan parámetros requeridos.");
+    }
+
+    try {
+      const resend = getResendClient();
+      let htmlContent;
+
+      switch (template) {
+        case 'simpatizante_welcome':
+          htmlContent = getSimpatizanteWelcomeTemplate(data.nombre, data);
+          break;
+        case 'user_welcome':
+          htmlContent = getUserWelcomeTemplate(data.nombre, data.email, data.rol);
+          break;
+        case 'password_reset':
+          htmlContent = getPasswordResetTemplate(data.nombre, data.resetLink);
+          break;
+        case 'goal_notification':
+          htmlContent = getGoalNotificationTemplate(data.nombre, data.meta, data.progreso);
+          break;
+        default:
+          throw new HttpsError("invalid-argument", "Plantilla no válida.");
+      }
+
+      const result = await resend.emails.send({
+        from: 'Félix Encarnación <notificaciones@felixencarnacion.com>',
+        to: Array.isArray(to) ? to : [to],
+        subject: subject,
+        html: htmlContent,
+      });
+
+      return { success: true, messageId: result.id };
+    } catch (error) {
+      logger.error("Error enviando correo personalizado:", error);
+      throw new HttpsError("internal", "Error enviando correo.");
+    }
+  }
+);
 
 
 // ... (MANTÉN TUS IMPORTS Y CONFIGURACIONES ANTERIORES ARRIBA) ...
@@ -419,7 +539,7 @@ const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const zonasData = require("./zonas.json");
 
 // =========================================================================
-// 7. TRIGGER: ASIGNACIÓN AUTOMÁTICA DE ZONA Y RECINTO
+// 8. TRIGGER: ASIGNACIÓN AUTOMÁTICA DE ZONA Y RECINTO
 // =========================================================================
 exports.asignarZonaYRecinto = onDocumentWritten("simpatizantes/{docId}", async (event) => {
   // Si el documento se borró, no hacemos nada
