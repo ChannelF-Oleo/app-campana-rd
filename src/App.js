@@ -11,6 +11,9 @@ import {
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ThemeProvider } from "./ThemeContext";
 
+// --- HOOKS ---
+import usePageTracking from "./hooks/usePageTracking";
+
 // --- COMPONENTES GLOBALES ---
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -126,8 +129,9 @@ function PublicOnlyRoute() {
 // --- DEFINICIÓN DE RUTAS ---
 function AppRoutes() {
   const { user } = useAuth();
-  // Nota: Ya no necesitamos lógica de tema aquí, ThemeContext se encarga.
-
+  // Rastreo automático de páginas con Google Analytics
+  usePageTracking();
+  
   const [isGoalModalOpen, setGoalModalOpen] = useState(false);
   const handleOpenGoalModal = () => setGoalModalOpen(true);
   const handleCloseGoalModal = () => setGoalModalOpen(false);

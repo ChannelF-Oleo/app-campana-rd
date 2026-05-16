@@ -1,3 +1,16 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://your-domain.com/sitemap.xml
+
+# Disallow admin routes for security
+Disallow: /admin/
+Disallow: /dashboard/
+
+# Allow public pages
+Allow: /
+Allow: /propuestas
+Allow: /registro
+Allow: /registro-app
