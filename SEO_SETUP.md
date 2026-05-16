@@ -29,10 +29,10 @@
 ## 🔧 Configuración Requerida
 
 ### 1. Actualizar el Dominio
-**IMPORTANTE**: Debes reemplazar `https://your-domain.com/` en los siguientes archivos:
+**IMPORTANTE**: Debes reemplazar `https://www.felixencarnacion.com/` en los siguientes archivos:
 
-1. **sitemap.xml** - Líneas con `<loc>https://your-domain.com/...</loc>`
-2. **robots.txt** - Línea `Sitemap: https://your-domain.com/sitemap.xml`
+1. **sitemap.xml** - Líneas con `<loc>https://www.felixencarnacion.com/...</loc>`
+2. **robots.txt** - Línea `Sitemap: https://www.felixencarnacion.com/sitemap.xml`
 3. **index.html** - Meta tags Open Graph y Twitter
 
 ### 2. Verificar Google Analytics

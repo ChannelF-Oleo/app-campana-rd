@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://www.felixencarnacion.com/sitemap.xml
 
 # Disallow admin routes for security
 Disallow: /admin/
