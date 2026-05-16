@@ -4,39 +4,17 @@
   <url>
     <loc>https://www.felixencarnacion.com/</loc>
     <lastmod>2026-05-16</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
   </url>
   
-  <!-- Página de propuestas -->
+  <!-- Página de propuestas (Ideal para atraer tráfico orgánico calificado) -->
   <url>
     <loc>https://www.felixencarnacion.com/propuestas</loc>
     <lastmod>2026-05-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
   </url>
   
-  <!-- Página de registro público -->
+  <!-- Página de registro de simpatizantes (Objetivo de conversión principal) -->
   <url>
     <loc>https://www.felixencarnacion.com/registro</loc>
     <lastmod>2026-05-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  
-  <!-- Página de registro de app -->
-  <url>
-    <loc>https://www.felixencarnacion.com/registro-app</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  
-  <!-- Página de login -->
-  <url>
-    <loc>https://www.felixencarnacion.com/login</loc>
-    <lastmod>2026-05-16</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
   </url>
 </urlset>

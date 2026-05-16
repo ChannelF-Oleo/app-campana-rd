@@ -1,16 +1,12 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Allow: /
+
+# Bloquear rutas privadas, administrativas y de autenticación
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /registro-app/
 
 # Sitemap
 Sitemap: https://www.felixencarnacion.com/sitemap.xml
 
-# Disallow admin routes for security
-Disallow: /admin/
-Disallow: /dashboard/
-
-# Allow public pages
-Allow: /
-Allow: /propuestas
-Allow: /registro
-Allow: /registro-app

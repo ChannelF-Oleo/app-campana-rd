@@ -268,3 +268,83 @@
     margin: -1.5rem -1.5rem 1.5rem -1.5rem;
   }
 }
+
+/* Estilos para opciones de correo */
+.email-options-group {
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  border-left: 4px solid #004d99;
+}
+
+.email-options-group h3 {
+  color: #004d99;
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.email-options-group .checkbox-group {
+  margin-bottom: 15px;
+}
+
+.email-options-group .input-group {
+  margin-bottom: 15px;
+}
+
+.email-options-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.email-options-group textarea:focus {
+  outline: none;
+  border-color: #004d99;
+  box-shadow: 0 0 0 3px rgba(0, 77, 153, 0.1);
+}
+
+.email-preview {
+  background-color: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.email-preview p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #1565c0;
+}
+
+.email-preview strong {
+  color: #0d47a1;
+}
+
+/* Responsive para opciones de correo */
+@media (max-width: 768px) {
+  .email-options-group {
+    padding: 15px;
+    margin: 15px 0;
+  }
+  
+  .email-options-group h3 {
+    font-size: 15px;
+  }
+  
+  .email-preview {
+    padding: 12px;
+  }
+  
+  .email-preview p {
+    font-size: 13px;
+  }
+}
