@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { ref, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase";
 import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
-import "./AvatarFoto.css";
 
 const AvatarFoto = ({
   cedula,

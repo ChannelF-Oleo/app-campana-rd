@@ -4,7 +4,6 @@ import { auth, db, functions } from "../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import "./Login.css"; // Reuse login styles
 
 function RegisterAppUser() {
   const [cedula, setCedula] = useState("");

@@ -7,7 +7,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import "./Login.css";
 
 // Función auxiliar simple
 const isEmail = (input) => input.includes("@");

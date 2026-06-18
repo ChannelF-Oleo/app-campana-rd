@@ -7,7 +7,6 @@ import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { ubicacionesData } from "../data/ubicaciones.js";
 import { useAnalytics } from "../utils/analytics";
 import EmailStatus from "./EmailStatus";
-import "./PublicRegister.css";
 import logo from "../Felix/Inscribete.png";
 import {
   PROVINCIA_FIJA,

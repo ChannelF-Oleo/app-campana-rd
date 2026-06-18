@@ -3,7 +3,6 @@ import { db } from "../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import * as XLSX from "xlsx"; // Librería de Excel
 import { FaFileExcel } from "react-icons/fa"; // Icono para el botón
-import "./Metrics.css";
 
 // Este componente recibe el usuario actual para saber a quién buscar
 function MyRegistrations({ user }) {

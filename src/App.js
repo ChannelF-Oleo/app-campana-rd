@@ -17,8 +17,6 @@ import usePageTracking from "./hooks/usePageTracking";
 // --- COMPONENTES GLOBALES ---
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import "./index.css"; // IMPORTANTE: Asegúrate de importar index.css aquí o en index.js
-import "./App.css"; // Estilos de layout específicos
 
 // --- COMPONENTES DEL DASHBOARD ---
 import DashboardSidebar from "./components/DashboardSidebar";

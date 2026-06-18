@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "app-campana-rd",
   "version": "0.1.0",
   "private": true,
@@ -11,7 +12,7 @@
     "chart.js": "^4.5.1",
     "csv-parser": "^3.2.0",
     "firebase": "^12.4.0",
-    "firebase-admin": "^13.6.0",
+    "firebase-admin": "^14.0.0",
     "fs-extra": "^11.3.2",
     "inquirer": "^13.0.1",
     "react": "^19.2.1",

@@ -9,7 +9,6 @@ import {
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import { FaFileExcel } from "react-icons/fa";
-import "./MyRegisteredSimpatizantes.css";
 import AvatarFoto from "./AvatarFoto"; // <--- IMPORTAR COMPONENTE
 
 function MyRegisteredSimpatizantes({ user }) {

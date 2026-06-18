@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './MyReferralLink.css';
 
 function MyReferralLink({ user }) {
   // Construimos la URL completa usando window.location.origin para la base

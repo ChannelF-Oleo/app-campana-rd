@@ -10,7 +10,6 @@ import {
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import "./ManageTeams.css";
 import AvatarFoto from "./AvatarFoto";
 
 // --- Spinner de carga ---

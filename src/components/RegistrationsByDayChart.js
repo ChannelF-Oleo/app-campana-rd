@@ -11,7 +11,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import './Metrics.css';
 
 ChartJS.register(
   CategoryScale,

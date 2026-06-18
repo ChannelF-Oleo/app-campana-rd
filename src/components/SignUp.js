@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore'; 
-import './Login.css'; // Asumo que el CSS se mantiene
 
 // 🚨 CONSTANTE CLAVE
 const CEDULA_DOMAIN = '@cedula.temp'; 

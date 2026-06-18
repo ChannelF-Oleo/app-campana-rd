@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaHammer, FaHandHoldingMedical, FaChild, FaArrowRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import "./Home.css";
 
 // Importación de Imágenes
 import FelixPortrait from "../Felix/Felix.png";

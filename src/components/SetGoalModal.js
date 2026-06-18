@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 // Reutilizaremos los estilos de la otra modal para mantener la consistencia
-import './EditUserModal.css'; 
 
 function SetGoalModal({ user, onClose, onSave }) {
   // Leemos la meta actual del usuario o ponemos valores por defecto

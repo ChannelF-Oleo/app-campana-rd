@@ -3,7 +3,6 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
 import { ubicacionesData } from "../data/ubicaciones.js";
-import "./PublicRegister.css"; // Reusing styles
 
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 

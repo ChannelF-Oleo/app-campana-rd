@@ -8,7 +8,6 @@ import {
   getDocs,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
-import "./MyTeam.css";
 import AvatarFoto from "./AvatarFoto"; // <--- IMPORTAR COMPONENTE
 
 function MyTeam({ user }) {

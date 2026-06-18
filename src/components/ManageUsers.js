@@ -5,7 +5,6 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage"; // Funciones de Storage
 import * as XLSX from "xlsx";
-import "./ManageUsers.css";
 import AvatarFoto from "./AvatarFoto";
 import {
   ROLES_DISPONIBLES,

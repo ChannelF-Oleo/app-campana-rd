@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
+import "./global.css";
 import App from "./App";
 // ❌ 1. ELIMINAMOS la importación fallida.
 // import * as serviceWorkerRegistration from "./service-worker";

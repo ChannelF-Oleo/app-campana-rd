@@ -5,7 +5,6 @@ import {
   FaUserShield,
   FaCrosshairs,
 } from "react-icons/fa";
-import "./Propuestas.css";
 
 // 1. Componente Reutilizable para Tarjetas
 const ProposalCard = ({ tag, title, description, detail }) => (

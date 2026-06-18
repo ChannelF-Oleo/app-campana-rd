@@ -22,7 +22,6 @@ import {
 } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import AvatarFoto from "./AvatarFoto";
-import "./Comandos.css";
 
 // Importación de datos (Asegúrate de que el archivo esté en src/data)
 import zonasData from "../data/zonas.json";

@@ -7,7 +7,6 @@ import {
   where,
   getCountFromServer,
 } from "firebase/firestore";
-import "./Metrics.css";
 
 function TotalRegistrations({ filterUserIds }) {
   const [count, setCount] = useState(0);

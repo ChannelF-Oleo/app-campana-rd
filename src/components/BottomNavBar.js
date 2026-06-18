@@ -10,7 +10,6 @@ import {
 } from "react-icons/fa";
 import { useTheme } from "../ThemeContext";
 import { getVisibleNavItems } from "../data/navConfig";
-import "./BottomNavBar.css";
 
 function BottomNavBar({ user, onSetGoalClick, onLogout }) {
   const { isDarkMode, toggleDarkMode } = useTheme();

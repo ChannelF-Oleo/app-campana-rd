@@ -1,6 +1,5 @@
 import React from "react";
 import { FaFacebook, FaInstagram, FaXTwitter, FaFilePdf } from "react-icons/fa6"; // FaXTwitter es más actual que FaTimes
-import "./Footer.css";
 
 const SOCIAL_LINKS = [
   { id: "facebook", icon: <FaFacebook />, url: "https://www.facebook.com/felixencarnacion", label: "Facebook" },

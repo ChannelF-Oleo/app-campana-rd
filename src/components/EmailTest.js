@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase';
-import './EmailTest.css';
 
 const EmailTest = () => {
   const [formData, setFormData] = useState({

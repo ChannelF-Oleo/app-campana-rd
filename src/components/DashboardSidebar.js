@@ -3,7 +3,6 @@ import { NavLink } from "react-router-dom";
 import { useTheme } from "../ThemeContext";
 import { FaBars, FaTimes, FaSignOutAlt, FaSun, FaMoon } from "react-icons/fa";
 import { getVisibleNavItems } from "../data/navConfig"; // Asegúrate de que este archivo exista
-import "./DashboardSidebar.css";
 
 function DashboardSidebar({
   user,

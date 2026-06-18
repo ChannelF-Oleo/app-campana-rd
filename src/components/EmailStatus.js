@@ -1,5 +1,4 @@
 import React from 'react';
-import './EmailStatus.css';
 
 const EmailStatus = ({ 
   isVisible, 

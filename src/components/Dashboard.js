@@ -8,7 +8,6 @@ import RegistrationsByZoneChart from "./RegistrationsByZoneChart";
 import MyReferralLink from "./MyReferralLink";
 import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
 import PadronCoverageChart from "./PadronCoverageChart";
-import "./Dashboard.css";
 import AvatarFoto from "./AvatarFoto";
 
 const Dashboard = ({ user }) => {

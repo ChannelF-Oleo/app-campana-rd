@@ -3,7 +3,6 @@ import { db } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import "./Metrics.css"; // Reutilizamos tus estilos
 import { TOTAL_PADRON_META } from "../constants";
 
 ChartJS.register(ArcElement, Tooltip, Legend);

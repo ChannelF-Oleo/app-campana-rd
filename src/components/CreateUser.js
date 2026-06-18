@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // 1. Quitar imports de auth y firestore directos, importar functions
 import { getFunctions, httpsCallable } from "firebase/functions";
-import "./CreateUser.css";
 
 // 2. Preparar la llamada a la nueva función
 const functions = getFunctions();
