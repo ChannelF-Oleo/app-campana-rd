@@ -12,6 +12,7 @@ import {
   validarCedula,
   validarTelefono,
 } from "../constants.js";
+import Loader from "./Loader";
 
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
@@ -279,7 +280,7 @@ function RegisterByActivist({ user }) {
   };
 
   if (loadError) return <div>Error al cargar Google Maps.</div>;
-  if (!isLoaded) return <div>Cargando Mapa...</div>;
+  if (!isLoaded) return <Loader message="Cargando Mapa..." />;
 
   return (
     <div className="register-container">

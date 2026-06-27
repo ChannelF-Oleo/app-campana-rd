@@ -43,15 +43,15 @@ PWA en React 19 (Create React App) + Firebase (Auth, Firestore, Functions, Stora
 - [ ] Revisar carga bajo demanda de `xlsx` (peso y vulnerabilidades)
 
 ### 🎨 Funcionalidades faltantes / gaps de UX
-- [ ] Crear página 404 real (con layout, Navbar/Footer)
+- [x] Crear página 404 real (con layout, Navbar/Footer)
 - [x] Añadir Error Boundary global
-- [ ] Unificar estados de carga en un componente `<Loader/>`
+- [x] Unificar estados de carga en un componente `<Loader/>`
 - [ ] Revisar accesibilidad (labels/aria) en formularios largos y mapa
 
 ### 🧪 Pruebas
 - [x] Arreglar/eliminar `App.test.js` obsoleto ("learn react link")
-- [ ] Tests de validadores (cédula/teléfono)
-- [ ] Tests de `getVisibleNavItems` (lógica de rol pura)
+- [x] Tests de validadores (cédula/teléfono)
+- [x] Tests de `getVisibleNavItems` (lógica de rol pura)
 - [ ] Tests de guards de ruta y flujo de registro
 
 ### 📝 Claridad del código / documentación
@@ -77,10 +77,10 @@ PWA en React 19 (Create React App) + Firebase (Auth, Firestore, Functions, Stora
 | 7 | 🟡 Media | Extraer `<DashboardWelcome/>` y `useMediaQuery` a sus archivos | Estructura | ✅ Completada |
 | 8 | 🟡 Media | Aplicar `React.lazy`/`Suspense` por ruta | Rendimiento | ✅ Completada |
 | 9 | 🟡 Media | Cache de datos (React Query/SWR) para Firestore | Estado | ⬜ Pendiente |
-| 10 | 🟡 Media | Tests de validadores y `getVisibleNavItems` | Pruebas | ⬜ Pendiente |
+| 10 | 🟡 Media | Tests de validadores y `getVisibleNavItems` | Pruebas | ✅ Completada |
 | 11 | 🟢 Baja | Reorganizar `src/components/` en subcarpetas | Estructura | ⬜ Pendiente |
 | 12 | 🟢 Baja | Resolver límite `in` de Firestore con contadores agregados | Rendimiento | ⬜ Pendiente |
-| 13 | 🟢 Baja | Página 404 con layout, `<Loader/>` unificado, limpiar estilos inline | UX | ⬜ Pendiente |
+| 13 | 🟢 Baja | Página 404 con layout, `<Loader/>` unificado, limpiar estilos inline | UX | ✅ Completada |
 | 14 | 🟢 Baja | Mover scripts sueltos a `scripts/`; migración CRA → Vite | Documentación | ⬜ Pendiente |
 
 **Leyenda de estado:** ⬜ Pendiente · 🟦 En progreso · ✅ Completada
@@ -90,7 +90,7 @@ PWA en React 19 (Create React App) + Firebase (Auth, Firestore, Functions, Stora
 ## 📈 Progreso general
 
 - **Total de tareas:** 14
-- **Completadas:** 8 / 14
+- **Completadas:** 10 / 14
 - **Alta prioridad:** 5 / 5
-- **Media prioridad:** 3 / 5
-- **Baja prioridad:** 0 / 4
+- **Media prioridad:** 4 / 5
+- **Baja prioridad:** 1 / 4

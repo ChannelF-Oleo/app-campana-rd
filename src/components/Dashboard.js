@@ -9,6 +9,7 @@ import MyReferralLink from "./MyReferralLink";
 import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
 import PadronCoverageChart from "./PadronCoverageChart";
 import DashboardWelcome from "./DashboardWelcome";
+import Loader from "./Loader";
 import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../constants";
 
 const Dashboard = ({ user }) => {
@@ -71,7 +72,7 @@ const Dashboard = ({ user }) => {
     [relevantUserIds, user.rol]
   ); // Agregamos user.rol a dependencias
 
-  if (!user) return <div className="loading-screen">Cargando datos...</div>;
+  if (!user) return <Loader message="Cargando datos..." />;
 
   return (
     <div className="dashboard-container-inner">

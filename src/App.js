@@ -27,6 +27,8 @@ import BottomNavBar from "./components/BottomNavBar";
 // --- PÁGINAS (carga estática) ---
 import HomePage from "./components/Home"; // landing / primera pintura
 import SetGoalModal from "./components/SetGoalModal"; // modal, no es una ruta
+import NotFound from "./components/NotFound";
+import Loader from "./components/Loader";
 
 // --- PÁGINAS (carga diferida con React.lazy / code-splitting) ---
 // Se prioriza separar las rutas más pesadas: mapas (RegisterByActivist),
@@ -53,7 +55,7 @@ function PublicLayout() {
     <>
       <Navbar />
       <div className="public-content-wrapper">
-        <Suspense fallback={<div className="loading-screen">Cargando...</div>}>
+        <Suspense fallback={<Loader />}>
           <Outlet />
         </Suspense>
       </div>
@@ -95,7 +97,7 @@ function DashboardLayout() {
       )}
 
       <main className="dashboard-content">
-        <Suspense fallback={<div className="loading-screen">Cargando...</div>}>
+        <Suspense fallback={<Loader />}>
           <Outlet />
         </Suspense>
       </main>
@@ -106,14 +108,14 @@ function DashboardLayout() {
 // --- RUTAS PROTEGIDAS ---
 function ProtectedRoute() {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="loading-screen">Cargando...</div>;
+  if (isLoading) return <Loader />;
   if (!user) return <Navigate to="/login" replace />;
   return <Outlet />;
 }
 
 function PublicOnlyRoute() {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="loading-screen">Verificando...</div>;
+  if (isLoading) return <Loader message="Verificando..." />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
@@ -144,6 +146,8 @@ function AppRoutes() {
             <Route path="/registro" element={<PublicRegister />} />
             <Route path="/registro-app" element={<RegisterAppUser />} />
           </Route>
+          {/* 404 dentro del layout público: hereda Navbar y Footer */}
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* ZONA PRIVADA (DASHBOARD) - RUTAS PLANAS */}
@@ -167,15 +171,6 @@ function AppRoutes() {
             )}
           </Route>
         </Route>
-
-        <Route
-          path="*"
-          element={
-            <h2 style={{ textAlign: "center", marginTop: "50px" }}>
-              404: Página no encontrada
-            </h2>
-          }
-        />
       </Routes>
     </LayoutContext.Provider>
   );
