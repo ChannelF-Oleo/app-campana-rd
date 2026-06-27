@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { useAuth } from "../AuthContext";
-import AvatarFoto from "./AvatarFoto";
-import { auth } from "../firebase";
+import { useAuth } from "../../AuthContext";
+import AvatarFoto from "../ui/AvatarFoto";
+import { auth } from "../../firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { FaEnvelope, FaIdBadge, FaLock, FaCheckCircle, FaTimes } from "react-icons/fa";
 

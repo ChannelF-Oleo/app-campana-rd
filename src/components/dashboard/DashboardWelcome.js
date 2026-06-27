@@ -1,5 +1,5 @@
 import React from "react";
-import AvatarFoto from "./AvatarFoto";
+import AvatarFoto from "../ui/AvatarFoto";
 
 // Encabezado de bienvenida del dashboard (avatar + saludo + rol).
 // Reutilizado por las vistas de líder de zona, admin y multiplicador.

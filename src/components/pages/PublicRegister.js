@@ -1,20 +1,20 @@
 import React, { useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { doc, getDoc } from "firebase/firestore";
 import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
-import { ubicacionesData } from "../data/ubicaciones.js";
-import { useAnalytics } from "../utils/analytics";
-import EmailStatus from "./EmailStatus";
-import logo from "../Felix/Inscribete.png";
+import { ubicacionesData } from "../../data/ubicaciones.js";
+import { useAnalytics } from "../../utils/analytics";
+import EmailStatus from "../ui/EmailStatus";
+import logo from "../../Felix/Inscribete.png";
 import {
   PROVINCIA_FIJA,
   MUNICIPIO_FIJO,
   MAP_INITIAL_CENTER,
   MAP_DEFAULT_ZOOM,
   CEDULA_REGEX,
-} from "../constants";
+} from "../../constants";
 
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 

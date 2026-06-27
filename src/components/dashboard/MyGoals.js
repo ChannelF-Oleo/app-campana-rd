@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 const getStartOfWeek = (date) => {

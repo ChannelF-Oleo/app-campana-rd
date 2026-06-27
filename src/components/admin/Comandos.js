@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import {
   collection,
   getDocs,
@@ -21,10 +21,10 @@ import {
   FaPrint,
 } from "react-icons/fa";
 import * as XLSX from "xlsx";
-import AvatarFoto from "./AvatarFoto";
+import AvatarFoto from "../ui/AvatarFoto";
 
-// Importación de datos (Asegúrate de que el archivo esté en src/data)
-import zonasData from "../data/zonas.json";
+// Importación de datos
+import zonasData from "../../data/zonas.json";
 
 const NIVELES = ["Municipal", "Zonal", "Sectorial"];
 const LISTA_ZONAS = zonasData.map((z) => z.zona).sort();

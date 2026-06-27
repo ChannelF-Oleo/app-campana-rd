@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase';
-import { ROL_ADMIN, ROL_MULTIPLICADOR } from '../constants';
+import { functions } from '../../firebase';
+import { ROL_ADMIN, ROL_MULTIPLICADOR } from '../../constants';
 
 const EmailTest = () => {
   const [formData, setFormData] = useState({

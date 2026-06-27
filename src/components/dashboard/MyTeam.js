@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import {
   collection,
   query,
@@ -8,8 +8,8 @@ import {
   getDocs,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
-import AvatarFoto from "./AvatarFoto"; // <--- IMPORTAR COMPONENTE
-import { ROL_LIDER } from "../constants";
+import AvatarFoto from "../ui/AvatarFoto";
+import { ROL_LIDER } from "../../constants";
 
 function MyTeam({ user }) {
   const [teamMembersWithMetrics, setTeamMembersWithMetrics] = useState([]);

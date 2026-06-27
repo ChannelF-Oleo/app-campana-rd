@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
-import { ubicacionesData } from "../data/ubicaciones.js";
+import { ubicacionesData } from "../../data/ubicaciones.js";
 import {
   PROVINCIA_FIJA,
   MUNICIPIO_FIJO,
@@ -11,8 +11,8 @@ import {
   CEDULA_LONGITUD,
   validarCedula,
   validarTelefono,
-} from "../constants.js";
-import Loader from "./Loader";
+} from "../../constants.js";
+import Loader from "../ui/Loader";
 
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
@@ -58,7 +58,7 @@ function RegisterByActivist({ user }) {
   const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIO_FIJO);
   const [selectedSector, setSelectedSector] = useState("");
 
-  // NUEVO: Estado para las coordenadas (ubicación pineada)
+  // Estado para las coordenadas (ubicación pineada)
   const [coordinates, setCoordinates] = useState(MAP_INITIAL_CENTER);
   // Estado para el mapa (referencia)
   const [, setMap] = useState(null);
@@ -90,9 +90,7 @@ function RegisterByActivist({ user }) {
 
   const [notification, setNotification] = useState({ message: "", type: "" });
 
-  // NUEVA FUNCIÓN: Buscar votante al ingresar cédula válida
-  // En PublicRegister.js y RegisterByActivist.js
-
+  // Buscar votante al ingresar cédula válida
   const handleCedulaSearch = useCallback(async (inputCedula) => {
     const cedulaNormalizada = inputCedula.replace(/-/g, "");
 
@@ -109,7 +107,7 @@ function RegisterByActivist({ user }) {
           setNombre(data.nombre);
           setColegioElectoral(data.colegioElectoral || "");
 
-          // 2. NUEVO: Llenar Teléfono y Dirección si existen
+          // Llenar Teléfono y Dirección si existen
           if (data.telefono) setTelefono(data.telefono);
           if (data.direccion) setDireccion(data.direccion);
 
@@ -244,7 +242,7 @@ function RegisterByActivist({ user }) {
         provincia: selectedProvincia, // Valor fijo: Santo Domingo
         municipio: selectedMunicipio, // Valor fijo: Santo Domingo Oeste
         sector: selectedSector,
-        // NUEVO: Enviar las coordenadas
+        // Enviar las coordenadas
         lat: coordinates.lat,
         lng: coordinates.lng,
         // Pass activist's data
@@ -284,7 +282,7 @@ function RegisterByActivist({ user }) {
 
   return (
     <div className="register-container">
-      <form className="register-form" onSubmit={handleSubmit}>
+      <form className="register-form register-form--activist" onSubmit={handleSubmit}>
         <h2>Registrar Nuevo Simpatizante</h2>
         <p>Los datos se asociarán a tu perfil.</p>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from '../constants';
+import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from '../../constants';
 
 function EditUserModal({ user, onClose, onSave }) {
   const [rol, setRol] = useState(user.rol);

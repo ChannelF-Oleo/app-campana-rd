@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import {
   collection,
   query,
@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import { FaFileExcel } from "react-icons/fa";
-import AvatarFoto from "./AvatarFoto"; // <--- IMPORTAR COMPONENTE
+import AvatarFoto from "../ui/AvatarFoto";
 
 function MyRegisteredSimpatizantes({ user }) {
   const [simpatizantes, setSimpatizantes] = useState([]);

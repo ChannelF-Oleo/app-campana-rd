@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth, db, functions } from "../firebase";
+import { auth, db, functions } from "../../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { ROL_MULTIPLICADOR } from "../constants";
+import { ROL_MULTIPLICADOR } from "../../constants";
 
 function RegisterAppUser() {
   const [cedula, setCedula] = useState("");

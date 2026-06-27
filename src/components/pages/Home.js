@@ -3,16 +3,16 @@ import { FaHammer, FaHandHoldingMedical, FaChild, FaArrowRight } from "react-ico
 import { Link } from "react-router-dom";
 
 // Importación de Imágenes
-import FelixPortrait from "../Felix/Felix.png";
-import Felixmobil from "../Felix/FelixMobil.png";
-import Felix1 from "../Felix/Felix1.png";
-import Felix2 from "../Felix/Felix2.png";
-import Felix3 from "../Felix/Felix3.png";
-import Felix4 from "../Felix/Felix4.png";
-import Felix5 from "../Felix/Felix5.png";
-import Felix6 from "../Felix/Felix6.png";
-import Felix7 from "../Felix/Felix7.jpg";
-import Felix8 from "../Felix/Felix8.jpg";
+import FelixPortrait from "../../Felix/Felix.png";
+import Felixmobil from "../../Felix/FelixMobil.png";
+import Felix1 from "../../Felix/Felix1.png";
+import Felix2 from "../../Felix/Felix2.png";
+import Felix3 from "../../Felix/Felix3.png";
+import Felix4 from "../../Felix/Felix4.png";
+import Felix5 from "../../Felix/Felix5.png";
+import Felix6 from "../../Felix/Felix6.png";
+import Felix7 from "../../Felix/Felix7.jpg";
+import Felix8 from "../../Felix/Felix8.jpg";
 
 // Componentes Reutilizables (Conservando tu lógica)
 const FeatureCard = ({ icon: Icon, title, description }) => (

@@ -4532,6 +4532,15 @@ body.dark-mode .progress-bar-container {
   cursor: not-allowed;
 }
 
+/* Texto escrito en los inputs del formulario de activistas (modo oscuro).
+   --color-text-dark (#333333) no se redefine en dark mode, así que aquí
+   forzamos el texto claro solo en este formulario. No afecta placeholders,
+   bordes ni fondos. */
+body.dark-mode .register-form--activist .input-group input,
+body.dark-mode .register-form--activist .input-group select {
+  color: var(--color-text-main);
+}
+
 /* === Checkbox de Términos y Condiciones === */
 .checkbox-group {
   display: flex;

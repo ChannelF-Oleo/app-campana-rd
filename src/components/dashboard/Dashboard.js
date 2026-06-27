@@ -2,15 +2,15 @@ import React, { useState, useEffect, useMemo } from "react";
 
 import MyTeam from "./MyTeam";
 import TotalRegistrations from "./TotalRegistrations";
-import RegistrationsByDayChart from "./RegistrationsByDayChart";
+import RegistrationsByDayChart from "../charts/RegistrationsByDayChart";
 import MyGoals from "./MyGoals";
-import RegistrationsByZoneChart from "./RegistrationsByZoneChart";
+import RegistrationsByZoneChart from "../charts/RegistrationsByZoneChart";
 import MyReferralLink from "./MyReferralLink";
 import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
-import PadronCoverageChart from "./PadronCoverageChart";
+import PadronCoverageChart from "../charts/PadronCoverageChart";
 import DashboardWelcome from "./DashboardWelcome";
-import Loader from "./Loader";
-import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../constants";
+import Loader from "../ui/Loader";
+import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../../constants";
 
 const Dashboard = ({ user }) => {
   // 1. Lógica de Datos (IDs relevantes para seguridad)

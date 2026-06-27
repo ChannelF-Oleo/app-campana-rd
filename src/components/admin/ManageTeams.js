@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import {
   collection,
   onSnapshot,
@@ -10,8 +10,8 @@ import {
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
-import { ROL_LIDER, ROL_MULTIPLICADOR } from "../constants";
-import AvatarFoto from "./AvatarFoto";
+import { ROL_LIDER, ROL_MULTIPLICADOR } from "../../constants";
+import AvatarFoto from "../ui/AvatarFoto";
 
 // --- Spinner de carga ---
 function LoadingSpinner({ message = "Cargando..." }) {

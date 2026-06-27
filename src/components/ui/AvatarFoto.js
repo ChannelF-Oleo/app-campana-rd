@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ref, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase";
+import { storage } from "../../firebase";
 import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
 
 const AvatarFoto = ({
@@ -15,7 +15,7 @@ const AvatarFoto = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // TU NÚMERO DE SOPORTE (Sin símbolos)
-  const ADMIN_PHONE = "18094202288"; // <--- ¡PON TU NÚMERO AQUÍ!
+  const ADMIN_PHONE = "18094202288";
 
   useEffect(() => {
     let isMounted = true;

@@ -17,33 +17,33 @@ import usePageTracking from "./hooks/usePageTracking";
 import useMediaQuery from "./hooks/useMediaQuery";
 
 // --- COMPONENTES GLOBALES ---
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import Navbar from "./components/ui/Navbar";
+import Footer from "./components/ui/Footer";
 
 // --- COMPONENTES DEL DASHBOARD ---
-import DashboardSidebar from "./components/DashboardSidebar";
-import BottomNavBar from "./components/BottomNavBar";
+import DashboardSidebar from "./components/dashboard/DashboardSidebar";
+import BottomNavBar from "./components/dashboard/BottomNavBar";
 
 // --- PÁGINAS (carga estática) ---
-import HomePage from "./components/Home"; // landing / primera pintura
-import SetGoalModal from "./components/SetGoalModal"; // modal, no es una ruta
-import NotFound from "./components/NotFound";
-import Loader from "./components/Loader";
+import HomePage from "./components/pages/Home"; // landing / primera pintura
+import SetGoalModal from "./components/dashboard/SetGoalModal"; // modal, no es una ruta
+import NotFound from "./components/pages/NotFound";
+import Loader from "./components/ui/Loader";
 
 // --- PÁGINAS (carga diferida con React.lazy / code-splitting) ---
 // Se prioriza separar las rutas más pesadas: mapas (RegisterByActivist),
 // gráficos (Dashboard) y panel de administración.
-const Login = lazy(() => import("./components/Login"));
-const PublicRegister = lazy(() => import("./components/PublicRegister"));
-const RegisterAppUser = lazy(() => import("./components/RegisterAppUser"));
-const ProposalsPage = lazy(() => import("./components/Propuestas"));
-const Dashboard = lazy(() => import("./components/Dashboard")); // gráficos (Chart.js)
-const RegisterByActivist = lazy(() => import("./components/RegisterByActivist")); // Google Maps
-const UserProfile = lazy(() => import("./components/UserProfile"));
-const ManageUsers = lazy(() => import("./components/ManageUsers"));
-const ManageTeams = lazy(() => import("./components/ManageTeams"));
-const CreateUser = lazy(() => import("./components/CreateUser"));
-const Comandos = lazy(() => import("./components/Comandos"));
+const Login = lazy(() => import("./components/pages/Login"));
+const PublicRegister = lazy(() => import("./components/pages/PublicRegister"));
+const RegisterAppUser = lazy(() => import("./components/pages/RegisterAppUser"));
+const ProposalsPage = lazy(() => import("./components/pages/Propuestas"));
+const Dashboard = lazy(() => import("./components/dashboard/Dashboard")); // gráficos (Chart.js)
+const RegisterByActivist = lazy(() => import("./components/dashboard/RegisterByActivist")); // Google Maps
+const UserProfile = lazy(() => import("./components/pages/UserProfile"));
+const ManageUsers = lazy(() => import("./components/admin/ManageUsers"));
+const ManageTeams = lazy(() => import("./components/admin/ManageTeams"));
+const CreateUser = lazy(() => import("./components/admin/CreateUser"));
+const Comandos = lazy(() => import("./components/admin/Comandos"));
 
 // Contexto para UI del Layout
 const LayoutContext = createContext(null);

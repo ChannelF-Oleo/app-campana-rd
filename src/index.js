@@ -2,10 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./global.css";
 import App from "./App";
-// ❌ 1. ELIMINAMOS la importación fallida.
-// import * as serviceWorkerRegistration from "./service-worker";
 import reportWebVitals from "./reportWebVitals";
-import ErrorBoundary from "./components/ErrorBoundary";
+import ErrorBoundary from "./components/ui/ErrorBoundary";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -21,11 +19,11 @@ root.render(
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
 
-// --- 2. REGISTRO NATIVO DEL SERVICE WORKER ---
-// Solo registra el SW en el entorno de producción para evitar problemas de caché en desarrollo.
+// --- REGISTRO DEL SERVICE WORKER ---
+// Solo registra el SW en producción para evitar problemas de caché en desarrollo.
 if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    // Asegúrate de que la ruta sea correcta. En CRA, se asume que el SW se copia a la raíz ('/').
+    // En CRA el SW se sirve desde la raíz ('/').
     const swUrl = `/service-worker.js`;
 
     navigator.serviceWorker

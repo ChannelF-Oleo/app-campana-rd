@@ -52,11 +52,10 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((cacheNames) => {
         return Promise.all(
-          // CORRECCIÓN: Se asegura que el .map siempre devuelve algo (sea un Promise o null)
+          // Se asegura que el .map siempre devuelve algo (sea un Promise o null)
           cacheNames.map((cacheName) => {
             if (cacheWhitelist.indexOf(cacheName) === -1) {
               console.log("Service Worker: Deleting old cache: " + cacheName);
-              // AÑADIR RETURN: Lógica de eliminación
               return caches.delete(cacheName);
             }
             // RETURN: Caso en que el nombre está en la whitelist (no se hace nada)

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { ROL_MULTIPLICADOR } from '../constants';
+import { ROL_MULTIPLICADOR } from '../../constants';
 
-// 🚨 CONSTANTE CLAVE
-const CEDULA_DOMAIN = '@cedula.temp'; 
+const CEDULA_DOMAIN = '@cedula.temp';
 const MIN_PASSWORD_LENGTH = 6;
 // Asumo que la cédula debe ser solo números (ajustar si es necesario)
 const CEDULA_REGEX = /^\d+$/; 

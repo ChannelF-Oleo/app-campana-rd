@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// 1. Quitar imports de auth y firestore directos, importar functions
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../constants";
+import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../../constants";
 
-// 2. Preparar la llamada a la nueva función
+// Cloud Function para crear usuarios (admin)
 const functions = getFunctions();
 const createUserAdminCallable = httpsCallable(functions, "createUserAdmin");
 
@@ -12,7 +11,6 @@ function CreateUser() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // PASO 1: Agregar el estado para la cédula
   const [cedula, setCedula] = useState("");
   const [rol, setRol] = useState(ROL_MULTIPLICADOR);
   const [loading, setLoading] = useState(false);
@@ -31,7 +29,7 @@ function CreateUser() {
       return;
     }
 
-    // **Validación de Cédula (Opcional, pero recomendado)**
+    // Validación de cédula
     if (!cedula.trim()) {
       setNotification({ message: "La cédula es obligatoria.", type: "error" });
       return;
@@ -40,8 +38,7 @@ function CreateUser() {
     setLoading(true);
 
     try {
-      // 3. Llamar a la Callable Function con los datos
-      // PASO 3: Incluir 'cedula' en los datos enviados
+      // Llamar a la Cloud Function con los datos del formulario
       const result = await createUserAdminCallable({
         nombre,
         email,
@@ -60,7 +57,6 @@ function CreateUser() {
         setCedula("");
         setRol(ROL_MULTIPLICADOR);
       }
-      // Los errores ahora vienen directamente en el 'catch'
     } catch (error) {
       console.error("Error al llamar a createUserAdmin:", error);
       // Los HttpsError vienen con un 'message' útil para el usuario
@@ -73,7 +69,7 @@ function CreateUser() {
     }
   };
 
-  // --- JSX del formulario (con cambios) ---
+  // --- JSX del formulario ---
   return (
     <div className="create-user-container">
       <h2>Crear Nuevo Usuario Activista</h2>
@@ -89,7 +85,6 @@ function CreateUser() {
           />
         </div>
 
-        {/* PASO 2: Agregar el campo de la cédula */}
         <div className="input-group">
           <label htmlFor="cedula">Cédula (Identificación)</label>
           <input

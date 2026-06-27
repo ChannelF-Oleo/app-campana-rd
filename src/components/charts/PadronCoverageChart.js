@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { TOTAL_PADRON_META } from "../constants";
+import { TOTAL_PADRON_META } from "../../constants";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 

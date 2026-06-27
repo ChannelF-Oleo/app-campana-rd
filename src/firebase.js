@@ -28,13 +28,11 @@ const app = initializeApp(firebaseConfig);
 // Exporta los servicios de autenticación y base de datos
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app); // Añadida exportación de functions
+export const functions = getFunctions(app);
 
-// Diagnóstico
 if (!firebaseConfig.storageBucket) {
   console.error("FIREBASE ERROR: Falta configurar REACT_APP_FIREBASE_STORAGE_BUCKET en el archivo .env");
 }
-// 2. EXPORTAR LA INSTANCIA DE STORAGE
 export const storage = getStorage(app);
 
 

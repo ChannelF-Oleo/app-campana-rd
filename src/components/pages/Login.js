@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth, functions } from "../firebase"; // Importamos functions
+import { auth, functions } from "../../firebase"; // Importamos functions
 import { httpsCallable } from "firebase/functions"; // Importamos httpsCallable
 import {
   signInWithEmailAndPassword,

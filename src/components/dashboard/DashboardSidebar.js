@@ -1,8 +1,8 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { useTheme } from "../ThemeContext";
+import { useTheme } from "../../ThemeContext";
 import { FaBars, FaTimes, FaSignOutAlt, FaSun, FaMoon } from "react-icons/fa";
-import { getVisibleNavItems } from "../data/navConfig"; // Asegúrate de que este archivo exista
+import { getVisibleNavItems } from "../../data/navConfig";
 
 function DashboardSidebar({
   user,
@@ -35,16 +35,16 @@ function DashboardSidebar({
         {visibleNavItems.map((item) => {
           const IconComponent = item.icon;
 
-          // FIX CRÍTICO: Identificar si es la raíz del dashboard para usar 'end'
+          // Identificar si es la raíz del dashboard para usar 'end'
           const isDashboardHome = item.path === "/dashboard";
 
-          // 1. Renderizar Enlace de Navegación
+          // Renderizar enlace de navegación
           if (!item.isAction) {
             return (
               <li key={item.id}>
                 <NavLink
                   to={item.path}
-                  end={isDashboardHome} // <--- ESTO EVITA EL DOBLE RESALTADO
+                  end={isDashboardHome} // evita el doble resaltado
                   className={({ isActive }) => (isActive ? "active" : "")}
                   title={isCollapsed ? item.label : ""}
                 >

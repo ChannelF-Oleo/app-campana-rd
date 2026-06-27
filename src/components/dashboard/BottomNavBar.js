@@ -8,15 +8,15 @@ import {
   FaMoon,
   FaChevronRight,
 } from "react-icons/fa";
-import { useTheme } from "../ThemeContext";
-import { getVisibleNavItems } from "../data/navConfig";
+import { useTheme } from "../../ThemeContext";
+import { getVisibleNavItems } from "../../data/navConfig";
 
 function BottomNavBar({ user, onSetGoalClick, onLogout }) {
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate(); // 2. Inicializamos el hook
+  const navigate = useNavigate();
 
-  // 3. NUEVA FUNCIÓN DE LOGOUT SEGURO
+  // Logout seguro
   const handleLogout = async () => {
     try {
       await onLogout(); // Esperamos a que Firebase cierre sesión

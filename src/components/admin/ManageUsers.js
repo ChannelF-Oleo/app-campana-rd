@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { db, storage } from "../firebase"; // Importamos storage
+import { db, storage } from "../../firebase"; // Importamos storage
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage"; // Funciones de Storage
 import * as XLSX from "xlsx";
-import AvatarFoto from "./AvatarFoto";
+import AvatarFoto from "../ui/AvatarFoto";
 import {
   ROLES_DISPONIBLES,
   USUARIOS_POR_PAGINA,
   ROL_ADMIN,
   ROL_LIDER,
   ROL_MULTIPLICADOR,
-} from "../constants";
+} from "../../constants";
 
 // Inicializar Functions
 const functions = getFunctions();
