@@ -5,11 +5,14 @@ import App from "./App";
 // ❌ 1. ELIMINAMOS la importación fallida.
 // import * as serviceWorkerRegistration from "./service-worker";
 import reportWebVitals from "./reportWebVitals";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );
 
