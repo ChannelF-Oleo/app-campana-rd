@@ -1,8 +1,9 @@
 // src/data/navConfig.js
 // src/data/navConfig.js
-import { 
+import {
   FaHome, FaUserPlus, FaUsers, FaTasks, FaBullseye, FaLayerGroup, FaUser
 } from 'react-icons/fa';
+import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from '../constants';
 
 export const getVisibleNavItems = (user) => {
   if (!user) return [];
@@ -31,7 +32,7 @@ export const getVisibleNavItems = (user) => {
   ];
 
   // 2. Ítems de Admin
-  if (user.rol === 'admin') {
+  if (user.rol === ROL_ADMIN) {
     return [
       ...commonItems,
       {
@@ -58,7 +59,7 @@ export const getVisibleNavItems = (user) => {
   // 3. Ítems de Líder / Multiplicador
   const roleItems = [...commonItems];
 
-  if (['multiplicador', 'lider de zona'].includes(user.rol)) {
+  if ([ROL_MULTIPLICADOR, ROL_LIDER].includes(user.rol)) {
     roleItems.push({
       id: 'meta',
       label: 'Meta',

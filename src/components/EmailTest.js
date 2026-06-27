@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase';
+import { ROL_ADMIN, ROL_MULTIPLICADOR } from '../constants';
 
 const EmailTest = () => {
   const [formData, setFormData] = useState({
@@ -9,7 +10,7 @@ const EmailTest = () => {
     template: 'simpatizante_welcome',
     nombre: '',
     email: '',
-    rol: 'multiplicador'
+    rol: ROL_MULTIPLICADOR
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -23,10 +24,10 @@ const EmailTest = () => {
   ];
 
   const roles = [
-    { value: 'multiplicador', label: 'Multiplicador' },
+    { value: ROL_MULTIPLICADOR, label: 'Multiplicador' },
     { value: 'coordinador', label: 'Coordinador' },
     { value: 'supervisor', label: 'Supervisor' },
-    { value: 'admin', label: 'Administrador' }
+    { value: ROL_ADMIN, label: 'Administrador' }
   ];
 
   const handleInputChange = (e) => {

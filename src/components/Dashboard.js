@@ -8,7 +8,8 @@ import RegistrationsByZoneChart from "./RegistrationsByZoneChart";
 import MyReferralLink from "./MyReferralLink";
 import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
 import PadronCoverageChart from "./PadronCoverageChart";
-import AvatarFoto from "./AvatarFoto";
+import DashboardWelcome from "./DashboardWelcome";
+import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../constants";
 
 const Dashboard = ({ user }) => {
   // 1. Lógica de Datos (IDs relevantes para seguridad)
@@ -16,11 +17,11 @@ const Dashboard = ({ user }) => {
 
   useEffect(() => {
     if (!user) return;
-    if (user.rol === "lider de zona") {
+    if (user.rol === ROL_LIDER) {
       setRelevantUserIds([user.uid, ...(user.multiplicadoresAsignados || [])]);
-    } else if (user.rol === "multiplicador") {
+    } else if (user.rol === ROL_MULTIPLICADOR) {
       setRelevantUserIds([user.uid]);
-    } else if (user.rol === "admin") {
+    } else if (user.rol === ROL_ADMIN) {
       setRelevantUserIds(undefined); // undefined = ver todo (Admin)
     } else {
       setRelevantUserIds(null); // null = no ver nada (Seguridad)
@@ -49,7 +50,7 @@ const Dashboard = ({ user }) => {
           <TotalRegistrations filterUserIds={relevantUserIds} />
 
           {/* CORRECCIÓN: Solo el ADMIN ve la cobertura del Padrón */}
-          {user.rol === "admin" && <PadronCoverageChart />}
+          {user.rol === ROL_ADMIN && <PadronCoverageChart />}
         </div>
 
         {/* Gráficos con filtro aplicado */}
@@ -75,25 +76,9 @@ const Dashboard = ({ user }) => {
   return (
     <div className="dashboard-container-inner">
       {/* VISTA LÍDER DE ZONA */}
-      {user.rol === "lider de zona" && (
+      {user.rol === ROL_LIDER && (
         <>
-          {/* REEMPLAZAR EL TÍTULO DE BIENVENIDA */}
-          <div
-            className="dashboard-welcome-row"
-          >
-            <AvatarFoto
-              cedula={user.cedula}
-              nombre={user.nombre}
-              size="60px"
-              allowReport={true} // <--- Activa el botón de WhatsApp
-            />
-            <div>
-              <h1 style={{ margin: 0 }}>
-                ¡Bienvenido, {user.nombre.split(" ")[0]}!
-              </h1>
-              <small style={{ color: "#666" }}>{user.rol}</small>
-            </div>
-          </div>
+          <DashboardWelcome user={user} />
           {referralLinkSection}
           {personalGoal}
           {myRegistrationsList}
@@ -105,62 +90,18 @@ const Dashboard = ({ user }) => {
       )}
 
       {/* VISTA ADMIN */}
-      {user.rol === "admin" && (
+      {user.rol === ROL_ADMIN && (
         <>
-          {/* REEMPLAZAR EL TÍTULO DE BIENVENIDA */}
-          <div
-            className="dashboard-welcome-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "15px",
-              marginBottom: "20px",
-            }}
-          >
-            <AvatarFoto
-              cedula={user.cedula}
-              nombre={user.nombre}
-              size="60px"
-              allowReport={true} // <--- Activa el botón de WhatsApp
-            />
-            <div>
-              <h1 style={{ margin: 0 }}>
-                ¡Bienvenido, {user.nombre.split(" ")[0]}!
-              </h1>
-              <small style={{ color: "#666" }}>{user.rol}</small>
-            </div>
-          </div>
+          <DashboardWelcome user={user} />
           {filteredMetrics}
         </>
       )}
 
       {/* VISTA MULTIPLICADOR */}
-      {(user.rol === "multiplicador" ||
-        !["admin", "lider de zona"].includes(user.rol)) && (
+      {(user.rol === ROL_MULTIPLICADOR ||
+        ![ROL_ADMIN, ROL_LIDER].includes(user.rol)) && (
         <>
-          {/* REEMPLAZAR EL TÍTULO DE BIENVENIDA */}
-          <div
-            className="dashboard-welcome-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "15px",
-              marginBottom: "20px",
-            }}
-          >
-            <AvatarFoto
-              cedula={user.cedula}
-              nombre={user.nombre}
-              size="60px"
-              allowReport={true} // <--- Activa el botón de WhatsApp
-            />
-            <div>
-              <h1 style={{ margin: 0 }}>
-                ¡Bienvenido, {user.nombre.split(" ")[0]}!
-              </h1>
-              <small style={{ color: "#666" }}>{user.rol}</small>
-            </div>
-          </div>
+          <DashboardWelcome user={user} />
           {referralLinkSection}
           {personalGoal}
           {myRegistrationsList}

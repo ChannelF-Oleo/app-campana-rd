@@ -9,6 +9,9 @@ import AvatarFoto from "./AvatarFoto";
 import {
   ROLES_DISPONIBLES,
   USUARIOS_POR_PAGINA,
+  ROL_ADMIN,
+  ROL_LIDER,
+  ROL_MULTIPLICADOR,
 } from "../constants";
 
 // Inicializar Functions
@@ -29,7 +32,7 @@ function LoadingSpinner({ message = "Cargando..." }) {
 
 // --- MODAL DE EDICIÓN (Con Cambio de Foto) ---
 function EditUserModal({ user, onClose, onSave }) {
-  const [newRole, setNewRole] = useState(user.rol || "multiplicador");
+  const [newRole, setNewRole] = useState(user.rol || ROL_MULTIPLICADOR);
   const [newCedula, setNewCedula] = useState(user.cedula || "");
   const [loadingSave, setLoadingSave] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -354,7 +357,7 @@ function ManageUsers() {
         rol: data.rol,
         cedula: data.cedula,
         multiplicadoresAsignados:
-          data.rol === "lider de zona"
+          data.rol === ROL_LIDER
             ? data.multiplicadoresAsignados || []
             : [],
       };
@@ -398,9 +401,9 @@ function ManageUsers() {
           className="role-filter-select"
         >
           <option value="todos">Todos los Roles</option>
-          <option value="admin">Administrador</option>
-          <option value="lider de zona">Lider de Zona</option>
-          <option value="multiplicador">Multiplicador</option>
+          <option value={ROL_ADMIN}>Administrador</option>
+          <option value={ROL_LIDER}>Lider de Zona</option>
+          <option value={ROL_MULTIPLICADOR}>Multiplicador</option>
         </select>
         <button
           onClick={handleExport}

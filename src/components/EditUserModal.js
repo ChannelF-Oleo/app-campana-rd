@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from '../constants';
 
 function EditUserModal({ user, onClose, onSave }) {
   const [rol, setRol] = useState(user.rol);
@@ -13,7 +14,7 @@ function EditUserModal({ user, onClose, onSave }) {
   useEffect(() => {
     const fetchMultiplicadores = async () => {
       // Creamos una consulta que solo trae a los multiplicadores
-      const q = query(collection(db, "users"), where("rol", "==", "multiplicador"));
+      const q = query(collection(db, "users"), where("rol", "==", ROL_MULTIPLICADOR));
       const querySnapshot = await getDocs(q);
       const lista = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMultiplicadores(lista);
@@ -51,14 +52,14 @@ function EditUserModal({ user, onClose, onSave }) {
         <div className="input-group">
           <label htmlFor="rol">Rol del Usuario</label>
           <select id="rol" value={rol} onChange={(e) => setRol(e.target.value)}>
-            <option value="multiplicador">Multiplicador</option>
-            <option value="lider de zona">Lider de Zona</option>
-            <option value="admin">Administrador</option>
+            <option value={ROL_MULTIPLICADOR}>Multiplicador</option>
+            <option value={ROL_LIDER}>Lider de Zona</option>
+            <option value={ROL_ADMIN}>Administrador</option>
           </select>
         </div>
 
         {/* --- 4. SECCIÓN CONDICIONAL PARA LÍDER DE ZONA --- */}
-        {rol === 'lider de zona' && (
+        {rol === ROL_LIDER && (
           <div className="assignment-section">
             <h4>Asignar Multiplicadores</h4>
             {loading ? <p>Cargando multiplicadores...</p> : (

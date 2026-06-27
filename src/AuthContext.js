@@ -8,6 +8,7 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import { ROL_MULTIPLICADOR } from "./constants";
 
 const AuthContext = createContext({
   user: null,
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
               uid: firebaseUser.uid,
               nombre: firebaseUser.displayName || "Activista Google",
               email: firebaseUser.email,
-              rol: "multiplicador", // Rol por defecto
+              rol: ROL_MULTIPLICADOR, // Rol por defecto
               cedula: null,
               fechaRegistro: new Date().toISOString(),
               metodoRegistro: "Google Auth Automático",

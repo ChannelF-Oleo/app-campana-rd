@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, { useState, createContext, useContext, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,9 +10,11 @@ import {
 // --- CONTEXTOS ---
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ThemeProvider } from "./ThemeContext";
+import { ROL_ADMIN } from "./constants";
 
 // --- HOOKS ---
 import usePageTracking from "./hooks/usePageTracking";
+import useMediaQuery from "./hooks/useMediaQuery";
 
 // --- COMPONENTES GLOBALES ---
 import Navbar from "./components/Navbar";
@@ -22,40 +24,28 @@ import Footer from "./components/Footer";
 import DashboardSidebar from "./components/DashboardSidebar";
 import BottomNavBar from "./components/BottomNavBar";
 
-// --- PÁGINAS ---
-import HomePage from "./components/Home";
-import Login from "./components/Login";
-import PublicRegister from "./components/PublicRegister";
-import RegisterAppUser from "./components/RegisterAppUser";
-import ProposalsPage from "./components/Propuestas";
+// --- PÁGINAS (carga estática) ---
+import HomePage from "./components/Home"; // landing / primera pintura
+import SetGoalModal from "./components/SetGoalModal"; // modal, no es una ruta
 
-// --- PÁGINAS PROTEGIDAS ---
-import Dashboard from "./components/Dashboard";
-import RegisterByActivist from "./components/RegisterByActivist";
-import UserProfile from "./components/UserProfile";
-import ManageUsers from "./components/ManageUsers";
-import ManageTeams from "./components/ManageTeams";
-import CreateUser from "./components/CreateUser";
-import Comandos from "./components/Comandos";
-import SetGoalModal from "./components/SetGoalModal";
+// --- PÁGINAS (carga diferida con React.lazy / code-splitting) ---
+// Se prioriza separar las rutas más pesadas: mapas (RegisterByActivist),
+// gráficos (Dashboard) y panel de administración.
+const Login = lazy(() => import("./components/Login"));
+const PublicRegister = lazy(() => import("./components/PublicRegister"));
+const RegisterAppUser = lazy(() => import("./components/RegisterAppUser"));
+const ProposalsPage = lazy(() => import("./components/Propuestas"));
+const Dashboard = lazy(() => import("./components/Dashboard")); // gráficos (Chart.js)
+const RegisterByActivist = lazy(() => import("./components/RegisterByActivist")); // Google Maps
+const UserProfile = lazy(() => import("./components/UserProfile"));
+const ManageUsers = lazy(() => import("./components/ManageUsers"));
+const ManageTeams = lazy(() => import("./components/ManageTeams"));
+const CreateUser = lazy(() => import("./components/CreateUser"));
+const Comandos = lazy(() => import("./components/Comandos"));
 
 // Contexto para UI del Layout
 const LayoutContext = createContext(null);
 const useLayoutContext = () => useContext(LayoutContext);
-
-// --- HOOK: DETECCIÓN DE DISPOSITIVO ---
-const useMediaQuery = (query) => {
-  const [matches, setMatches] = useState(window.matchMedia(query).matches);
-
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const listener = () => setMatches(media.matches);
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
-  }, [query]);
-
-  return matches;
-};
 
 // --- LAYOUTS ---
 function PublicLayout() {
@@ -63,7 +53,9 @@ function PublicLayout() {
     <>
       <Navbar />
       <div className="public-content-wrapper">
-        <Outlet />
+        <Suspense fallback={<div className="loading-screen">Cargando...</div>}>
+          <Outlet />
+        </Suspense>
       </div>
       <Footer />
     </>
@@ -103,7 +95,9 @@ function DashboardLayout() {
       )}
 
       <main className="dashboard-content">
-        <Outlet />
+        <Suspense fallback={<div className="loading-screen">Cargando...</div>}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
@@ -163,7 +157,7 @@ function AppRoutes() {
             <Route path="/dashboard/perfil" element={<UserProfile />} />
 
             {/* Admin */}
-            {user?.rol === "admin" && (
+            {user?.rol === ROL_ADMIN && (
               <>
                 <Route path="/admin/usuarios" element={<ManageUsers />} />
                 <Route path="/admin/crear-usuario" element={<CreateUser />} />

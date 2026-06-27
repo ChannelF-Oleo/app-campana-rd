@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import { FaFileExcel, FaPrint } from "react-icons/fa";
+import { ROL_LIDER, ROL_MULTIPLICADOR } from "../constants";
 import AvatarFoto from "./AvatarFoto";
 
 // --- Spinner de carga ---
@@ -43,8 +44,8 @@ function ManageTeams() {
           id: doc.id,
           ...doc.data(),
         }));
-        setLeaders(allUsers.filter((user) => user.rol === "lider de zona"));
-        setMultipliers(allUsers.filter((user) => user.rol === "multiplicador"));
+        setLeaders(allUsers.filter((user) => user.rol === ROL_LIDER));
+        setMultipliers(allUsers.filter((user) => user.rol === ROL_MULTIPLICADOR));
         setLoading(false);
       },
       (error) => {

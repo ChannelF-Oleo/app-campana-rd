@@ -34,6 +34,16 @@ export const STORAGE_FOTOS_PATH = "votantes_fotos";
 export const CEDULA_REGEX = /^\d{3}-?\d{7}-?\d{1}$/;
 export const CEDULA_LONGITUD = 11;
 
+// --- Validaciones de Teléfono ---
+export const TELEFONO_REGEX = /^[\d\s-]{7,}$/;
+
+// Valida el formato de una cédula dominicana (XXX-XXXXXXX-X).
+export const validarCedula = (cedula) => CEDULA_REGEX.test(cedula);
+
+// Valida un teléfono (mínimo 7 dígitos). Acepta cadena vacía (campo opcional).
+export const validarTelefono = (telefono) =>
+  telefono === "" || TELEFONO_REGEX.test(telefono);
+
 // --- Coordenadas iniciales del mapa (Santo Domingo) ---
 export const MAP_INITIAL_CENTER = { lat: 18.4861, lng: -69.9309 };
 export const MAP_DEFAULT_ZOOM = 12;

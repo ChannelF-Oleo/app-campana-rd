@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore'; 
+import { doc, setDoc } from 'firebase/firestore';
+import { ROL_MULTIPLICADOR } from '../constants';
 
 // 🚨 CONSTANTE CLAVE
 const CEDULA_DOMAIN = '@cedula.temp'; 
@@ -74,7 +75,7 @@ function SignUp() {
         email: authEmail, 
         // Almacenamos la cédula limpia (o null) en un campo indexable
         numeroCedula: trimmedCedula || null, 
-        rol: 'multiplicador',
+        rol: ROL_MULTIPLICADOR,
         createdAt: new Date(), // Buena práctica: añadir timestamp
       };
 

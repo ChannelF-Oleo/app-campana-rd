@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // 1. Quitar imports de auth y firestore directos, importar functions
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../constants";
 
 // 2. Preparar la llamada a la nueva función
 const functions = getFunctions();
@@ -13,7 +14,7 @@ function CreateUser() {
   const [password, setPassword] = useState("");
   // PASO 1: Agregar el estado para la cédula
   const [cedula, setCedula] = useState("");
-  const [rol, setRol] = useState("multiplicador");
+  const [rol, setRol] = useState(ROL_MULTIPLICADOR);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ message: "", type: "" });
   const navigate = useNavigate();
@@ -57,7 +58,7 @@ function CreateUser() {
         setPassword("");
         // Limpiar el campo de cédula también
         setCedula("");
-        setRol("multiplicador");
+        setRol(ROL_MULTIPLICADOR);
       }
       // Los errores ahora vienen directamente en el 'catch'
     } catch (error) {
@@ -130,9 +131,9 @@ function CreateUser() {
         <div className="input-group">
           <label htmlFor="rol">Asignar Rol</label>
           <select id="rol" value={rol} onChange={(e) => setRol(e.target.value)}>
-            <option value="multiplicador">Multiplicador</option>
-            <option value="lider de zona">Lider de Zona</option>
-            <option value="admin">Administrador</option>
+            <option value={ROL_MULTIPLICADOR}>Multiplicador</option>
+            <option value={ROL_LIDER}>Lider de Zona</option>
+            <option value={ROL_ADMIN}>Administrador</option>
           </select>
         </div>
 

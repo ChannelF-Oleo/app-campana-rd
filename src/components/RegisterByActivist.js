@@ -3,12 +3,17 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
 import { ubicacionesData } from "../data/ubicaciones.js";
+import {
+  PROVINCIA_FIJA,
+  MUNICIPIO_FIJO,
+  MAP_INITIAL_CENTER,
+  MAP_DEFAULT_ZOOM,
+  CEDULA_LONGITUD,
+  validarCedula,
+  validarTelefono,
+} from "../constants.js";
 
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-
-// [INICIO CORRECCIÓN SDO]
-const PROVINCIA_FIJA = "Santo Domingo";
-const MUNICIPIO_FIJO = "Santo Domingo Oeste";
 
 // Cargar sectores fijos de SDO una sola vez
 const provinciaSDO = ubicacionesData.find(
@@ -18,7 +23,6 @@ const municipioData = provinciaSDO
   ? provinciaSDO.municipios.find((m) => m.municipio === MUNICIPIO_FIJO)
   : null;
 const sectoresSDO = municipioData ? municipioData.sectores : [];
-// [FIN CORRECCIÓN SDO]
 
 // Opciones del mapa
 const mapContainerStyle = {
@@ -26,23 +30,7 @@ const mapContainerStyle = {
   height: "400px",
   marginBottom: "15px",
 };
-// Centro inicial: Por ejemplo, Santo Domingo, República Dominicana
-const initialCenter = {
-  lat: 18.4861,
-  lng: -69.9309,
-};
-const defaultZoom = 12;
 const libraries = ["places", "marker"];
-
-// Validation Functions
-const validarCedula = (cedula) => {
-  const cedulaRegex = /^\d{3}-?\d{7}-?\d{1}$/;
-  return cedulaRegex.test(cedula);
-};
-const validarTelefono = (telefono) => {
-  const telefonoRegex = /^[\d\s-]{7,}$/;
-  return telefono === "" || telefonoRegex.test(telefono);
-};
 
 // Initialize Firebase Functions connection
 const functions = getFunctions();
@@ -70,7 +58,7 @@ function RegisterByActivist({ user }) {
   const [selectedSector, setSelectedSector] = useState("");
 
   // NUEVO: Estado para las coordenadas (ubicación pineada)
-  const [coordinates, setCoordinates] = useState(initialCenter);
+  const [coordinates, setCoordinates] = useState(MAP_INITIAL_CENTER);
   // Estado para el mapa (referencia)
   const [, setMap] = useState(null);
 
@@ -107,7 +95,7 @@ function RegisterByActivist({ user }) {
   const handleCedulaSearch = useCallback(async (inputCedula) => {
     const cedulaNormalizada = inputCedula.replace(/-/g, "");
 
-    if (cedulaNormalizada.length === 11 && validarCedula(inputCedula)) {
+    if (cedulaNormalizada.length === CEDULA_LONGITUD && validarCedula(inputCedula)) {
       setIsSearching(true);
       setNotification({ message: "Buscando datos...", type: "info" });
 
@@ -174,7 +162,7 @@ function RegisterByActivist({ user }) {
     setCedula(formatted);
 
     // 5. Disparar búsqueda si está completa
-    if (normalized.length === 11) {
+    if (normalized.length === CEDULA_LONGITUD) {
       // Validamos con tu regex existente para seguridad extra
       if (validarCedula(formatted)) {
         handleCedulaSearch(formatted);
@@ -190,7 +178,7 @@ function RegisterByActivist({ user }) {
 
     // Validations (ajustadas para el nuevo flujo fijo de ubicación)
     const cedulaNormalizada = cedula.replace(/-/g, "");
-    if (cedulaNormalizada.length !== 11) {
+    if (cedulaNormalizada.length !== CEDULA_LONGITUD) {
       setNotification({
         message: "Formato de cédula incorrecto (debe tener 11 dígitos).",
         type: "error",
@@ -230,8 +218,8 @@ function RegisterByActivist({ user }) {
     // Opcional: Validar que el pin esté ubicado
     if (
       !coordinates ||
-      (coordinates.lat === initialCenter.lat &&
-        coordinates.lng === initialCenter.lng)
+      (coordinates.lat === MAP_INITIAL_CENTER.lat &&
+        coordinates.lng === MAP_INITIAL_CENTER.lng)
     ) {
       setNotification({
         message:
@@ -275,7 +263,7 @@ function RegisterByActivist({ user }) {
         setSelectedProvincia(PROVINCIA_FIJA);
         setSelectedMunicipio(MUNICIPIO_FIJO);
         setSelectedSector("");
-        setCoordinates(initialCenter);
+        setCoordinates(MAP_INITIAL_CENTER);
       } else {
         setNotification({ message: result.data.message, type: "error" });
       }
@@ -419,7 +407,7 @@ function RegisterByActivist({ user }) {
           <label>📍 Ubicación Exacta (Arrastra el Pin)</label>
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
-            zoom={defaultZoom}
+            zoom={MAP_DEFAULT_ZOOM}
             center={coordinates}
             onLoad={onLoad}
             onUnmount={onUnmount}

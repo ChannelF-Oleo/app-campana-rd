@@ -4,6 +4,7 @@ import { auth, db, functions } from "../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
+import { ROL_MULTIPLICADOR } from "../constants";
 
 function RegisterAppUser() {
   const [cedula, setCedula] = useState("");
@@ -95,7 +96,7 @@ function RegisterAppUser() {
         nombre: nombre,
         email: email,
         cedula: cedula,
-        rol: "multiplicador",
+        rol: ROL_MULTIPLICADOR,
         registrationCount: 0,
         createdAt: serverTimestamp(),
         lastActivity: serverTimestamp(),

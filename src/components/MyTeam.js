@@ -9,13 +9,14 @@ import {
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
 import AvatarFoto from "./AvatarFoto"; // <--- IMPORTAR COMPONENTE
+import { ROL_LIDER } from "../constants";
 
 function MyTeam({ user }) {
   const [teamMembersWithMetrics, setTeamMembersWithMetrics] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || user.rol !== "lider de zona") {
+    if (!user || user.rol !== ROL_LIDER) {
       setLoading(false);
       setTeamMembersWithMetrics([]);
       return;
@@ -118,7 +119,7 @@ function MyTeam({ user }) {
     return <p>Cargando información del peloton...</p>;
   }
 
-  if (user.rol !== "lider de zona") {
+  if (user.rol !== ROL_LIDER) {
     return (
       <div className="my-team-container">
         <p>Esta sección solo está disponible para líderes de zona.</p>
@@ -193,7 +194,7 @@ function MyTeam({ user }) {
           </table>
         </div>
       ) : (
-        user.rol === "lider de zona" && (
+        user.rol === ROL_LIDER && (
           <p className="empty-team-message">
             Aún no tienes soldados asignados a tu peloton.
           </p>
