@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
 } from "firebase/auth";
 
 // Función auxiliar simple
@@ -84,14 +85,42 @@ function Login() {
   const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
+    const provider = new GoogleAuthProvider();
     try {
-      const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate("/dashboard");
+      // No navegamos manualmente: AuthContext detecta la sesión y
+      // PublicOnlyRoute redirige a /dashboard automáticamente.
     } catch (err) {
-      console.error("Error Google Login:", err.message);
-      if (err.code !== "auth/popup-closed-by-user") {
-        setError("No se pudo iniciar sesión con Google.");
+      // Mostramos el código real de Firebase para poder diagnosticar.
+      console.error("Error Google Login:", err.code, err.message);
+
+      switch (err.code) {
+        case "auth/popup-closed-by-user":
+        case "auth/cancelled-popup-request":
+          // El usuario cerró el popup: no es un error real.
+          break;
+        case "auth/operation-not-allowed":
+          setError(
+            "El acceso con Google no está habilitado en Firebase (Authentication → Sign-in method)."
+          );
+          break;
+        case "auth/unauthorized-domain":
+          setError(
+            "Este dominio no está autorizado en Firebase (Authentication → Settings → Authorized domains)."
+          );
+          break;
+        case "auth/popup-blocked":
+          // El navegador o la cabecera COOP bloqueó el popup: caemos a redirección.
+          try {
+            await signInWithRedirect(auth, provider);
+            return;
+          } catch (redirectErr) {
+            console.error("Error Google redirect:", redirectErr.code);
+            setError("No se pudo abrir la ventana de Google.");
+          }
+          break;
+        default:
+          setError(`No se pudo iniciar sesión con Google. (${err.code})`);
       }
     } finally {
       setLoading(false);
