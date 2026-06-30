@@ -183,7 +183,7 @@ exports.deleteUserAndData = onCall(async (request) => {
 // =========================================================================
 // 4. CALLABLE: CREAR USUARIO ADMIN Y ENVIAR CORREO DE BIENVENIDA
 // =========================================================================
-exports.createUserAdmin = onCall(async (request) => {
+exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) => {
   const { nombre, email, password, rol, cedula } = request.data;
 
   if (!nombre || !email || !password || !rol || !cedula) {
