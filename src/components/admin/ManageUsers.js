@@ -35,6 +35,7 @@ function LoadingSpinner({ message = "Cargando..." }) {
 function EditUserModal({ user, onClose, onSave }) {
   const [newRole, setNewRole] = useState(user.rol || ROL_MULTIPLICADOR);
   const [newCedula, setNewCedula] = useState(user.cedula || "");
+  const [newTelefono, setNewTelefono] = useState(user.telefono || "");
   const [loadingSave, setLoadingSave] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -67,9 +68,10 @@ function EditUserModal({ user, onClose, onSave }) {
 
     setUploading(true);
     try {
-      // Guardamos como .jpg para estandarizar (AvatarFoto lo buscará primero)
-      // Usamos la cédula con guiones para el nombre del archivo
-      const storageRef = ref(storage, `votantes_fotos/${newCedula}.jpg`);
+      // Guardamos como .jpg con la cédula SIN guiones (estándar normalizado).
+      // AvatarFoto prueba primero este formato, así la foto nueva siempre gana
+      // sobre el recorte viejo del padrón (que está con guiones).
+      const storageRef = ref(storage, `votantes_fotos/${cleanCedula}.jpg`);
 
       await uploadBytes(storageRef, file);
 
@@ -98,6 +100,7 @@ function EditUserModal({ user, onClose, onSave }) {
       await onSave(user.id, {
         rol: newRole,
         cedula: newCedula,
+        telefono: newTelefono,
         multiplicadoresAsignados: user.multiplicadoresAsignados,
       });
     } catch (error) {
@@ -171,6 +174,18 @@ function EditUserModal({ user, onClose, onSave }) {
             onChange={handleCedulaChange}
             placeholder="001-0000000-0"
             className="search-input"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Teléfono:</label>
+          <input
+            type="tel"
+            value={newTelefono}
+            onChange={(e) => setNewTelefono(e.target.value)}
+            placeholder="809-000-0000"
+            className="search-input"
+            disabled={loadingSave}
           />
         </div>
 
@@ -358,6 +373,7 @@ function ManageUsers() {
         rol: data.rol,
         // Estándar: cédula SOLO dígitos en Firestore.
         cedula: normalizarCedula(data.cedula),
+        telefono: data.telefono || "",
         multiplicadoresAsignados:
           data.rol === ROL_LIDER
             ? data.multiplicadoresAsignados || []
@@ -438,7 +454,7 @@ function ManageUsers() {
             <tr>
               <th>Foto</th>
               <th>Nombre</th>
-              <th>Email</th>
+              <th>Teléfono</th>
               <th>Rol</th>
               <th>Registros</th>
               <th>Acciones</th>
@@ -465,7 +481,7 @@ function ManageUsers() {
                       <small style={{ color: "#e63946" }}>Sin Cédula</small>
                     )}
                   </td>
-                  <td data-label="Email">{user.email || "N/A"}</td>
+                  <td data-label="Teléfono">{user.telefono || "—"}</td>
                   <td data-label="Rol">
                     <span
                       className={`role-badge role-${user.rol?.replace(
