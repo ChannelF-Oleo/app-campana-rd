@@ -269,10 +269,10 @@ function ManageUsers() {
         collection(db, "simpatizantes")
       );
       const registrationCounts = {};
-      // Mapa cédula normalizada -> teléfono del simpatizante (para usuarios que
-      // aún no tienen teléfono en su propio doc, se toma el del simpatizante
-      // vinculado por cédula).
-      const telefonoPorCedula = {};
+      // Mapa cédula normalizada -> datos del simpatizante vinculado (teléfono,
+      // zona, dirección). Los usuarios existentes no tienen estos campos en su
+      // propio doc, así que se toman del simpatizante con la misma cédula.
+      const datosSimpPorCedula = {};
       simpatizantesSnapshot.forEach((doc) => {
         const data = doc.data();
         const registeredBy = data.registradoPor;
@@ -280,17 +280,25 @@ function ManageUsers() {
           registrationCounts[registeredBy] =
             (registrationCounts[registeredBy] || 0) + 1;
         const ced = normalizarCedula(data.cedula);
-        if (ced && data.telefono && !telefonoPorCedula[ced]) {
-          telefonoPorCedula[ced] = data.telefono;
+        if (ced && !datosSimpPorCedula[ced]) {
+          datosSimpPorCedula[ced] = {
+            telefono: data.telefono || "",
+            zona: data.zona || "",
+            direccion: data.direccion || "",
+          };
         }
       });
 
-      usersList = usersList.map((user) => ({
-        ...user,
-        registrationCount: registrationCounts[user.uid] || 0,
-        telefono:
-          user.telefono || telefonoPorCedula[normalizarCedula(user.cedula)] || "",
-      }));
+      usersList = usersList.map((user) => {
+        const simp = datosSimpPorCedula[normalizarCedula(user.cedula)] || {};
+        return {
+          ...user,
+          registrationCount: registrationCounts[user.uid] || 0,
+          telefono: user.telefono || simp.telefono || "",
+          zona: user.zona || simp.zona || "",
+          direccion: user.direccion || simp.direccion || "",
+        };
+      });
 
       setAllUsers(usersList);
       setFilteredUsers(usersList);
@@ -332,11 +340,12 @@ function ManageUsers() {
     }
     const dataToExport = filteredUsers.map((user) => ({
       Nombre: user.nombre || "N/A",
-      Email: user.email || "N/A",
-      Rol: user.rol || "N/A",
       Cedula: user.cedula || "N/A",
+      Telefono: user.telefono || "",
+      Rol: user.rol || "N/A",
+      Zona: user.zona || "",
+      Direccion: user.direccion || "",
       Registros: user.registrationCount || 0,
-      UID: user.id,
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
