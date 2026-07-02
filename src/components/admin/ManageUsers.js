@@ -68,9 +68,10 @@ function EditUserModal({ user, onClose, onSave }) {
 
     setUploading(true);
     try {
-      // Guardamos como .jpg para estandarizar (AvatarFoto lo buscará primero)
-      // Usamos la cédula con guiones para el nombre del archivo
-      const storageRef = ref(storage, `votantes_fotos/${newCedula}.jpg`);
+      // Guardamos como .jpg con la cédula SIN guiones (estándar normalizado).
+      // AvatarFoto prueba primero este formato, así la foto nueva siempre gana
+      // sobre el recorte viejo del padrón (que está con guiones).
+      const storageRef = ref(storage, `votantes_fotos/${cleanCedula}.jpg`);
 
       await uploadBytes(storageRef, file);
 
