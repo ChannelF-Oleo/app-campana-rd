@@ -25,8 +25,17 @@ const AvatarFoto = ({
         return;
       }
 
-      const cedulaConGuiones = cedula;
-      const cedulaSinGuiones = cedula.replace(/-/g, "");
+      // Las fotos en Storage pueden estar nombradas con guiones (el set del
+      // padrón: 001-1234567-8.jpg) o sin guiones (00112345678.jpg). Como la
+      // cédula ya se guarda normalizada (solo dígitos), reconstruimos AMBOS
+      // formatos a partir de los dígitos para probar los dos, sin importar
+      // en qué formato venga.
+      const digitos = cedula.replace(/\D/g, "");
+      const cedulaSinGuiones = digitos;
+      const cedulaConGuiones =
+        digitos.length === 11
+          ? `${digitos.slice(0, 3)}-${digitos.slice(3, 10)}-${digitos.slice(10)}`
+          : cedula;
 
       const pathsToTry = [
         `votantes_fotos/${cedulaConGuiones}.jpg`,

@@ -4,7 +4,7 @@ import { auth, db, functions } from "../../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { ROL_MULTIPLICADOR } from "../../constants";
+import { ROL_MULTIPLICADOR, normalizarCedula } from "../../constants";
 
 function RegisterAppUser() {
   const [cedula, setCedula] = useState("");
@@ -85,6 +85,9 @@ function RegisterAppUser() {
     setLoading(true);
     setError("");
 
+    // Estándar: cédula SOLO dígitos en Firestore.
+    const cedulaNorm = normalizarCedula(cedula);
+
     try {
       // 1. Crear el Auth User
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -95,7 +98,7 @@ function RegisterAppUser() {
         uid: user.uid,
         nombre: nombre,
         email: email,
-        cedula: cedula,
+        cedula: cedulaNorm,
         rol: ROL_MULTIPLICADOR,
         registrationCount: 0,
         createdAt: serverTimestamp(),
@@ -107,7 +110,7 @@ function RegisterAppUser() {
       try {
         await registerSimpatizanteCallable({
           nombre: nombre,
-          cedula: cedula,
+          cedula: cedulaNorm,
           email: email,
           telefono: votanteData?.telefono || "",
           direccion: votanteData?.direccion || "",

@@ -78,8 +78,13 @@ ui-debug.log*
 
 # Backend Keys & Credentials
 politicard-cfd-firebase-adminsdk-fbsvc-0dfcb72afa.json
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
 *.p12
 *.pem
+
+# Backups de Firestore (datos reales, no versionar)
+/backups
 
 # Data & Media
 fotos

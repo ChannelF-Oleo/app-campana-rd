@@ -40,6 +40,12 @@ export const TELEFONO_REGEX = /^[\d\s-]{7,}$/;
 // Valida el formato de una cédula dominicana (XXX-XXXXXXX-X).
 export const validarCedula = (cedula) => CEDULA_REGEX.test(cedula);
 
+// Normaliza una cédula al estándar de almacenamiento: SOLO dígitos, sin guiones
+// ni espacios. Debe usarse antes de CUALQUIER escritura o consulta por cédula en
+// Firestore, para evitar duplicados por diferencias de formato.
+export const normalizarCedula = (cedula) =>
+  (cedula === null || cedula === undefined ? "" : String(cedula)).replace(/\D/g, "");
+
 // Valida un teléfono (mínimo 7 dígitos). Acepta cadena vacía (campo opcional).
 export const validarTelefono = (telefono) =>
   telefono === "" || TELEFONO_REGEX.test(telefono);
