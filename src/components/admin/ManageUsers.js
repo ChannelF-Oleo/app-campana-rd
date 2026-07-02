@@ -269,16 +269,27 @@ function ManageUsers() {
         collection(db, "simpatizantes")
       );
       const registrationCounts = {};
+      // Mapa cédula normalizada -> teléfono del simpatizante (para usuarios que
+      // aún no tienen teléfono en su propio doc, se toma el del simpatizante
+      // vinculado por cédula).
+      const telefonoPorCedula = {};
       simpatizantesSnapshot.forEach((doc) => {
-        const registeredBy = doc.data().registradoPor;
+        const data = doc.data();
+        const registeredBy = data.registradoPor;
         if (registeredBy)
           registrationCounts[registeredBy] =
             (registrationCounts[registeredBy] || 0) + 1;
+        const ced = normalizarCedula(data.cedula);
+        if (ced && data.telefono && !telefonoPorCedula[ced]) {
+          telefonoPorCedula[ced] = data.telefono;
+        }
       });
 
       usersList = usersList.map((user) => ({
         ...user,
         registrationCount: registrationCounts[user.uid] || 0,
+        telefono:
+          user.telefono || telefonoPorCedula[normalizarCedula(user.cedula)] || "",
       }));
 
       setAllUsers(usersList);
