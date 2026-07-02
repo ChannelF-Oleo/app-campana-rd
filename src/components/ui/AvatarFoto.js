@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ref, getDownloadURL } from "firebase/storage";
 import { storage } from "../../firebase";
 import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
@@ -11,17 +11,42 @@ const AvatarFoto = ({
   allowReport = false,
 }) => {
   const [imageUrl, setImageUrl] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Arranca en false: mientras el avatar no es visible o no tiene foto, se
+  // muestra la inicial del nombre (no un spinner). Pasa a true al buscar.
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Lazy-load: solo pedimos la foto a Storage cuando el avatar entra en pantalla.
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef(null);
 
   // TU NÚMERO DE SOPORTE (Sin símbolos)
   const ADMIN_PHONE = "18094202288";
 
+  // Observamos la visibilidad del avatar (con margen para precargar un poco antes).
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setIsVisible(true); // Fallback: si no hay soporte, cargamos igual.
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
     const fetchImage = async () => {
-      if (!cedula) {
-        setLoading(false);
+      if (!cedula || !isVisible) {
         return;
       }
 
@@ -71,7 +96,7 @@ const AvatarFoto = ({
     return () => {
       isMounted = false;
     };
-  }, [cedula]);
+  }, [cedula, isVisible]);
 
   // --- UTILIDADES ---
   const stringToColor = (str) => {
@@ -112,6 +137,7 @@ const AvatarFoto = ({
     <>
       {/* MINIATURA */}
       <div
+        ref={containerRef}
         className={`avatar-container ${
           imageUrl ? "clickable" : ""
         } ${className}`}
@@ -123,6 +149,8 @@ const AvatarFoto = ({
             src={imageUrl}
             alt={nombre}
             className="avatar-img"
+            loading="lazy"
+            decoding="async"
             onError={() => setImageUrl(null)}
           />
         ) : (

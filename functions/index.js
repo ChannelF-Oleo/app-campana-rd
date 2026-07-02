@@ -201,10 +201,23 @@ exports.deleteUserAndData = onCall(async (request) => {
 // 4. CALLABLE: CREAR USUARIO ADMIN Y ENVIAR CORREO DE BIENVENIDA
 // =========================================================================
 exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) => {
-  const { nombre, email, password, rol, cedula } = request.data;
+  const {
+    nombre,
+    email,
+    password,
+    rol,
+    cedula,
+    telefono,
+    direccion,
+    sector,
+    provincia,
+    municipio,
+    colegioElectoral,
+  } = request.data;
 
-  if (!nombre || !email || !password || !rol || !cedula) {
-    throw new HttpsError("invalid-argument", "Datos incompletos.");
+  // Fase 5: email OPCIONAL, teléfono OBLIGATORIO.
+  if (!nombre || !password || !rol || !cedula || !telefono) {
+    throw new HttpsError("invalid-argument", "Faltan datos obligatorios (nombre, cédula, teléfono, rol, contraseña).");
   }
 
   // Estándar: cédula SOLO dígitos en Firestore.
@@ -213,9 +226,15 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
     throw new HttpsError("invalid-argument", "La cédula debe tener 11 dígitos.");
   }
 
+  // Email: si el admin lo provee, se usa para Auth y notificación. Si no, se
+  // sintetiza uno a partir de la cédula (misma convención que SignUp) para que
+  // Firebase Auth tenga un identificador y el login por cédula siga funcionando.
+  const emailReal = email && email.trim() ? email.trim() : null;
+  const authEmail = emailReal || `${cedulaNorm}@cedula.temp`;
+
   try {
     const userRecord = await admin.auth().createUser({
-      email,
+      email: authEmail,
       password,
       displayName: nombre,
       disabled: false,
@@ -224,7 +243,8 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
     const userData = {
       uid: userRecord.uid,
       nombre,
-      email,
+      email: authEmail,
+      telefono,
       rol,
       cedula: cedulaNorm,
       registrationCount: 0,
@@ -234,6 +254,19 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
 
     await admin.firestore().collection("users").doc(userRecord.uid).set(userData);
 
+    // Datos del perfil de simpatizante (mismos campos que el form de simpatizante).
+    const perfilSimpatizante = {
+      nombre,
+      cedula: cedulaNorm,
+      email: authEmail,
+      telefono,
+      direccion: direccion || "",
+      sector: sector || "",
+      provincia: provincia || "",
+      municipio: municipio || "",
+      colegioElectoral: colegioElectoral || "",
+    };
+
     // Perfil de simpatizante vinculado (colecciones separadas, unidas por cédula/UID).
     // Regla (Fase 3): si la cédula YA existe en simpatizantes, no se crea otro doc,
     // solo se vincula por usuarioId. Si no existe, se crea el perfil ya vinculado.
@@ -241,46 +274,48 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
     const existing = await simpRef.where("cedula", "==", cedulaNorm).get();
     if (existing.empty) {
       await simpRef.add({
-        nombre,
-        cedula: cedulaNorm,
-        email,
+        ...perfilSimpatizante,
         usuarioId: userRecord.uid,
         registradoPor: "Admin Console",
         esUsuarioInterno: true,
         fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
-        provincia: "N/A",
-        municipio: "N/A",
-        sector: "N/A",
-        direccion: "N/A",
       });
     } else {
-      // Ya existe: solo vincular por UID (sin duplicar).
-      await existing.docs[0].ref.update({
-        usuarioId: userRecord.uid,
-        esUsuarioInterno: true,
-      });
+      // Ya existe: vincular por UID y completar datos (merge, sin duplicar).
+      await existing.docs[0].ref.set(
+        {
+          ...perfilSimpatizante,
+          usuarioId: userRecord.uid,
+          esUsuarioInterno: true,
+        },
+        { merge: true }
+      );
     }
 
-    // Enviar correo de bienvenida. El envío se AÍSLA: si Resend falla, el
-    // usuario YA quedó creado (Auth + Firestore), así que no debe hacer fallar
-    // toda la operación ni aparentar que el usuario no se creó.
-    let emailSent = true;
-    try {
-      await sendUserWelcomeEmail(email, nombre, rol);
-    } catch (mailError) {
-      emailSent = false;
-      logger.error(
-        `Usuario ${email} creado OK, pero falló el correo de bienvenida:`,
-        mailError
-      );
+    // Correo de bienvenida SOLO si hay email real (no al sintético @cedula.temp).
+    // Además se AÍSLA: si Resend falla, el usuario YA quedó creado y no debe
+    // hacer fallar toda la operación ni aparentar que el usuario no se creó.
+    let emailSent = false;
+    if (emailReal) {
+      try {
+        await sendUserWelcomeEmail(emailReal, nombre, rol);
+        emailSent = true;
+      } catch (mailError) {
+        logger.error(
+          `Usuario ${emailReal} creado OK, pero falló el correo de bienvenida:`,
+          mailError
+        );
+      }
     }
 
     return {
       success: true,
       emailSent,
-      message: emailSent
-        ? "Usuario creado y correo de bienvenida enviado."
-        : "Usuario creado. El correo de bienvenida no pudo enviarse.",
+      message: emailReal
+        ? emailSent
+          ? "Usuario creado y correo de bienvenida enviado."
+          : "Usuario creado. El correo de bienvenida no pudo enviarse."
+        : "Usuario creado (sin email; podrá iniciar sesión con su cédula).",
     };
   } catch (error) {
     throw new HttpsError("internal", error.message);
