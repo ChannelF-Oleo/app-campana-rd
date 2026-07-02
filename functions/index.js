@@ -50,31 +50,42 @@ exports.createProfileForProvider = user().onCreate(async (userRecord) => {
   const userRef = db.collection("users").doc(userRecord.uid);
 
   try {
-    const doc = await userRef.get();
-    if (!doc.exists) {
-      const userData = {
-        uid: userRecord.uid,
-        nombre: userRecord.displayName || "Usuario Sin Nombre",
-        email: userRecord.email,
-        fotoUrl: userRecord.photoURL || null,
-        rol: "multiplicador", // Rol por defecto
-        cedula: null,
-        registrationCount: 0, // Inicializamos contador
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastActivity: admin.firestore.FieldValue.serverTimestamp(),
-        metodoRegistro: "google",
-      };
-      
-      await userRef.set(userData);
+    const userData = {
+      uid: userRecord.uid,
+      nombre: userRecord.displayName || "Usuario Sin Nombre",
+      email: userRecord.email,
+      fotoUrl: userRecord.photoURL || null,
+      rol: "multiplicador", // Rol por defecto
+      cedula: null,
+      registrationCount: 0, // Inicializamos contador
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastActivity: admin.firestore.FieldValue.serverTimestamp(),
+      metodoRegistro: "google",
+    };
+
+    // Anti-carrera: este trigger (onCreate de Auth) puede ejecutarse en paralelo
+    // con createUserAdmin, que escribe el mismo doc con la cédula/rol correctos.
+    // Con una transacción, si el doc ya existe (p.ej. lo creó createUserAdmin)
+    // NO lo tocamos; y si otro flujo lo escribe entre la lectura y el commit,
+    // Firestore reintenta la transacción y vuelve a ver que ya existe. Así el
+    // trigger nunca pisa la cédula con null.
+    const created = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(userRef);
+      if (snap.exists) return false;
+      tx.set(userRef, userData);
+      return true;
+    });
+
+    if (created) {
       logger.info(`Perfil creado automáticamente para: ${userRecord.email}`);
-      
-      // Enviar correo de bienvenida para usuario registrado
+      // Correo de bienvenida SOLO si este trigger realmente creó el perfil
+      // (evita el correo duplicado cuando createUserAdmin ya lo creó y notificó).
       if (userRecord.email) {
-        await sendUserWelcomeEmail(
-          userRecord.email,
-          userData.nombre,
-          userData.rol
-        );
+        try {
+          await sendUserWelcomeEmail(userRecord.email, userData.nombre, userData.rol);
+        } catch (mailError) {
+          logger.error(`Perfil creado, pero falló el correo a ${userRecord.email}:`, mailError);
+        }
       }
     }
   } catch (error) {
@@ -250,10 +261,27 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
       });
     }
 
-    // Enviar correo de bienvenida para usuario creado por admin
-    await sendUserWelcomeEmail(email, nombre, rol);
+    // Enviar correo de bienvenida. El envío se AÍSLA: si Resend falla, el
+    // usuario YA quedó creado (Auth + Firestore), así que no debe hacer fallar
+    // toda la operación ni aparentar que el usuario no se creó.
+    let emailSent = true;
+    try {
+      await sendUserWelcomeEmail(email, nombre, rol);
+    } catch (mailError) {
+      emailSent = false;
+      logger.error(
+        `Usuario ${email} creado OK, pero falló el correo de bienvenida:`,
+        mailError
+      );
+    }
 
-    return { success: true };
+    return {
+      success: true,
+      emailSent,
+      message: emailSent
+        ? "Usuario creado y correo de bienvenida enviado."
+        : "Usuario creado. El correo de bienvenida no pudo enviarse.",
+    };
   } catch (error) {
     throw new HttpsError("internal", error.message);
   }

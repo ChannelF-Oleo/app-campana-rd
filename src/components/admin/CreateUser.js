@@ -144,7 +144,7 @@ function CreateUser() {
 
         <button
           type="button"
-          onClick={() => navigate("/admin")}
+          onClick={() => navigate("/admin/usuarios")}
           className="back-button"
         >
           Volver a la Lista
