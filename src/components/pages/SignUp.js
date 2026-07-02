@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { ROL_MULTIPLICADOR } from '../../constants';
+import { ROL_MULTIPLICADOR, normalizarCedula } from '../../constants';
 
 const CEDULA_DOMAIN = '@cedula.temp';
 const MIN_PASSWORD_LENGTH = 6;
@@ -71,9 +71,10 @@ function SignUp() {
         uid: user.uid,
         nombre: nombre,
         // Almacenamos el email utilizado para la autenticación
-        email: authEmail, 
-        // Almacenamos la cédula limpia (o null) en un campo indexable
-        numeroCedula: trimmedCedula || null, 
+        email: authEmail,
+        // Cédula normalizada (solo dígitos) en el campo estándar `cedula`,
+        // el mismo que consultan el login y el resto de la app.
+        cedula: trimmedCedula ? normalizarCedula(trimmedCedula) : null,
         rol: ROL_MULTIPLICADOR,
         createdAt: new Date(), // Buena práctica: añadir timestamp
       };

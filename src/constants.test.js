@@ -1,4 +1,9 @@
-import { validarCedula, validarTelefono, CEDULA_LONGITUD } from "./constants";
+import {
+  validarCedula,
+  validarTelefono,
+  CEDULA_LONGITUD,
+  normalizarCedula,
+} from "./constants";
 
 describe("validarCedula", () => {
   it("acepta una cédula con formato XXX-XXXXXXX-X", () => {
@@ -24,6 +29,29 @@ describe("validarCedula", () => {
 
   it("la longitud esperada de la cédula es 11", () => {
     expect(CEDULA_LONGITUD).toBe(11);
+  });
+});
+
+describe("normalizarCedula", () => {
+  it("quita los guiones", () => {
+    expect(normalizarCedula("001-1234567-8")).toBe("00112345678");
+  });
+
+  it("deja igual una cédula que ya viene sin guiones", () => {
+    expect(normalizarCedula("00112345678")).toBe("00112345678");
+  });
+
+  it("quita espacios y cualquier caracter no numérico", () => {
+    expect(normalizarCedula(" 001 1234567 8 ")).toBe("00112345678");
+  });
+
+  it("maneja null y undefined devolviendo cadena vacía", () => {
+    expect(normalizarCedula(null)).toBe("");
+    expect(normalizarCedula(undefined)).toBe("");
+  });
+
+  it("dos formatos distintos de la misma cédula normalizan igual", () => {
+    expect(normalizarCedula("001-1234567-8")).toBe(normalizarCedula("00112345678"));
   });
 });
 

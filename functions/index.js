@@ -23,6 +23,12 @@ const {
 
 admin.initializeApp();
 
+// Normaliza una cédula al estándar de almacenamiento: SOLO dígitos, sin guiones
+// ni espacios. Debe usarse antes de CUALQUIER escritura/consulta por cédula para
+// evitar duplicados por diferencias de formato. (Gemelo de src/constants.js.)
+const normalizarCedula = (cedula) =>
+  (cedula === null || cedula === undefined ? "" : String(cedula)).replace(/\D/g, "");
+
 // Configuración Global (V2)
 setGlobalOptions({
   region: "us-central1",
@@ -190,6 +196,12 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
     throw new HttpsError("invalid-argument", "Datos incompletos.");
   }
 
+  // Estándar: cédula SOLO dígitos en Firestore.
+  const cedulaNorm = normalizarCedula(cedula);
+  if (cedulaNorm.length !== 11) {
+    throw new HttpsError("invalid-argument", "La cédula debe tener 11 dígitos.");
+  }
+
   try {
     const userRecord = await admin.auth().createUser({
       email,
@@ -203,7 +215,7 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
       nombre,
       email,
       rol,
-      cedula,
+      cedula: cedulaNorm,
       registrationCount: 0,
       lastActivity: admin.firestore.FieldValue.serverTimestamp(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -211,14 +223,17 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
 
     await admin.firestore().collection("users").doc(userRecord.uid).set(userData);
 
-    // Espejo en Simpatizantes
+    // Perfil de simpatizante vinculado (colecciones separadas, unidas por cédula/UID).
+    // Regla (Fase 3): si la cédula YA existe en simpatizantes, no se crea otro doc,
+    // solo se vincula por usuarioId. Si no existe, se crea el perfil ya vinculado.
     const simpRef = admin.firestore().collection("simpatizantes");
-    const existing = await simpRef.where("cedula", "==", cedula).get();
+    const existing = await simpRef.where("cedula", "==", cedulaNorm).get();
     if (existing.empty) {
       await simpRef.add({
         nombre,
-        cedula,
+        cedula: cedulaNorm,
         email,
+        usuarioId: userRecord.uid,
         registradoPor: "Admin Console",
         esUsuarioInterno: true,
         fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
@@ -226,6 +241,12 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
         municipio: "N/A",
         sector: "N/A",
         direccion: "N/A",
+      });
+    } else {
+      // Ya existe: solo vincular por UID (sin duplicar).
+      await existing.docs[0].ref.update({
+        usuarioId: userRecord.uid,
+        esUsuarioInterno: true,
       });
     }
 
@@ -249,22 +270,14 @@ exports.getEmailByCedula = onCall(async (request) => {
 
   try {
     const usersRef = admin.firestore().collection("users");
-    // Intento 1: Directo
-    let query = await usersRef.where("cedula", "==", cedula).limit(1).get();
+    // Las cédulas se guardan normalizadas (solo dígitos), así que consultamos
+    // con el valor normalizado.
+    const cedulaNorm = normalizarCedula(cedula);
+    let query = await usersRef.where("cedula", "==", cedulaNorm).limit(1).get();
 
-    // Intento 2: Formateado
+    // Respaldo: registros antiguos que hayan quedado con guiones.
     if (query.empty) {
-      const clean = cedula.replace(/-/g, "");
-      const formatted = `${clean.slice(0, 3)}-${clean.slice(
-        3,
-        10
-      )}-${clean.slice(10)}`;
-      query = await usersRef.where("cedula", "==", formatted).limit(1).get();
-
-      // Intento 3: Limpio
-      if (query.empty) {
-        query = await usersRef.where("cedula", "==", clean).limit(1).get();
-      }
+      query = await usersRef.where("cedula", "==", cedula).limit(1).get();
     }
 
     if (!query.empty)
@@ -345,19 +358,54 @@ exports.registerSimpatizante = onCall(async (request) => {
   const data = request.data;
   if (!data.cedula) throw new HttpsError("invalid-argument", "Falta cédula");
 
-  const ref = admin.firestore().collection("simpatizantes");
-  // Verificar duplicado (asumiendo formato consistente)
-  const dup = await ref.where("cedula", "==", data.cedula).get();
-  if (!dup.empty) return { success: false, message: "Ya registrado." };
+  // Estándar: cédula SOLO dígitos. Normalizamos ANTES de consultar y guardar,
+  // para que el chequeo de duplicado funcione sin importar el formato de entrada.
+  const cedulaNorm = normalizarCedula(data.cedula);
+  if (cedulaNorm.length !== 11) {
+    throw new HttpsError("invalid-argument", "La cédula debe tener 11 dígitos.");
+  }
+
+  const db = admin.firestore();
+  const simpRef = db.collection("simpatizantes");
 
   try {
-    await ref.add({
+    // Vínculo con usuario: si la cédula pertenece a un usuario, guardamos su UID.
+    const userSnap = await db
+      .collection("users")
+      .where("cedula", "==", cedulaNorm)
+      .limit(1)
+      .get();
+    const usuarioId = userSnap.empty ? null : userSnap.docs[0].id;
+
+    // Campos derivados/normalizados comunes.
+    const payload = {
       ...data,
-      fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
+      cedula: cedulaNorm,
       ubicacion:
         data.lat && data.lng
           ? new admin.firestore.GeoPoint(data.lat, data.lng)
           : null,
+    };
+    if (usuarioId) payload.usuarioId = usuarioId;
+
+    // ¿Ya existe un simpatizante con esta cédula?
+    const dup = await simpRef.where("cedula", "==", cedulaNorm).get();
+
+    if (!dup.empty) {
+      // Ya registrado: actualizamos sus datos (sin duplicar, conservando
+      // fechaRegistro y sin re-contar el registro del activista).
+      await dup.docs[0].ref.set(payload, { merge: true });
+      return {
+        success: true,
+        updated: true,
+        message: "Usuario ya registrado, se actualizarán los datos.",
+      };
+    }
+
+    // No existe: creamos el perfil (vinculado si corresponde).
+    await simpRef.add({
+      ...payload,
+      fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
     });
     return { success: true, message: "Registro exitoso." };
   } catch (error) {

@@ -12,6 +12,7 @@ import {
   ROL_ADMIN,
   ROL_LIDER,
   ROL_MULTIPLICADOR,
+  normalizarCedula,
 } from "../../constants";
 
 // Inicializar Functions
@@ -355,7 +356,8 @@ function ManageUsers() {
     try {
       let dataToUpdate = {
         rol: data.rol,
-        cedula: data.cedula,
+        // Estándar: cédula SOLO dígitos en Firestore.
+        cedula: normalizarCedula(data.cedula),
         multiplicadoresAsignados:
           data.rol === ROL_LIDER
             ? data.multiplicadoresAsignados || []
