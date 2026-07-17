@@ -67,7 +67,9 @@ const mb = (bytes) => (bytes / (1024 * 1024)).toFixed(2);
 const kb = (bytes) => Math.round(bytes / 1024);
 
 /**
- * Procesa una foto: decide si saltarla o recomprimirla.
+ * Procesa una foto CANDIDATA (ya pre-filtrada por tamaño >= UMBRAL_BYTES según
+ * metadata, sin haber descargado). Descarga, comprueba dimensiones y recomprime
+ * si hace falta.
  * @returns {Promise<{ estado: "recomprimida"|"saltada"|"fallida", antes: number, despues: number }>}
  */
 async function procesarFoto(file) {
@@ -79,10 +81,11 @@ async function procesarFoto(file) {
     const meta = await sharp(buffer).metadata();
     const ladoMayor = Math.max(meta.width || 0, meta.height || 0);
 
-    // Se salta si YA está optimizada: pequeña en peso O pequeña en dimensiones.
-    if (antes < UMBRAL_BYTES || ladoMayor <= MAX_LADO) {
+    // Aunque pese >= umbral, si su lado mayor ya es <= 1000px está optimizada
+    // en dimensiones: recomprimir no aportaría y evitamos degradar de más.
+    if (ladoMayor <= MAX_LADO) {
       console.log(
-        `  SALTA   ${name}  (${kb(antes)}KB, ${meta.width}x${meta.height})`
+        `  SALTA   ${name}  (${kb(antes)}KB, ${meta.width}x${meta.height}, lado<=${MAX_LADO})`
       );
       return { estado: "saltada", antes, despues: antes };
     }
@@ -143,16 +146,41 @@ async function main() {
       : "MODO: APPLY (SOBREESCRIBE los originales). Asegúrate de tener backup.\n"
   );
 
-  const [files] = await bucket.getFiles({ prefix: PREFIX });
-  // Ignora "carpetas" (objetos que terminan en / y tamaño 0).
-  const fotos = files.filter((f) => !f.name.endsWith("/"));
-  console.log(`Objetos encontrados: ${fotos.length}\n`);
+  // PRE-FILTRO POR METADATA (sin descargar): el prefijo tiene ~225k objetos
+  // (recortes del padrón, ~8KB c/u) y solo un puñado son fotos crudas grandes.
+  // Descargar todo para medir sería inviable (~2.3GB), así que paginamos y nos
+  // quedamos SOLO con los objetos cuyo metadata.size >= UMBRAL_BYTES.
+  let totalObjetos = 0;
+  let saltadasPorTamano = 0;
+  const candidatas = [];
+  let pageToken;
+  do {
+    const [files, , resp] = await bucket.getFiles({
+      prefix: PREFIX,
+      maxResults: 1000,
+      autoPaginate: false,
+      pageToken,
+    });
+    for (const f of files) {
+      if (f.name.endsWith("/")) continue; // ignora "carpetas"
+      totalObjetos++;
+      if (Number(f.metadata.size || 0) >= UMBRAL_BYTES) candidatas.push(f);
+      else saltadasPorTamano++;
+    }
+    pageToken = resp && resp.nextPageToken;
+    console.log(
+      `... listados ${totalObjetos} objetos (candidatas por tamaño: ${candidatas.length})`
+    );
+  } while (pageToken);
 
-  const resultados = await conConcurrencia(fotos, CONCURRENCIA, procesarFoto);
+  console.log(
+    `\nObjetos: ${totalObjetos} · candidatas >=${kb(UMBRAL_BYTES)}KB: ${candidatas.length}\n`
+  );
 
-  const total = resultados.length;
+  const resultados = await conConcurrencia(candidatas, CONCURRENCIA, procesarFoto);
+
   const recomprimidas = resultados.filter((r) => r.estado === "recomprimida");
-  const saltadas = resultados.filter((r) => r.estado === "saltada");
+  const saltadasPorDimension = resultados.filter((r) => r.estado === "saltada");
   const fallidas = resultados.filter((r) => r.estado === "fallida");
   const ahorroBytes = recomprimidas.reduce(
     (acc, r) => acc + (r.antes - r.despues),
@@ -160,14 +188,15 @@ async function main() {
   );
 
   console.log("\n=== RESUMEN ===");
-  console.log(`Total:            ${total}`);
+  console.log(`Total objetos:          ${totalObjetos}`);
   console.log(
-    `Recomprimidas:    ${recomprimidas.length}${DRY_RUN ? " (estimado, dry-run)" : ""}`
+    `Recomprimidas:          ${recomprimidas.length}${DRY_RUN ? " (estimado, dry-run)" : ""}`
   );
-  console.log(`Saltadas:         ${saltadas.length}`);
-  console.log(`Fallidas:         ${fallidas.length}`);
+  console.log(`Saltadas (por tamaño):  ${saltadasPorTamano}`);
+  console.log(`Saltadas (por lado):    ${saltadasPorDimension.length}`);
+  console.log(`Fallidas:               ${fallidas.length}`);
   console.log(
-    `MB ahorrados:     ${mb(ahorroBytes)} MB${DRY_RUN ? " (estimado)" : ""}`
+    `MB ahorrados:           ${mb(ahorroBytes)} MB${DRY_RUN ? " (estimado)" : ""}`
   );
   if (DRY_RUN) {
     console.log(
