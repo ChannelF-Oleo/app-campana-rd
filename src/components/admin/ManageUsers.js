@@ -6,6 +6,8 @@ import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage"; // Funciones de Storage
 import * as XLSX from "xlsx";
 import AvatarFoto from "../ui/AvatarFoto";
+import { generarPadronPDF } from "../../utils/pdfPadron";
+import { generarExcelConFoto } from "../../utils/excelConFoto";
 import {
   ROLES_DISPONIBLES,
   USUARIOS_POR_PAGINA,
@@ -18,6 +20,27 @@ import {
 // Inicializar Functions
 const functions = getFunctions();
 const deleteUserCallable = httpsCallable(functions, "deleteUserAndData");
+
+// Campos/columnas para los exports con foto. `key` referencia propiedades de
+// cada objeto de filteredUsers (que ya trae cedula, nombre, telefono, rol,
+// zona y registrationCount). Sin Dirección (se está retirando del modelo).
+const CAMPOS_PDF_USUARIOS = [
+  { label: "Nombre", key: "nombre" },
+  { label: "Cédula", key: "cedula" },
+  { label: "Teléfono", key: "telefono" },
+  { label: "Rol", key: "rol" },
+  { label: "Zona", key: "zona" },
+  { label: "Registros", key: "registrationCount" },
+];
+
+const COLUMNAS_EXCEL_USUARIOS = [
+  { header: "Nombre", key: "nombre", width: 28 },
+  { header: "Cédula", key: "cedula", width: 16 },
+  { header: "Teléfono", key: "telefono", width: 16 },
+  { header: "Rol", key: "rol", width: 16 },
+  { header: "Zona", key: "zona", width: 16 },
+  { header: "Registros", key: "registrationCount", width: 12 },
+];
 
 // --- SPINNER DE CARGA ---
 function LoadingSpinner({ message = "Cargando..." }) {
@@ -240,6 +263,13 @@ function ManageUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("todos");
 
+  // Estado de los exports con foto (PDF/Excel).
+  const [exportando, setExportando] = useState(false);
+  const [progreso, setProgreso] = useState(null); // { fase, hechos, total }
+  const textoProgreso = progreso
+    ? `Generando... ${progreso.hechos}/${progreso.total}`
+    : "";
+
   // --- PAGINACIÓN ---
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(filteredUsers.length / USUARIOS_POR_PAGINA);
@@ -353,6 +383,56 @@ function ManageUsers() {
     XLSX.writeFile(workbook, "Usuarios_Filtrados.xlsx");
   };
 
+  // Export PDF tipo padrón (foto grande + datos por ficha).
+  const handleExportPDF = async () => {
+    if (filteredUsers.length === 0) {
+      alert("No hay usuarios para exportar.");
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: filteredUsers.length });
+    try {
+      await generarPadronPDF(filteredUsers, {
+        titulo: "Padrón de Usuarios",
+        campos: CAMPOS_PDF_USUARIOS,
+        fileName: "Usuarios_Padron.pdf",
+        onProgress: (fase, hechos, total) =>
+          setProgreso({ fase, hechos, total }),
+      });
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      alert("Hubo un error al generar el PDF.");
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
+
+  // Export Excel con la foto embebida en cada fila.
+  const handleExportExcelFoto = async () => {
+    if (filteredUsers.length === 0) {
+      alert("No hay usuarios para exportar.");
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: filteredUsers.length });
+    try {
+      await generarExcelConFoto(filteredUsers, {
+        hojaNombre: "Usuarios",
+        columnas: COLUMNAS_EXCEL_USUARIOS,
+        fileName: "Usuarios_Con_Foto.xlsx",
+        onProgress: (fase, hechos, total) =>
+          setProgreso({ fase, hechos, total }),
+      });
+    } catch (error) {
+      console.error("Error generando Excel:", error);
+      alert("Hubo un error al generar el Excel.");
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
+
   useEffect(() => {
     fetchUsersAndMetrics();
   }, []);
@@ -446,9 +526,23 @@ function ManageUsers() {
         <button
           onClick={handleExport}
           className="export-excel-button"
-          disabled={loading || filteredUsers.length === 0}
+          disabled={loading || exportando || filteredUsers.length === 0}
         >
           Exportar Excel
+        </button>
+        <button
+          onClick={handleExportPDF}
+          className="export-excel-button"
+          disabled={loading || exportando || filteredUsers.length === 0}
+        >
+          {exportando ? textoProgreso : "PDF con foto (padrón)"}
+        </button>
+        <button
+          onClick={handleExportExcelFoto}
+          className="export-excel-button"
+          disabled={loading || exportando || filteredUsers.length === 0}
+        >
+          {exportando ? textoProgreso : "Excel con foto"}
         </button>
       </div>
 

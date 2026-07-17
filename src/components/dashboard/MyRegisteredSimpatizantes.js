@@ -8,13 +8,47 @@ import {
   orderBy,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
-import { FaFileExcel } from "react-icons/fa";
+import { FaFileExcel, FaFilePdf, FaFileImage } from "react-icons/fa";
 import AvatarFoto from "../ui/AvatarFoto";
+import { generarPadronPDF } from "../../utils/pdfPadron";
+import { generarExcelConFoto } from "../../utils/excelConFoto";
+
+// Campos/columnas para los exports con foto de simpatizantes. Usa los campos
+// nuevos de ubicación electoral; fallback "N/A" lo aplican los generadores.
+const CAMPOS_PDF_SIMP = [
+  { label: "Nombre", key: "nombre" },
+  { label: "Cédula", key: "cedula" },
+  { label: "Teléfono", key: "telefono" },
+  { label: "Zona", key: "zona" },
+  { label: "Sector", key: "sector" },
+  { label: "Subsector", key: "subsector" },
+  { label: "Recinto", key: "recinto" },
+  { label: "Colegio", key: "colegio" },
+];
+
+const COLUMNAS_EXCEL_SIMP = [
+  { header: "Nombre", key: "nombre", width: 28 },
+  { header: "Cédula", key: "cedula", width: 16 },
+  { header: "Teléfono", key: "telefono", width: 16 },
+  { header: "Zona", key: "zona", width: 16 },
+  { header: "Sector", key: "sector", width: 18 },
+  { header: "Subsector", key: "subsector", width: 18 },
+  { header: "Recinto", key: "recinto", width: 22 },
+  { header: "Colegio", key: "colegio", width: 14 },
+  { header: "FechaRegistro", key: "fechaRegistro", width: 16 },
+];
 
 function MyRegisteredSimpatizantes({ user }) {
   const [simpatizantes, setSimpatizantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Estado de los exports con foto (PDF/Excel).
+  const [exportando, setExportando] = useState(false);
+  const [progreso, setProgreso] = useState(null); // { fase, hechos, total }
+  const textoProgreso = progreso
+    ? `Generando... ${progreso.hechos}/${progreso.total}`
+    : "";
 
   useEffect(() => {
     if (!user) {
@@ -86,6 +120,76 @@ function MyRegisteredSimpatizantes({ user }) {
     )}.xlsx`;
     XLSX.writeFile(workbook, fileName);
   };
+
+  // Normaliza los simpatizantes al shape que consumen los generadores:
+  // debe incluir `cedula` (para resolver la foto) y las `key` referenciadas.
+  // La fecha se pre-formatea porque los generadores solo convierten a texto.
+  const buildPersonasExport = () =>
+    simpatizantes.map((s) => ({
+      cedula: s.cedula,
+      nombre: s.nombre,
+      telefono: s.telefono,
+      zona: s.zona,
+      sector: s.sector,
+      subsector: s.subsector,
+      recinto: s.recinto,
+      colegio: s.colegioElectoral,
+      fechaRegistro: s.fechaRegistro
+        ? s.fechaRegistro.toDate().toLocaleDateString("es-DO")
+        : "",
+    }));
+
+  const safeNombre = (user.nombre || "usuario").replace(/\s/g, "_");
+
+  // Export PDF tipo padrón (foto grande + datos por ficha).
+  const handleExportPDF = async () => {
+    if (simpatizantes.length === 0) {
+      alert("No tienes registros para exportar.");
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: simpatizantes.length });
+    try {
+      await generarPadronPDF(buildPersonasExport(), {
+        titulo: "Padrón de Simpatizantes",
+        campos: CAMPOS_PDF_SIMP,
+        fileName: `Mis_Registros_Padron_${safeNombre}.pdf`,
+        onProgress: (fase, hechos, total) =>
+          setProgreso({ fase, hechos, total }),
+      });
+    } catch (err) {
+      console.error("Error generando PDF:", err);
+      alert("Hubo un error al generar el PDF.");
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
+
+  // Export Excel con la foto embebida en cada fila.
+  const handleExportExcelFoto = async () => {
+    if (simpatizantes.length === 0) {
+      alert("No tienes registros para exportar.");
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: simpatizantes.length });
+    try {
+      await generarExcelConFoto(buildPersonasExport(), {
+        hojaNombre: "Mis Registros",
+        columnas: COLUMNAS_EXCEL_SIMP,
+        fileName: `Mis_Registros_Con_Foto_${safeNombre}.xlsx`,
+        onProgress: (fase, hechos, total) =>
+          setProgreso({ fase, hechos, total }),
+      });
+    } catch (err) {
+      console.error("Error generando Excel:", err);
+      alert("Hubo un error al generar el Excel.");
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
   // ------------------------------------
 
   if (loading) {
@@ -108,8 +212,25 @@ function MyRegisteredSimpatizantes({ user }) {
             onClick={handleExport}
             className="export-registros-button"
             title="Exportar mis registros a Excel"
+            disabled={exportando}
           >
             <FaFileExcel /> Exportar Excel
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="export-registros-button"
+            title="Exportar PDF tipo padrón con foto"
+            disabled={exportando}
+          >
+            <FaFilePdf /> {exportando ? textoProgreso : "PDF con foto (padrón)"}
+          </button>
+          <button
+            onClick={handleExportExcelFoto}
+            className="export-registros-button"
+            title="Exportar Excel con foto embebida"
+            disabled={exportando}
+          >
+            <FaFileImage /> {exportando ? textoProgreso : "Excel con foto"}
           </button>
         </div>
       )}
