@@ -127,6 +127,27 @@ node scripts/recomprimirFotos.js --dry-run
 node scripts/recomprimirFotos.js --apply
 ```
 
+## 🖼️ CORS de Storage (fotos en el export a PDF/Excel)
+
+El export a PDF/Excel lee cada foto con `getBytes()` del SDK, que internamente hace un **XHR** a `firebasestorage.googleapis.com` → **sí requiere CORS** en el bucket. En cambio `<img src>` (la miniatura en pantalla) **no usa CORS**.
+
+> ⚠️ **La prueba de éxito NO es "las fotos se ven en pantalla".** El `<img>` funciona sin CORS y da **falsos positivos**. El éxito real es: en la consola aparece `[fotoExport][…] getBytes OK` **y** el PDF muestra **caras** (no placeholders grises). Un GET a Storage con `200` tampoco basta: puede tener CORS incompleto (sin los `responseHeader` que `getBytes` necesita leer).
+
+La config vive en [`cors.json`](cors.json) (raíz del repo), con `responseHeader` amplio para que `getBytes` pueda leer la respuesta.
+
+```bash
+# Ver la config CORS actual (vacío = nunca aplicada)
+gcloud storage buckets describe gs://politicard-cfd.firebasestorage.app --format="default(cors_config)"
+
+# Aplicar / actualizar la config
+gcloud storage buckets update gs://politicard-cfd.firebasestorage.app --cors-file=cors.json
+
+# Verificar que quedó aplicada
+gcloud storage buckets describe gs://politicard-cfd.firebasestorage.app --format="default(cors_config)"
+```
+
+Los `origin` incluyen `http://localhost:3000` y el dominio de producción (`felixencarnacion.com` con y sin `www`). **Pendiente:** si se usan previews `*.vercel.app`, agregar ese patrón a `origin` (CORS no admite comodines de subdominio arbitrarios; hay que listar los orígenes concretos).
+
 ## 🤝 Contribuciones
 
 Trabajo por ramas y PRs desde `main`. Verificar `CI=true npm run build` y `CI=true npm test` antes de abrir PR.

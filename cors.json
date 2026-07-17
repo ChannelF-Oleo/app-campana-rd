@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:3000", "https://www.felixencarnacion.com", "https://felixencarnacion.com"],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Range", "Content-Encoding", "Accept-Ranges", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]
