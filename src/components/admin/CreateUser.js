@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { ubicacionesData } from "../../data/ubicaciones.js";
 import {
   ROL_ADMIN,
   ROL_LIDER,
@@ -12,27 +11,37 @@ import {
   validarCedula,
   validarTelefono,
 } from "../../constants";
+import {
+  ZONA_FIJA,
+  SECTOR_FIJO,
+  OPCION_NO_IDENTIFICADO,
+} from "../../data/ubicacionElectoral";
+import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
 
 // Cloud Functions
 const functions = getFunctions();
 const createUserAdminCallable = httpsCallable(functions, "createUserAdmin");
 const searchVotanteCallable = httpsCallable(functions, "searchVotanteByCedula");
 
-// Sectores fijos de Santo Domingo Oeste (mismo origen que el form de simpatizante)
-const provinciaSDO = ubicacionesData.find((p) => p.provincia === PROVINCIA_FIJA);
-const municipioData = provinciaSDO
-  ? provinciaSDO.municipios.find((m) => m.municipio === MUNICIPIO_FIJO)
-  : null;
-const sectoresSDO = municipioData ? municipioData.sectores : [];
+// Estado inicial de la ubicación electoral (zona y sector fijos por ahora)
+const UBICACION_INICIAL = {
+  zona: ZONA_FIJA,
+  sector: SECTOR_FIJO,
+  subsector: "",
+  recinto: "",
+  colegioElectoral: "",
+};
+
+// Convierte "No identificado" en cadena vacía para el payload.
+const limpiarUbicacion = (valor) =>
+  valor === OPCION_NO_IDENTIFICADO ? "" : valor;
 
 function CreateUser() {
   const [nombre, setNombre] = useState("");
   const [cedula, setCedula] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [colegioElectoral, setColegioElectoral] = useState("");
-  const [selectedSector, setSelectedSector] = useState("");
+  const [ubicacion, setUbicacion] = useState(UBICACION_INICIAL);
   const [password, setPassword] = useState("");
   const [rol, setRol] = useState(ROL_MULTIPLICADOR);
 
@@ -40,6 +49,17 @@ function CreateUser() {
   const [isSearching, setIsSearching] = useState(false);
   const [notification, setNotification] = useState({ message: "", type: "" });
   const navigate = useNavigate();
+
+  // Al cambiar un campo de ubicación; si cambia "recinto", resetea el colegio.
+  const handleUbicacionChange = (campo, valor) => {
+    setUbicacion((prev) => {
+      const next = { ...prev, [campo]: valor };
+      if (campo === "recinto") {
+        next.colegioElectoral = "";
+      }
+      return next;
+    });
+  };
 
   // Autocompletar desde el padrón cuando la cédula está completa
   const buscarVotante = useCallback(async (cedulaFormateada) => {
@@ -49,11 +69,7 @@ function CreateUser() {
       const { found, data } = result.data;
       if (found) {
         setNombre(data.nombre || "");
-        setColegioElectoral(data.colegioElectoral || "");
         if (data.telefono) setTelefono(data.telefono);
-        if (data.direccion) setDireccion(data.direccion);
-        const foundSector = sectoresSDO.includes(data.sector) ? data.sector : "";
-        setSelectedSector(foundSector);
         setNotification({ message: "Datos cargados desde el padrón.", type: "success" });
       } else {
         setNotification({ message: "Cédula no encontrada en el padrón. Completa los datos manualmente.", type: "info" });
@@ -96,8 +112,19 @@ function CreateUser() {
       setNotification({ message: "La contraseña debe tener al menos 6 caracteres.", type: "error" });
       return;
     }
-    if (!selectedSector) {
-      setNotification({ message: "Por favor, selecciona un Sector.", type: "error" });
+    // Validación de ubicación electoral: sector, subsector, recinto y colegio
+    // deben tener valor (incluido "No identificado"). La zona ya viene fija.
+    if (
+      !ubicacion.sector ||
+      !ubicacion.subsector ||
+      !ubicacion.recinto ||
+      !ubicacion.colegioElectoral
+    ) {
+      setNotification({
+        message:
+          "Por favor, completa la ubicación electoral (sector, subsector, recinto y colegio).",
+        type: "error",
+      });
       return;
     }
 
@@ -108,11 +135,14 @@ function CreateUser() {
         cedula: cedulaNormalizada,
         email, // opcional; el backend sintetiza uno si viene vacío
         telefono,
-        direccion,
-        sector: selectedSector,
         provincia: PROVINCIA_FIJA,
         municipio: MUNICIPIO_FIJO,
-        colegioElectoral,
+        // Ubicación electoral ("No identificado" se envía como "")
+        zona: limpiarUbicacion(ubicacion.zona),
+        sector: limpiarUbicacion(ubicacion.sector),
+        subsector: limpiarUbicacion(ubicacion.subsector),
+        recinto: limpiarUbicacion(ubicacion.recinto),
+        colegioElectoral: limpiarUbicacion(ubicacion.colegioElectoral),
         password,
         rol,
       });
@@ -124,9 +154,7 @@ function CreateUser() {
         setCedula("");
         setEmail("");
         setTelefono("");
-        setDireccion("");
-        setColegioElectoral("");
-        setSelectedSector("");
+        setUbicacion(UBICACION_INICIAL);
         setPassword("");
         setRol(ROL_MULTIPLICADOR);
       }
@@ -209,45 +237,12 @@ function CreateUser() {
           </select>
         </div>
 
-        <div className="input-group">
-          <label htmlFor="sector">Sector o Barrio</label>
-          <select
-            id="sector"
-            value={selectedSector}
-            onChange={(e) => setSelectedSector(e.target.value)}
-            required
-            disabled={sectoresSDO.length === 0 || loading || isSearching}
-          >
-            <option value="">-- Selecciona --</option>
-            {sectoresSDO.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="input-group">
-          <label htmlFor="direccion">Dirección</label>
-          <input
-            type="text"
-            id="direccion"
-            value={direccion}
-            onChange={(e) => setDireccion(e.target.value)}
-            disabled={loading || isSearching}
-          />
-        </div>
-
-        <div className="input-group">
-          <label htmlFor="colegio">Colegio Electoral (Opcional)</label>
-          <input
-            type="text"
-            id="colegio"
-            value={colegioElectoral}
-            onChange={(e) => setColegioElectoral(e.target.value)}
-            disabled={loading || isSearching}
-          />
-        </div>
+        {/* Ubicación electoral: Zona → Sector → Subsector → Recinto → Colegio */}
+        <UbicacionElectoralFields
+          value={ubicacion}
+          onChange={handleUbicacionChange}
+          disabled={loading || isSearching}
+        />
 
         <div className="input-group">
           <label htmlFor="password">Contraseña Temporal (mín. 6 caracteres)</label>

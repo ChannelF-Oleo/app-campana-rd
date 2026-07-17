@@ -113,9 +113,13 @@ function RegisterAppUser() {
           cedula: cedulaNorm,
           email: email,
           telefono: votanteData?.telefono || "",
-          direccion: votanteData?.direccion || "",
-          colegioElectoral: votanteData?.colegioElectoral || "",
-          sector: votanteData?.sector || "N/A",
+          // Ubicación electoral: este flujo no la captura, se deja vacía
+          // (no se autoasigna zona ni el resto de niveles).
+          zona: "",
+          sector: "",
+          subsector: "",
+          recinto: "",
+          colegioElectoral: "",
           municipio: votanteData?.municipio || "N/A",
           provincia: votanteData?.provincia || "N/A",
           registradoPor: "App Reg Automático",
