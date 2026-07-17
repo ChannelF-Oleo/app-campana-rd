@@ -1,4 +1,4 @@
-import { ref, getDownloadURL } from "firebase/storage";
+import { ref, getBytes } from "firebase/storage";
 import { storage } from "../firebase";
 
 // Máximo lado (px) de la foto redimensionada antes de exportar. Mantiene el
@@ -100,12 +100,28 @@ async function redimensionar(dataUrl) {
 }
 
 /**
+ * Deriva el mime de una ruta a partir de su extensión.
+ * @param {string} path
+ * @returns {string}
+ */
+function mimePorExtension(path) {
+  const ext = path.split(".").pop().toLowerCase();
+  if (ext === "png") return "image/png";
+  return "image/jpeg"; // jpg / JPG / jpeg
+}
+
+/**
  * Descarga la foto de una cédula desde Storage como base64.
  *
  * Prueba las rutas candidatas en orden, se queda con la primera que exista,
- * la baja vía fetch(downloadURL), la redimensiona/recomprime y devuelve un
- * objeto { dataUrl, width, height, mime }. Los errores por ruta se ignoran
- * silenciosamente (se prueba la siguiente).
+ * y lee sus bytes con getBytes() del SDK de Storage (petición autenticada por
+ * el SDK, NO un fetch() directo). Esto evita el bloqueo CORS que sí afecta a
+ * fetch(downloadURL) — motivo por el que antes las fotos salían como
+ * placeholder gris en el PDF/Excel. Con getBytes el canvas tampoco queda
+ * "tainted" porque los bytes no entran como recurso remoto cross-origin.
+ *
+ * Luego redimensiona/recomprime por canvas igual que antes y devuelve un
+ * objeto { dataUrl, width, height, mime }, o null si ninguna ruta existe.
  *
  * @param {string} cedula
  * @returns {Promise<{ dataUrl: string, width: number, height: number, mime: string } | null>}
@@ -115,35 +131,14 @@ export async function fetchFotoBase64(cedula) {
 
   for (const path of paths) {
     try {
-      const url = await getDownloadURL(ref(storage, path));
-      // [DIAG] Ruta que SÍ resolvió en Storage.
-      console.log(`[fotoExport][${cedula}] getDownloadURL OK -> ${path}`, url);
-
-      let response;
-      try {
-        response = await fetch(url);
-      } catch (fetchErr) {
-        // [DIAG] fetch lanzó (típico de CORS: "Failed to fetch" / TypeError).
-        console.error(
-          `[fotoExport][${cedula}] fetch(downloadURL) LANZÓ:`,
-          fetchErr && fetchErr.name,
-          fetchErr && fetchErr.message,
-          fetchErr
-        );
-        continue;
-      }
-      // [DIAG] fetch resolvió: estado HTTP.
+      const bytes = await getBytes(ref(storage, path));
+      // [DIAG] Ruta que SÍ existe y de la que leímos bytes.
       console.log(
-        `[fotoExport][${cedula}] fetch status=${response.status} ok=${response.ok}`
-      );
-      if (!response.ok) continue;
-
-      const blob = await response.blob();
-      // [DIAG] Tipo/tamaño del blob descargado.
-      console.log(
-        `[fotoExport][${cedula}] blob type=${blob.type} size=${blob.size}`
+        `[fotoExport][${cedula}] getBytes OK -> ${path} (${bytes.byteLength} bytes)`
       );
 
+      const mime = mimePorExtension(path);
+      const blob = new Blob([bytes], { type: mime });
       const dataUrl = await blobToDataUrl(blob);
       // [DIAG] dataUrl original (prefijo + longitud).
       console.log(
@@ -164,7 +159,7 @@ export async function fetchFotoBase64(cedula) {
         );
         return res;
       } catch (canvasErr) {
-        // [DIAG] El canvas falló (p.ej. SecurityError por canvas "tainted").
+        // [DIAG] El canvas falló (no debería con getBytes; sería un bug real).
         console.error(
           `[fotoExport][${cedula}] redimensionar/canvas LANZÓ:`,
           canvasErr && canvasErr.name,
@@ -172,20 +167,22 @@ export async function fetchFotoBase64(cedula) {
           canvasErr
         );
         // Si el redimensionado falla, devolvemos el original sin dimensiones.
-        return { dataUrl, width: null, height: null, mime: blob.type || null };
+        return { dataUrl, width: null, height: null, mime };
       }
     } catch (err) {
-      // [DIAG] getDownloadURL falló (404 objeto inexistente u otro). Ruidoso
-      // a propósito para ver cuántas rutas se descartan por cédula.
+      // [DIAG] getBytes falló (404 objeto inexistente u otro). Ruidoso a
+      // propósito para ver cuántas rutas se descartan por cédula.
       console.warn(
-        `[fotoExport][${cedula}] getDownloadURL FALLÓ en ${path}:`,
+        `[fotoExport][${cedula}] getBytes FALLÓ en ${path}:`,
         err && err.code ? err.code : err && err.message
       );
     }
   }
 
-  // [DIAG] Ninguna ruta produjo foto -> placeholder en el PDF.
-  console.warn(`[fotoExport][${cedula}] RESULTADO null (todas las rutas fallaron)`);
+  // [DIAG] Ninguna ruta produjo foto -> placeholder (persona sin foto real).
+  console.warn(
+    `[fotoExport][${cedula}] RESULTADO null (todas las rutas fallaron)`
+  );
   return null;
 }
 
