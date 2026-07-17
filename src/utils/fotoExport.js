@@ -1,5 +1,6 @@
-import { ref, getBytes } from "firebase/storage";
+import { ref, getBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase";
+import * as fotoCache from "./fotoCache";
 
 // Máximo lado (px) de la foto redimensionada antes de exportar. Mantiene el
 // archivo final (PDF/Excel) pequeño sin degradar demasiado la miniatura.
@@ -14,9 +15,14 @@ const JPEG_QUALITY = 0.8;
  * o CON guiones (001-1234567-8.jpg). Reconstruimos ambos formatos desde los
  * dígitos y probamos.
  *
- * ORDEN IMPORTANTE — SIN guiones PRIMERO: las fotos NUEVAS (cámara, correctas)
- * se suben con la cédula normalizada; las VIEJAS del padrón (frecuentemente de
- * otra persona) están con guiones y quedan solo como respaldo.
+ * ORDEN de formato de cédula — SIN guiones PRIMERO: las fotos NUEVAS (cámara,
+ * correctas) se suben con la cédula normalizada; las VIEJAS del padrón
+ * (frecuentemente de otra persona) están con guiones y quedan solo como
+ * respaldo. NO invertir este orden: acertar antes con la del padrón mostraría
+ * la cara equivocada.
+ *
+ * ORDEN de extensión — .jpg PRIMERO (el más común), luego JPG, jpeg, png: así
+ * el sondeo acierta cuanto antes y hace menos llamadas fallidas.
  *
  * @param {string} cedula
  * @returns {string[]} 8 rutas candidatas en Storage.
@@ -100,90 +106,114 @@ async function redimensionar(dataUrl) {
 }
 
 /**
- * Deriva el mime de una ruta a partir de su extensión.
- * @param {string} path
+ * Deriva el mime de una URL/ruta a partir de su extensión (ignora query).
+ * @param {string} urlOrPath
  * @returns {string}
  */
-function mimePorExtension(path) {
-  const ext = path.split(".").pop().toLowerCase();
-  if (ext === "png") return "image/png";
-  return "image/jpeg"; // jpg / JPG / jpeg
+function mimePorExtension(urlOrPath) {
+  const limpio = String(urlOrPath).split("?")[0].toLowerCase();
+  return limpio.endsWith(".png") ? "image/png" : "image/jpeg";
+}
+
+/**
+ * Sondea las rutas candidatas y devuelve el downloadURL de la primera que
+ * exista, o null. Uso interno de resolveFotoUrl.
+ * @param {string} cedula
+ * @returns {Promise<string|null>}
+ */
+async function sondearFotoUrl(cedula) {
+  const paths = getPathsToTry(cedula);
+  for (const path of paths) {
+    try {
+      return await getDownloadURL(ref(storage, path));
+    } catch {
+      // Ruta inexistente (404) u otro error: probamos la siguiente.
+    }
+  }
+  return null;
+}
+
+/**
+ * Resuelve el downloadURL de la foto de una cédula, con CACHE COMPARTIDO.
+ *
+ * El sondeo de hasta 8 rutas se hace UNA sola vez por cédula y sesión: tanto
+ * AvatarFoto (que usa la URL en un <img>) como el export (que la usa para
+ * getBytes) reutilizan la misma promesa. Cachea también los negativos (null)
+ * para no re-sondear a quienes no tienen foto.
+ *
+ * @param {string} cedula
+ * @returns {Promise<string|null>}
+ */
+export function resolveFotoUrl(cedula) {
+  if (!cedula) return Promise.resolve(null);
+  const cacheada = fotoCache.get(cedula);
+  if (cacheada) return cacheada;
+  return fotoCache.set(cedula, sondearFotoUrl(cedula));
 }
 
 /**
  * Descarga la foto de una cédula desde Storage como base64.
  *
- * Prueba las rutas candidatas en orden, se queda con la primera que exista,
- * y lee sus bytes con getBytes() del SDK de Storage (petición autenticada por
- * el SDK, NO un fetch() directo). Esto evita el bloqueo CORS que sí afecta a
- * fetch(downloadURL) — motivo por el que antes las fotos salían como
- * placeholder gris en el PDF/Excel. Con getBytes el canvas tampoco queda
- * "tainted" porque los bytes no entran como recurso remoto cross-origin.
+ * Resuelve la URL vía cache compartido (resolveFotoUrl) y lee sus bytes con
+ * getBytes() del SDK (petición autenticada por el SDK, NO un fetch() directo).
+ * Esto evita el bloqueo CORS que sí afecta a fetch(downloadURL) — motivo por el
+ * que antes las fotos salían como placeholder gris en el PDF/Excel. Con
+ * getBytes el canvas tampoco queda "tainted".
  *
- * Luego redimensiona/recomprime por canvas igual que antes y devuelve un
- * objeto { dataUrl, width, height, mime }, o null si ninguna ruta existe.
+ * Luego redimensiona/recomprime por canvas y devuelve un objeto
+ * { dataUrl, width, height, mime }, o null si la persona no tiene foto.
  *
  * @param {string} cedula
  * @returns {Promise<{ dataUrl: string, width: number, height: number, mime: string } | null>}
  */
 export async function fetchFotoBase64(cedula) {
-  const paths = getPathsToTry(cedula);
-
-  for (const path of paths) {
-    try {
-      const bytes = await getBytes(ref(storage, path));
-      // [DIAG] Ruta que SÍ existe y de la que leímos bytes.
-      console.log(
-        `[fotoExport][${cedula}] getBytes OK -> ${path} (${bytes.byteLength} bytes)`
-      );
-
-      const mime = mimePorExtension(path);
-      const blob = new Blob([bytes], { type: mime });
-      const dataUrl = await blobToDataUrl(blob);
-      // [DIAG] dataUrl original (prefijo + longitud).
-      console.log(
-        `[fotoExport][${cedula}] dataUrl original prefijo="${String(
-          dataUrl
-        ).slice(0, 32)}" len=${dataUrl ? dataUrl.length : 0}`
-      );
-
-      try {
-        const res = await redimensionar(dataUrl);
-        // [DIAG] dataUrl tras canvas (prefijo + longitud + dimensiones).
-        console.log(
-          `[fotoExport][${cedula}] canvas dataUrl prefijo="${String(
-            res.dataUrl
-          ).slice(0, 32)}" len=${
-            res.dataUrl ? res.dataUrl.length : 0
-          } ${res.width}x${res.height} mime=${res.mime}`
-        );
-        return res;
-      } catch (canvasErr) {
-        // [DIAG] El canvas falló (no debería con getBytes; sería un bug real).
-        console.error(
-          `[fotoExport][${cedula}] redimensionar/canvas LANZÓ:`,
-          canvasErr && canvasErr.name,
-          canvasErr && canvasErr.message,
-          canvasErr
-        );
-        // Si el redimensionado falla, devolvemos el original sin dimensiones.
-        return { dataUrl, width: null, height: null, mime };
-      }
-    } catch (err) {
-      // [DIAG] getBytes falló (404 objeto inexistente u otro). Ruidoso a
-      // propósito para ver cuántas rutas se descartan por cédula.
-      console.warn(
-        `[fotoExport][${cedula}] getBytes FALLÓ en ${path}:`,
-        err && err.code ? err.code : err && err.message
-      );
-    }
+  const url = await resolveFotoUrl(cedula);
+  if (!url) {
+    // [DIAG] Sin foto real -> placeholder (negativo, ya cacheado).
+    console.warn(`[fotoExport][${cedula}] RESULTADO null (sin foto)`);
+    return null;
   }
 
-  // [DIAG] Ninguna ruta produjo foto -> placeholder (persona sin foto real).
-  console.warn(
-    `[fotoExport][${cedula}] RESULTADO null (todas las rutas fallaron)`
-  );
-  return null;
+  try {
+    const bytes = await getBytes(ref(storage, url));
+    // [DIAG] Bytes leídos de la URL resuelta.
+    console.log(
+      `[fotoExport][${cedula}] getBytes OK (${bytes.byteLength} bytes)`
+    );
+
+    const mime = mimePorExtension(url);
+    const blob = new Blob([bytes], { type: mime });
+    const dataUrl = await blobToDataUrl(blob);
+
+    try {
+      const res = await redimensionar(dataUrl);
+      // [DIAG] dataUrl tras canvas.
+      console.log(
+        `[fotoExport][${cedula}] canvas dataUrl prefijo="${String(
+          res.dataUrl
+        ).slice(0, 32)}" len=${res.dataUrl ? res.dataUrl.length : 0} ${
+          res.width
+        }x${res.height}`
+      );
+      return res;
+    } catch (canvasErr) {
+      // [DIAG] El canvas falló (no debería con getBytes; sería un bug real).
+      console.error(
+        `[fotoExport][${cedula}] redimensionar/canvas LANZÓ:`,
+        canvasErr && canvasErr.name,
+        canvasErr && canvasErr.message
+      );
+      // Si el redimensionado falla, devolvemos el original sin dimensiones.
+      return { dataUrl, width: null, height: null, mime };
+    }
+  } catch (err) {
+    // [DIAG] getBytes falló sobre una URL que sí resolvió (¿CORS?, ¿permisos?).
+    console.error(
+      `[fotoExport][${cedula}] getBytes LANZÓ:`,
+      err && err.code ? err.code : err && err.message
+    );
+    return null;
+  }
 }
 
 /**

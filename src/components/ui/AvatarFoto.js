@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ref, getDownloadURL } from "firebase/storage";
-import { storage } from "../../firebase";
 import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
-import { getPathsToTry } from "../../utils/fotoExport";
-
-// [DIAG] Contador global temporal de llamadas a getDownloadURL desde AvatarFoto.
-// Uso: en la consola del navegador, tras cargar la lista, ejecutar
-//   window.__DIAG_getDownloadURL
-// para ver { intentos, exitos, fallos } acumulados.
-if (typeof window !== "undefined" && !window.__DIAG_getDownloadURL) {
-  window.__DIAG_getDownloadURL = { intentos: 0, exitos: 0, fallos: 0 };
-}
+import { resolveFotoUrl } from "../../utils/fotoExport";
 
 const AvatarFoto = ({
   cedula,
@@ -53,43 +43,22 @@ const AvatarFoto = ({
   }, []);
 
   useEffect(() => {
+    if (!cedula || !isVisible) return;
+
     let isMounted = true;
-    const fetchImage = async () => {
-      if (!cedula || !isVisible) {
-        return;
-      }
+    setLoading(true);
+    // resolveFotoUrl consulta el cache compartido ANTES de sondear: el mismo
+    // avatar re-entrando al viewport (o el export) no repite las 8 rutas.
+    resolveFotoUrl(cedula)
+      .then((url) => {
+        if (!isMounted) return;
+        setImageUrl(url); // url encontrada o null (sin foto)
+        setLoading(false);
+      })
+      .catch(() => {
+        if (isMounted) setLoading(false);
+      });
 
-      // Rutas candidatas en Storage (sin/con guiones, varias extensiones).
-      // La lógica vive en src/utils/fotoExport.js para no duplicarla con los
-      // exports a PDF/Excel.
-      const pathsToTry = getPathsToTry(cedula);
-
-      const tryNextPath = async (index) => {
-        if (index >= pathsToTry.length) {
-          if (isMounted) setLoading(false);
-          return;
-        }
-        try {
-          const photoRef = ref(storage, pathsToTry[index]);
-          if (typeof window !== "undefined")
-            window.__DIAG_getDownloadURL.intentos++; // [DIAG]
-          const url = await getDownloadURL(photoRef);
-          if (typeof window !== "undefined")
-            window.__DIAG_getDownloadURL.exitos++; // [DIAG]
-          if (isMounted) {
-            setImageUrl(url);
-            setLoading(false);
-          }
-        } catch (error) {
-          if (typeof window !== "undefined")
-            window.__DIAG_getDownloadURL.fallos++; // [DIAG] 404 antes de acertar
-          tryNextPath(index + 1);
-        }
-      };
-      setLoading(true);
-      tryNextPath(0);
-    };
-    fetchImage();
     return () => {
       isMounted = false;
     };
