@@ -112,19 +112,22 @@ Se ejecutan con Node usando la clave de servicio del Admin SDK (ver Prerrequisit
 
 ### Recompresión de fotos (`recomprimirFotos.js`)
 
-Como la corrida real **sobreescribe los originales**, hacer SIEMPRE un backup del prefijo antes:
+La corrida real **sobreescribe los originales**, pero hace **backup automático de SOLO las fotos que va a tocar** (las ~65 crudas, no los ~225k objetos). Antes de sobreescribir cada foto, la copia dentro del mismo bucket a `backup_votantes_fotos_YYYYMMDD/{nombre}` (una carpeta por corrida, con su fecha). Es idempotente (si el backup ya existe no lo pisa) y **nunca sobreescribe sin backup exitoso**: si el backup de una foto falla, la salta.
 
 ```bash
-# 1) Backup del prefijo (cambia la FECHA)
-gcloud storage cp -r \
-  gs://politicard-cfd.firebasestorage.app/votantes_fotos \
-  gs://politicard-cfd.firebasestorage.app/backup_votantes_fotos_$(date +%Y%m%d)
-
-# 2) Dry-run: revisa el reporte (no escribe nada)
+# 1) Dry-run: revisa el reporte, incluye qué rutas de backup se crearían (no escribe nada)
 node scripts/recomprimirFotos.js --dry-run
 
-# 3) Corrida real (tras verificar el dry-run y el backup)
+# 2) Corrida real (tras verificar el dry-run). Respalda y luego recomprime.
 node scripts/recomprimirFotos.js --apply
+```
+
+**Revertir** (si algo salió mal): copiar de vuelta los originales desde la carpeta de backup de esa corrida sobre el prefijo `votantes_fotos/` (ajusta la FECHA a la de la carpeta creada):
+
+```bash
+gcloud storage cp -r \
+  gs://politicard-cfd.firebasestorage.app/backup_votantes_fotos_YYYYMMDD/* \
+  gs://politicard-cfd.firebasestorage.app/votantes_fotos/
 ```
 
 ## 🖼️ CORS de Storage (fotos en el export a PDF/Excel)
