@@ -4,6 +4,14 @@ import { storage } from "../../firebase";
 import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
 import { getPathsToTry } from "../../utils/fotoExport";
 
+// [DIAG] Contador global temporal de llamadas a getDownloadURL desde AvatarFoto.
+// Uso: en la consola del navegador, tras cargar la lista, ejecutar
+//   window.__DIAG_getDownloadURL
+// para ver { intentos, exitos, fallos } acumulados.
+if (typeof window !== "undefined" && !window.__DIAG_getDownloadURL) {
+  window.__DIAG_getDownloadURL = { intentos: 0, exitos: 0, fallos: 0 };
+}
+
 const AvatarFoto = ({
   cedula,
   nombre,
@@ -63,12 +71,18 @@ const AvatarFoto = ({
         }
         try {
           const photoRef = ref(storage, pathsToTry[index]);
+          if (typeof window !== "undefined")
+            window.__DIAG_getDownloadURL.intentos++; // [DIAG]
           const url = await getDownloadURL(photoRef);
+          if (typeof window !== "undefined")
+            window.__DIAG_getDownloadURL.exitos++; // [DIAG]
           if (isMounted) {
             setImageUrl(url);
             setLoading(false);
           }
         } catch (error) {
+          if (typeof window !== "undefined")
+            window.__DIAG_getDownloadURL.fallos++; // [DIAG] 404 antes de acertar
           tryNextPath(index + 1);
         }
       };

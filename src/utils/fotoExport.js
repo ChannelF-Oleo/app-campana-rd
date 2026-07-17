@@ -116,21 +116,76 @@ export async function fetchFotoBase64(cedula) {
   for (const path of paths) {
     try {
       const url = await getDownloadURL(ref(storage, path));
-      const response = await fetch(url);
-      if (!response.ok) continue;
-      const blob = await response.blob();
-      const dataUrl = await blobToDataUrl(blob);
+      // [DIAG] Ruta que SÍ resolvió en Storage.
+      console.log(`[fotoExport][${cedula}] getDownloadURL OK -> ${path}`, url);
+
+      let response;
       try {
-        return await redimensionar(dataUrl);
-      } catch {
+        response = await fetch(url);
+      } catch (fetchErr) {
+        // [DIAG] fetch lanzó (típico de CORS: "Failed to fetch" / TypeError).
+        console.error(
+          `[fotoExport][${cedula}] fetch(downloadURL) LANZÓ:`,
+          fetchErr && fetchErr.name,
+          fetchErr && fetchErr.message,
+          fetchErr
+        );
+        continue;
+      }
+      // [DIAG] fetch resolvió: estado HTTP.
+      console.log(
+        `[fotoExport][${cedula}] fetch status=${response.status} ok=${response.ok}`
+      );
+      if (!response.ok) continue;
+
+      const blob = await response.blob();
+      // [DIAG] Tipo/tamaño del blob descargado.
+      console.log(
+        `[fotoExport][${cedula}] blob type=${blob.type} size=${blob.size}`
+      );
+
+      const dataUrl = await blobToDataUrl(blob);
+      // [DIAG] dataUrl original (prefijo + longitud).
+      console.log(
+        `[fotoExport][${cedula}] dataUrl original prefijo="${String(
+          dataUrl
+        ).slice(0, 32)}" len=${dataUrl ? dataUrl.length : 0}`
+      );
+
+      try {
+        const res = await redimensionar(dataUrl);
+        // [DIAG] dataUrl tras canvas (prefijo + longitud + dimensiones).
+        console.log(
+          `[fotoExport][${cedula}] canvas dataUrl prefijo="${String(
+            res.dataUrl
+          ).slice(0, 32)}" len=${
+            res.dataUrl ? res.dataUrl.length : 0
+          } ${res.width}x${res.height} mime=${res.mime}`
+        );
+        return res;
+      } catch (canvasErr) {
+        // [DIAG] El canvas falló (p.ej. SecurityError por canvas "tainted").
+        console.error(
+          `[fotoExport][${cedula}] redimensionar/canvas LANZÓ:`,
+          canvasErr && canvasErr.name,
+          canvasErr && canvasErr.message,
+          canvasErr
+        );
         // Si el redimensionado falla, devolvemos el original sin dimensiones.
         return { dataUrl, width: null, height: null, mime: blob.type || null };
       }
-    } catch {
-      // Ruta inexistente o error de red: probamos la siguiente.
+    } catch (err) {
+      // [DIAG] getDownloadURL falló (404 objeto inexistente u otro). Ruidoso
+      // a propósito para ver cuántas rutas se descartan por cédula.
+      console.warn(
+        `[fotoExport][${cedula}] getDownloadURL FALLÓ en ${path}:`,
+        err && err.code ? err.code : err && err.message
+      );
     }
   }
 
+  // [DIAG] Ninguna ruta produjo foto -> placeholder en el PDF.
+  console.warn(`[fotoExport][${cedula}] RESULTADO null (todas las rutas fallaron)`);
   return null;
 }
 
