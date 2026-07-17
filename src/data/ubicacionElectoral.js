@@ -4,6 +4,26 @@ import sectores from "./sectores.json";
 /** Última opción de los selectores cuando no se puede ubicar al simpatizante. */
 export const OPCION_NO_IDENTIFICADO = "No identificado";
 
+/**
+ * Valor CENTINELA (solo UI) de la opción "Otro" del subsector. Nunca se guarda
+ * en el payload: cuando está activa, el subsector efectivo es el texto libre
+ * que el usuario escribe (normalizado con normalizarSubsector al enviar).
+ */
+export const OPCION_OTRO = "__OTRO__";
+
+/**
+ * Normaliza un subsector escrito a mano al estilo del catálogo: sin espacios
+ * sobrantes (trim + colapso de espacios internos) y en MAYÚSCULAS.
+ * @param {string} str
+ * @returns {string}
+ */
+export function normalizarSubsector(str) {
+  return String(str || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
 /** Zona y sector fijos por ahora (a la espera de poblar el resto). */
 export const ZONA_FIJA = "ZONA N";
 export const SECTOR_FIJO = "Hato Nuevo";

@@ -1,6 +1,7 @@
 import React from "react";
 import {
   OPCION_NO_IDENTIFICADO,
+  OPCION_OTRO,
   ZONA_FIJA,
   SECTOR_FIJO,
   getSubsectores,
@@ -27,15 +28,38 @@ import {
  *
  * La opción "No identificado" es un valor SELECCIONABLE y válido (distinto del
  * placeholder vacío inicial), presente en Sector, Subsector, Recinto y Colegio.
+ *
+ * SUBSECTOR "Otro" (texto libre): además del catálogo y "No identificado", el
+ * subsector ofrece "Otro". El estado vive en el padre mediante DOS campos:
+ *   - subsectorEsOtro (bool): si la opción activa es "Otro".
+ *   - subsector (string): cuando esOtro, guarda el texto libre TAL CUAL se
+ *     escribe; en otro caso, el valor del catálogo o "No identificado".
+ * Hacia el payload solo sale `subsector` con el valor final (el padre normaliza
+ * el texto libre con normalizarSubsector al enviar). El centinela OPCION_OTRO
+ * es solo el value del <option>: nunca se persiste.
  */
 function UbicacionElectoralFields({ value, onChange, disabled }) {
   const {
     zona = ZONA_FIJA,
     sector = "",
     subsector = "",
+    subsectorEsOtro = false,
     recinto = "",
     colegioElectoral = "",
   } = value || {};
+
+  // Al elegir en el select de subsector: "Otro" activa el texto libre (y limpia
+  // el campo para empezar en blanco); cualquier otra opción desactiva "Otro".
+  const handleSubsectorSelect = (e) => {
+    const v = e.target.value;
+    if (v === OPCION_OTRO) {
+      onChange("subsectorEsOtro", true);
+      onChange("subsector", "");
+    } else {
+      onChange("subsectorEsOtro", false);
+      onChange("subsector", v);
+    }
+  };
 
   const subsectores = getSubsectores(zona, sector);
   const recintos = getRecintos(zona);
@@ -70,13 +94,13 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
         </select>
       </div>
 
-      {/* Subsector: opciones del sector + "No identificado". */}
+      {/* Subsector: catálogo + "Otro" (texto libre) + "No identificado". */}
       <div className="input-group">
         <label htmlFor="ubic-subsector">Subsector</label>
         <select
           id="ubic-subsector"
-          value={subsector}
-          onChange={(e) => onChange("subsector", e.target.value)}
+          value={subsectorEsOtro ? OPCION_OTRO : subsector}
+          onChange={handleSubsectorSelect}
           required
           disabled={disabled}
         >
@@ -86,8 +110,22 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
               {s}
             </option>
           ))}
+          <option value={OPCION_OTRO}>Otro</option>
           <option value={OPCION_NO_IDENTIFICADO}>{OPCION_NO_IDENTIFICADO}</option>
         </select>
+        {/* Texto libre cuando la opción activa es "Otro". Se normaliza (mayúsculas,
+            sin espacios sobrantes) en el submit del padre. La validación de vacío
+            también vive en el submit, para mostrar la notificación del formulario. */}
+        {subsectorEsOtro && (
+          <input
+            type="text"
+            id="ubic-subsector-otro"
+            placeholder="Escribe el subsector"
+            value={subsector}
+            onChange={(e) => onChange("subsector", e.target.value)}
+            disabled={disabled}
+          />
+        )}
       </div>
 
       {/* Recinto: centros de la zona + "No identificado". */}

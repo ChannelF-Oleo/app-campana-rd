@@ -15,6 +15,7 @@ import {
   ZONA_FIJA,
   SECTOR_FIJO,
   OPCION_NO_IDENTIFICADO,
+  normalizarSubsector,
 } from "../../data/ubicacionElectoral";
 import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
 import Loader from "../ui/Loader";
@@ -34,6 +35,7 @@ const UBICACION_INICIAL = {
   zona: ZONA_FIJA,
   sector: SECTOR_FIJO,
   subsector: "",
+  subsectorEsOtro: false,
   recinto: "",
   colegioElectoral: "",
 };
@@ -212,6 +214,11 @@ function RegisterByActivist({ user }) {
       });
       return;
     }
+    // Subsector "Otro": el texto libre no puede quedar vacío.
+    if (ubicacion.subsectorEsOtro && !normalizarSubsector(ubicacion.subsector)) {
+      setNotification({ message: "Escribe el subsector", type: "error" });
+      return;
+    }
     // Validación de ubicación electoral: sector, subsector, recinto y colegio
     // deben tener valor (incluido "No identificado"). La zona ya viene fija.
     if (
@@ -255,7 +262,9 @@ function RegisterByActivist({ user }) {
         // Ubicación electoral ("No identificado" se envía como "")
         zona: limpiarUbicacion(ubicacion.zona),
         sector: limpiarUbicacion(ubicacion.sector),
-        subsector: limpiarUbicacion(ubicacion.subsector),
+        subsector: ubicacion.subsectorEsOtro
+          ? normalizarSubsector(ubicacion.subsector)
+          : limpiarUbicacion(ubicacion.subsector),
         recinto: limpiarUbicacion(ubicacion.recinto),
         colegioElectoral: limpiarUbicacion(ubicacion.colegioElectoral),
         // Enviar las coordenadas
