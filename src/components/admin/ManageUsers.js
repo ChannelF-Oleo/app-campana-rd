@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
+import { comprimirImagen } from "../../utils/comprimirImagen";
 import {
   ROLES_DISPONIBLES,
   USUARIOS_POR_PAGINA,
@@ -91,15 +92,20 @@ function EditUserModal({ user, onClose, onSave }) {
 
     setUploading(true);
     try {
+      // Comprimimos/redimensionamos en el navegador ANTES de subir: las fotos
+      // de cámara pesan varios MB y ralentizaban el export a PDF y la carga.
+      const comprimida = await comprimirImagen(file);
+      const kb = Math.round(comprimida.size / 1024);
+
       // Guardamos como .jpg con la cédula SIN guiones (estándar normalizado).
       // AvatarFoto prueba primero este formato, así la foto nueva siempre gana
       // sobre el recorte viejo del padrón (que está con guiones).
       const storageRef = ref(storage, `votantes_fotos/${cleanCedula}.jpg`);
 
-      await uploadBytes(storageRef, file);
+      await uploadBytes(storageRef, comprimida);
 
       alert(
-        "✅ Foto actualizada correctamente.\n\nNota: Puede tardar unos minutos en reflejarse o requerir recargar la página."
+        `✅ Foto actualizada correctamente (${kb} KB).\n\nNota: Puede tardar unos minutos en reflejarse o requerir recargar la página.`
       );
       setUploading(false);
     } catch (error) {
