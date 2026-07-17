@@ -1,0 +1,49 @@
+[
+  {
+    "zona": "ZONA N",
+    "sectores": [
+      {
+        "sector": "Hato Nuevo",
+        "subsectores": [
+          "EL BRUGAL",
+          "LOS TRINITARIOS",
+          "YOLENNY",
+          "SANTIAGO APOSTOL",
+          "BRISA DEL SUR",
+          "BRISA DEL NORTE",
+          "AMAPOLA",
+          "BUENAS NOCHES",
+          "BUENAS NOCHES ARRIBA",
+          "BUENAS NOCHES 2",
+          "VILLA CAROLINA 2",
+          "SAN JOSE",
+          "HATO NUEVO CENTRO",
+          "ROALVA",
+          "LOS PINOS",
+          "LA ESPERANZA",
+          "VILLA CAROLINA 1",
+          "NUEVO HORIZONTE",
+          "EL ZUMBOM",
+          "CONTRESA",
+          "ARROLLO PIEDRA",
+          "INESPRE",
+          "TANQUE AZUL",
+          "CEDEE",
+          "MARIA LUISA",
+          "5 CASITA",
+          "LA DELEGACION",
+          "BARRIO LA OMSA",
+          "EDF. BANRESERVAS",
+          "PRIMAVERAL",
+          "SAN LUIS",
+          "LA PRADERA",
+          "QUINTO SUEÑO",
+          "VALERIO JAQUEZ",
+          "VILLA PROGRESO",
+          "JOSE REYES",
+          "EL CONTROL"
+        ]
+      }
+    ]
+  }
+]
