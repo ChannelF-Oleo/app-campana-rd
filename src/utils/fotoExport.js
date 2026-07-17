@@ -168,48 +168,23 @@ export function resolveFotoUrl(cedula) {
  */
 export async function fetchFotoBase64(cedula) {
   const url = await resolveFotoUrl(cedula);
-  if (!url) {
-    // [DIAG] Sin foto real -> placeholder (negativo, ya cacheado).
-    console.warn(`[fotoExport][${cedula}] RESULTADO null (sin foto)`);
-    return null;
-  }
+  if (!url) return null; // sin foto -> placeholder
 
   try {
     const bytes = await getBytes(ref(storage, url));
-    // [DIAG] Bytes leídos de la URL resuelta.
-    console.log(
-      `[fotoExport][${cedula}] getBytes OK (${bytes.byteLength} bytes)`
-    );
-
     const mime = mimePorExtension(url);
     const blob = new Blob([bytes], { type: mime });
     const dataUrl = await blobToDataUrl(blob);
 
     try {
-      const res = await redimensionar(dataUrl);
-      // [DIAG] dataUrl tras canvas.
-      console.log(
-        `[fotoExport][${cedula}] canvas dataUrl prefijo="${String(
-          res.dataUrl
-        ).slice(0, 32)}" len=${res.dataUrl ? res.dataUrl.length : 0} ${
-          res.width
-        }x${res.height}`
-      );
-      return res;
-    } catch (canvasErr) {
-      // [DIAG] El canvas falló (no debería con getBytes; sería un bug real).
-      console.error(
-        `[fotoExport][${cedula}] redimensionar/canvas LANZÓ:`,
-        canvasErr && canvasErr.name,
-        canvasErr && canvasErr.message
-      );
+      return await redimensionar(dataUrl);
+    } catch {
       // Si el redimensionado falla, devolvemos el original sin dimensiones.
       return { dataUrl, width: null, height: null, mime };
     }
   } catch (err) {
-    // [DIAG] getBytes falló sobre una URL que sí resolvió (¿CORS?, ¿permisos?).
     console.error(
-      `[fotoExport][${cedula}] getBytes LANZÓ:`,
+      `fetchFotoBase64: no se pudo leer la foto de ${cedula}:`,
       err && err.code ? err.code : err && err.message
     );
     return null;
