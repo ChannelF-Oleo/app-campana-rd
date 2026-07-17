@@ -2,7 +2,6 @@ import React, { useState, useCallback } from "react";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
 
-import { ubicacionesData } from "../../data/ubicaciones.js";
 import {
   PROVINCIA_FIJA,
   MUNICIPIO_FIJO,
@@ -12,18 +11,15 @@ import {
   validarCedula,
   validarTelefono,
 } from "../../constants.js";
+import {
+  ZONA_FIJA,
+  SECTOR_FIJO,
+  OPCION_NO_IDENTIFICADO,
+} from "../../data/ubicacionElectoral";
+import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
 import Loader from "../ui/Loader";
 
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-
-// Cargar sectores fijos de SDO una sola vez
-const provinciaSDO = ubicacionesData.find(
-  (p) => p.provincia === PROVINCIA_FIJA
-);
-const municipioData = provinciaSDO
-  ? provinciaSDO.municipios.find((m) => m.municipio === MUNICIPIO_FIJO)
-  : null;
-const sectoresSDO = municipioData ? municipioData.sectores : [];
 
 // Opciones del mapa
 const mapContainerStyle = {
@@ -32,6 +28,19 @@ const mapContainerStyle = {
   marginBottom: "15px",
 };
 const libraries = ["places", "marker"];
+
+// Estado inicial de la ubicación electoral (zona y sector fijos por ahora)
+const UBICACION_INICIAL = {
+  zona: ZONA_FIJA,
+  sector: SECTOR_FIJO,
+  subsector: "",
+  recinto: "",
+  colegioElectoral: "",
+};
+
+// Convierte "No identificado" en cadena vacía para el payload.
+const limpiarUbicacion = (valor) =>
+  valor === OPCION_NO_IDENTIFICADO ? "" : valor;
 
 // Initialize Firebase Functions connection
 const functions = getFunctions();
@@ -45,18 +54,17 @@ function RegisterByActivist({ user }) {
   // Form field states
   const [nombre, setNombre] = useState("");
   const [cedula, setCedula] = useState("");
-  const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [colegioElectoral, setColegioElectoral] = useState("");
   // Estados de carga y búsqueda
   const [loading, setLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Dropdown states: Inicializados a valores fijos
+  // Provincia y municipio siguen fijos
   const [selectedProvincia, setSelectedProvincia] = useState(PROVINCIA_FIJA);
   const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIO_FIJO);
-  const [selectedSector, setSelectedSector] = useState("");
+
+  // Ubicación electoral en cascada (5 niveles)
+  const [ubicacion, setUbicacion] = useState(UBICACION_INICIAL);
 
   // Estado para las coordenadas (ubicación pineada)
   const [coordinates, setCoordinates] = useState(MAP_INITIAL_CENTER);
@@ -87,6 +95,16 @@ function RegisterByActivist({ user }) {
     setMap(null);
   }, []);
 
+  // Al cambiar un campo de ubicación; si cambia "recinto", resetea el colegio.
+  const handleUbicacionChange = (campo, valor) => {
+    setUbicacion((prev) => {
+      const next = { ...prev, [campo]: valor };
+      if (campo === "recinto") {
+        next.colegioElectoral = "";
+      }
+      return next;
+    });
+  };
 
   const [notification, setNotification] = useState({ message: "", type: "" });
 
@@ -103,19 +121,11 @@ function RegisterByActivist({ user }) {
         const { found, data } = result.data;
 
         if (found) {
-          // 1. Llenar Nombre y Colegio (Origen)
+          // Llenar Nombre
           setNombre(data.nombre);
-          setColegioElectoral(data.colegioElectoral || "");
 
-          // Llenar Teléfono y Dirección si existen
+          // Llenar Teléfono si existe
           if (data.telefono) setTelefono(data.telefono);
-          if (data.direccion) setDireccion(data.direccion);
-
-          // 3. Llenar Sector (Solo si coincide con SDO)
-          const foundSector = sectoresSDO.includes(data.sector)
-            ? data.sector
-            : "";
-          setSelectedSector(foundSector);
 
           setNotification({
             message: "Datos cargados correctamente.",
@@ -124,9 +134,6 @@ function RegisterByActivist({ user }) {
         } else {
           // Si no aparece, limpiamos para que escriban manualmente
           setNombre("");
-          setColegioElectoral("");
-          setSelectedSector("");
-          // Opcional: Limpiar o mantener tel/dir si quieres
           setNotification({
             message: "No encontrado en el padrón.",
             type: "error",
@@ -205,10 +212,17 @@ function RegisterByActivist({ user }) {
       });
       return;
     }
-    // VALIDACIÓN SIMPLIFICADA: Solo se revisa el Sector
-    if (!selectedSector) {
+    // Validación de ubicación electoral: sector, subsector, recinto y colegio
+    // deben tener valor (incluido "No identificado"). La zona ya viene fija.
+    if (
+      !ubicacion.sector ||
+      !ubicacion.subsector ||
+      !ubicacion.recinto ||
+      !ubicacion.colegioElectoral
+    ) {
       setNotification({
-        message: "Por favor, selecciona un Sector.",
+        message:
+          "Por favor, completa la ubicación electoral (sector, subsector, recinto y colegio).",
         type: "error",
       });
       return;
@@ -235,13 +249,15 @@ function RegisterByActivist({ user }) {
         // Pass form data
         nombre,
         cedula: cedulaFormateada,
-        email,
         telefono,
-        direccion,
-        colegioElectoral,
         provincia: selectedProvincia, // Valor fijo: Santo Domingo
         municipio: selectedMunicipio, // Valor fijo: Santo Domingo Oeste
-        sector: selectedSector,
+        // Ubicación electoral ("No identificado" se envía como "")
+        zona: limpiarUbicacion(ubicacion.zona),
+        sector: limpiarUbicacion(ubicacion.sector),
+        subsector: limpiarUbicacion(ubicacion.subsector),
+        recinto: limpiarUbicacion(ubicacion.recinto),
+        colegioElectoral: limpiarUbicacion(ubicacion.colegioElectoral),
         // Enviar las coordenadas
         lat: coordinates.lat,
         lng: coordinates.lng,
@@ -255,13 +271,10 @@ function RegisterByActivist({ user }) {
         // Clear form y reset location states a fixed values
         setNombre("");
         setCedula("");
-        setEmail("");
         setTelefono("");
-        setDireccion("");
-        setColegioElectoral("");
         setSelectedProvincia(PROVINCIA_FIJA);
         setSelectedMunicipio(MUNICIPIO_FIJO);
-        setSelectedSector("");
+        setUbicacion(UBICACION_INICIAL);
         setCoordinates(MAP_INITIAL_CENTER);
       } else {
         setNotification({ message: result.data.message, type: "error" });
@@ -312,17 +325,6 @@ function RegisterByActivist({ user }) {
           />
         </div>
         <div className="input-group">
-          <label htmlFor="email">Correo Electrónico</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isSearching || loading}
-          />
-        </div>
-        <div className="input-group">
           <label htmlFor="telefono">Teléfono</label>
           <input
             type="tel"
@@ -359,45 +361,13 @@ function RegisterByActivist({ user }) {
             <option value={MUNICIPIO_FIJO}>{MUNICIPIO_FIJO}</option>
           </select>
         </div>
-        {/* Sector: Ahora usa la lista fija de SDO y es editable/autocompletable */}
-        <div className="input-group">
-          <label htmlFor="sector">Sector o Barrio</label>
-          <select
-            id="sector"
-            value={selectedSector}
-            onChange={(e) => setSelectedSector(e.target.value)}
-            required
-            disabled={sectoresSDO.length === 0 || isSearching || loading}
-          >
-            <option value="">-- Selecciona --</option>
-            {sectoresSDO.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        <div className="input-group">
-          <label htmlFor="direccion">Dirección</label>
-          <input
-            type="text"
-            id="direccion"
-            value={direccion}
-            onChange={(e) => setDireccion(e.target.value)}
-            disabled={isSearching || loading}
-          />
-        </div>
-        <div className="input-group">
-          <label htmlFor="colegio">Colegio Electoral (Opcional)</label>
-          <input
-            type="text"
-            id="colegio"
-            value={colegioElectoral}
-            onChange={(e) => setColegioElectoral(e.target.value)}
-            disabled={isSearching || loading}
-          />
-        </div>
+        {/* Ubicación electoral: Zona → Sector → Subsector → Recinto → Colegio */}
+        <UbicacionElectoralFields
+          value={ubicacion}
+          onChange={handleUbicacionChange}
+          disabled={isSearching || loading}
+        />
 
         {/* ---------------------------------------------------- */}
         {/* Contenedor del Mapa de Google Maps */}
