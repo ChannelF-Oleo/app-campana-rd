@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ref, getDownloadURL } from "firebase/storage";
 import { storage } from "../../firebase";
 import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
+import { getPathsToTry } from "../../utils/fotoExport";
 
 const AvatarFoto = ({
   cedula,
@@ -50,32 +51,10 @@ const AvatarFoto = ({
         return;
       }
 
-      // Las fotos en Storage pueden estar nombradas SIN guiones (00112345678.jpg)
-      // o CON guiones (001-1234567-8.jpg). Reconstruimos ambos formatos desde los
-      // dígitos y probamos.
-      //
-      // ORDEN IMPORTANTE — SIN guiones PRIMERO:
-      // Las fotos NUEVAS (cámara, correctas) se suben con la cédula normalizada
-      // (sin guiones). Las fotos VIEJAS del padrón (recortes, frecuentemente de
-      // otra persona) están con guiones. Por eso preferimos la nueva y dejamos
-      // la del padrón solo como respaldo para quienes no tienen foto nueva.
-      const digitos = cedula.replace(/\D/g, "");
-      const cedulaSinGuiones = digitos;
-      const cedulaConGuiones =
-        digitos.length === 11
-          ? `${digitos.slice(0, 3)}-${digitos.slice(3, 10)}-${digitos.slice(10)}`
-          : cedula;
-
-      const pathsToTry = [
-        `votantes_fotos/${cedulaSinGuiones}.jpg`,
-        `votantes_fotos/${cedulaSinGuiones}.JPG`,
-        `votantes_fotos/${cedulaSinGuiones}.jpeg`,
-        `votantes_fotos/${cedulaSinGuiones}.png`,
-        `votantes_fotos/${cedulaConGuiones}.jpg`,
-        `votantes_fotos/${cedulaConGuiones}.JPG`,
-        `votantes_fotos/${cedulaConGuiones}.jpeg`,
-        `votantes_fotos/${cedulaConGuiones}.png`,
-      ];
+      // Rutas candidatas en Storage (sin/con guiones, varias extensiones).
+      // La lógica vive en src/utils/fotoExport.js para no duplicarla con los
+      // exports a PDF/Excel.
+      const pathsToTry = getPathsToTry(cedula);
 
       const tryNextPath = async (index) => {
         if (index >= pathsToTry.length) {
