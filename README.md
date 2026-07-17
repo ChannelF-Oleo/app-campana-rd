@@ -106,8 +106,26 @@ Se ejecutan con Node usando la clave de servicio del Admin SDK (ver Prerrequisit
 
 - `scripts/fase1-backup-audit.js` — **solo lectura**: exporta `users` y `simpatizantes` a `backups/` y audita el formato de cédula.
 - `scripts/fase2-migracion.js` — normaliza cédulas, deduplica `simpatizantes` y vincula por `usuarioId`. **Dry-run por defecto**; `--apply` es el único modo que escribe (hace backup previo). Simulación offline con `--source=backup`.
+- `scripts/recomprimirFotos.js` — recompresión one-off de fotos crudas en Storage (`votantes_fotos/`) con **sharp** (lado mayor 1000px, JPEG q82). Salta las que ya están optimizadas (< 400KB o lado mayor ≤ 1000px) y **sobreescribe** las grandes. **Dry-run por defecto**; `--apply` es el único modo que escribe.
 
 > `backups/` y las claves `*-firebase-adminsdk-*.json` están en `.gitignore`; nunca se versionan.
+
+### Recompresión de fotos (`recomprimirFotos.js`)
+
+Como la corrida real **sobreescribe los originales**, hacer SIEMPRE un backup del prefijo antes:
+
+```bash
+# 1) Backup del prefijo (cambia la FECHA)
+gcloud storage cp -r \
+  gs://politicard-cfd.firebasestorage.app/votantes_fotos \
+  gs://politicard-cfd.firebasestorage.app/backup_votantes_fotos_$(date +%Y%m%d)
+
+# 2) Dry-run: revisa el reporte (no escribe nada)
+node scripts/recomprimirFotos.js --dry-run
+
+# 3) Corrida real (tras verificar el dry-run y el backup)
+node scripts/recomprimirFotos.js --apply
+```
 
 ## 🤝 Contribuciones
 
