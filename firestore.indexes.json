@@ -20,6 +20,14 @@
       "collectionGroup": "simpatizantes",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "subsector", "order": "ASCENDING" },
+        { "fieldPath": "fechaRegistro", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "simpatizantes",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "municipio", "order": "ASCENDING" },
         { "fieldPath": "fechaRegistro", "order": "DESCENDING" }
       ]

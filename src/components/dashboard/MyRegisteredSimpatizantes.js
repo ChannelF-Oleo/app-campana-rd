@@ -65,9 +65,11 @@ function MyRegisteredSimpatizantes({ user }) {
       Nombre: simpatizante.nombre || "N/A",
       Cédula: simpatizante.cedula || "N/A",
       Teléfono: simpatizante.telefono || "N/A",
-      Dirección: simpatizante.direccion || "N/A",
       Zona: simpatizante.zona || "N/A",
       Sector: simpatizante.sector || "N/A",
+      Subsector: simpatizante.subsector || "N/A",
+      Recinto: simpatizante.recinto || "N/A",
+      Colegio: simpatizante.colegioElectoral || "N/A",
       FechaRegistro: simpatizante.fechaRegistro
         ? simpatizante.fechaRegistro.toDate().toLocaleDateString("es-DO")
         : "N/A",

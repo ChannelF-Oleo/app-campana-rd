@@ -44,14 +44,15 @@ function MyRegistrations({ user }) {
       Nombre: reg.nombre || "N/A",
       Cedula: reg.cedula || "N/A",
       Telefono: reg.telefono || "N/A",
-      Direccion: reg.direccion || "N/A",
+      Zona: reg.zona || "N/A",
+      Sector: reg.sector || "N/A",
+      Subsector: reg.subsector || "N/A",
+      Recinto: reg.recinto || "N/A",
+      Colegio: reg.colegioElectoral || "N/A",
       // Convertir el timestamp de Firestore a una cadena de fecha legible
       FechaRegistro: reg.timestamp
         ? new Date(reg.timestamp.toDate()).toLocaleDateString()
         : "N/A",
-      // Agrega más campos si son relevantes:
-      // Zona: reg.zona || "N/A",
-      // Sector: reg.sector || "N/A",
     }));
 
     // Crear la hoja de cálculo, el libro de trabajo y descargar
