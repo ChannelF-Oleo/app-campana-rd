@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { db, storage } from "../../firebase"; // Importamos storage
+import { db } from "../../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes } from "firebase/storage"; // Funciones de Storage
 import * as XLSX from "xlsx";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
-import { comprimirImagen } from "../../utils/comprimirImagen";
+import { subirFotoUsuario } from "../../utils/subirFotoUsuario";
 import {
   ROLES_DISPONIBLES,
   USUARIOS_POR_PAGINA,
@@ -81,7 +80,8 @@ function EditUserModal({ user, onClose, onSave }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validar que tengamos cédula para nombrar el archivo
+    // Validar que tengamos cédula para nombrar el archivo (misma exigencia que
+    // antes: la foto se sube en el acto y la cédula debe existir ya).
     const cleanCedula = newCedula.replace(/-/g, "");
     if (cleanCedula.length !== 11) {
       alert(
@@ -92,20 +92,10 @@ function EditUserModal({ user, onClose, onSave }) {
 
     setUploading(true);
     try {
-      // Comprimimos/redimensionamos en el navegador ANTES de subir: las fotos
-      // de cámara pesan varios MB y ralentizaban el export a PDF y la carga.
-      const comprimida = await comprimirImagen(file);
-      const kb = Math.round(comprimida.size / 1024);
-
-      // Guardamos como .jpg con la cédula SIN guiones (estándar normalizado).
-      // AvatarFoto prueba primero este formato, así la foto nueva siempre gana
-      // sobre el recorte viejo del padrón (que está con guiones).
-      const storageRef = ref(storage, `votantes_fotos/${cleanCedula}.jpg`);
-
-      await uploadBytes(storageRef, comprimida);
-
+      // Lógica compartida (comprimir + subir a Storage) extraída a un util.
+      await subirFotoUsuario(file, cleanCedula);
       alert(
-        `✅ Foto actualizada correctamente (${kb} KB).\n\nNota: Puede tardar unos minutos en reflejarse o requerir recargar la página.`
+        "✅ Foto actualizada correctamente.\n\nNota: Puede tardar unos minutos en reflejarse o requerir recargar la página."
       );
       setUploading(false);
     } catch (error) {
