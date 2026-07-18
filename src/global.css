@@ -4576,13 +4576,33 @@ body.dark-mode .progress-bar-container {
   cursor: not-allowed;
 }
 
-/* Texto escrito en los inputs del formulario de activistas (modo oscuro).
+/* Texto escrito en los inputs de los formularios (modo oscuro).
    --color-text-dark (#333333) no se redefine en dark mode, así que aquí
-   forzamos el texto claro solo en este formulario. No afecta placeholders,
-   bordes ni fondos. */
+   forzamos el texto claro. No afecta placeholders, bordes ni fondos.
+   Incluye create-user-form (Crear Usuario) además del de activistas. */
+body.dark-mode .create-user-form .input-group input,
+body.dark-mode .create-user-form .input-group select,
 body.dark-mode .register-form--activist .input-group input,
 body.dark-mode .register-form--activist .input-group select {
   color: var(--color-text-main);
+}
+
+/* Neutraliza el estilo de AUTOFILL del navegador en modo oscuro. Chrome pinta
+   los campos autocompletados con su amarillo por defecto y texto de bajo
+   contraste vía :-webkit-autofill, que IGNORA la regla normal de `color`. El
+   truco del box-shadow inset es el estándar para tapar ese fondo (background-
+   color normal no aplica sobre :-webkit-autofill). --color-surface es la
+   superficie oscura del tema (#1e293b en dark). */
+body.dark-mode .create-user-form .input-group input:-webkit-autofill,
+body.dark-mode .create-user-form .input-group input:-webkit-autofill:hover,
+body.dark-mode .create-user-form .input-group input:-webkit-autofill:focus,
+body.dark-mode .register-form--activist .input-group input:-webkit-autofill,
+body.dark-mode .register-form--activist .input-group input:-webkit-autofill:hover,
+body.dark-mode .register-form--activist .input-group input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-main) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-input-bg, var(--color-surface)) inset !important;
+  caret-color: var(--color-text-main) !important;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 /* === Checkbox de Términos y Condiciones === */
