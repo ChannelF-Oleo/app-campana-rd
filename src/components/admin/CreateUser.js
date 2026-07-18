@@ -1,6 +1,9 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { db } from "../../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { doc, updateDoc } from "firebase/firestore";
+import { subirFotoUsuario } from "../../utils/subirFotoUsuario";
 import {
   ROL_ADMIN,
   ROL_LIDER,
@@ -47,10 +50,34 @@ function CreateUser() {
   const [password, setPassword] = useState("");
   const [rol, setRol] = useState(ROL_MULTIPLICADOR);
 
+  // Foto OPCIONAL: se elige aquí pero NO se sube hasta que el usuario exista
+  // (necesitamos su cédula/uid). Guardamos el File y una URL de preview local.
+  const [fotoFile, setFotoFile] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState(null);
+
   const [loading, setLoading] = useState(false);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [notification, setNotification] = useState({ message: "", type: "" });
   const navigate = useNavigate();
+
+  // Revoca la URL de preview al cambiar de foto o al desmontar (evita fugas).
+  useEffect(() => {
+    return () => {
+      if (fotoPreview) URL.revokeObjectURL(fotoPreview);
+    };
+  }, [fotoPreview]);
+
+  // Al elegir una foto: guardamos el File y generamos la miniatura. NO subimos
+  // todavía; la subida ocurre tras crear el usuario en handleCreateUser.
+  const handleFotoChange = (e) => {
+    const file = e.target.files[0];
+    setFotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+    setFotoFile(file || null);
+  };
 
   // Al cambiar un campo de ubicación; si cambia "recinto", resetea el colegio.
   const handleUbicacionChange = (campo, valor) => {
@@ -157,7 +184,30 @@ function CreateUser() {
       });
 
       if (result.data.success) {
-        setNotification({ message: result.data.message || "Usuario creado.", type: "success" });
+        // El usuario YA quedó creado. Si el admin eligió foto, la subimos ahora
+        // (aislado): si la subida falla, NO reventamos: el usuario sigue creado
+        // y se avisa que la foto puede agregarse editándolo.
+        let mensaje = result.data.message || "Usuario creado.";
+        let tipo = "success";
+        if (fotoFile) {
+          setSubiendoFoto(true);
+          try {
+            const { fotoPath } = await subirFotoUsuario(fotoFile, cedulaNormalizada);
+            // Persistimos la ruta en el doc del usuario recién creado (id === uid).
+            if (result.data.uid) {
+              await updateDoc(doc(db, "users", result.data.uid), { fotoPath });
+            }
+          } catch (fotoError) {
+            console.error("Error subiendo la foto del nuevo usuario:", fotoError);
+            mensaje =
+              "Usuario creado, pero la foto no se pudo subir (agrégala editando el usuario).";
+            tipo = "info";
+          } finally {
+            setSubiendoFoto(false);
+          }
+        }
+
+        setNotification({ message: mensaje, type: tipo });
         // Limpiar formulario
         setNombre("");
         setCedula("");
@@ -166,6 +216,11 @@ function CreateUser() {
         setUbicacion(UBICACION_INICIAL);
         setPassword("");
         setRol(ROL_MULTIPLICADOR);
+        setFotoFile(null);
+        setFotoPreview((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
       }
     } catch (error) {
       console.error("Error al llamar a createUserAdmin:", error);
@@ -232,6 +287,27 @@ function CreateUser() {
           />
         </div>
 
+        <div className="input-group">
+          <label htmlFor="foto">Foto (opcional)</label>
+          <input
+            type="file"
+            id="foto"
+            accept="image/*"
+            onChange={handleFotoChange}
+            disabled={loading || isSearching}
+            className="foto-input"
+          />
+          {fotoPreview && (
+            <div className="foto-preview-wrapper">
+              <img
+                src={fotoPreview}
+                alt="Vista previa de la foto"
+                className="foto-preview-img"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Provincia y Municipio fijos (SDO) */}
         <div className="input-group">
           <label htmlFor="provincia">Provincia</label>
@@ -275,7 +351,13 @@ function CreateUser() {
         </div>
 
         <button type="submit" disabled={loading || isSearching}>
-          {loading ? "Creando Usuario..." : isSearching ? "Buscando padrón..." : "Crear Usuario"}
+          {loading
+            ? subiendoFoto
+              ? "Subiendo foto..."
+              : "Creando..."
+            : isSearching
+            ? "Buscando padrón..."
+            : "Crear Usuario"}
         </button>
 
         {notification.message && (

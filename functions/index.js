@@ -316,6 +316,7 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
 
     return {
       success: true,
+      uid: userRecord.uid,
       emailSent,
       message: emailReal
         ? emailSent

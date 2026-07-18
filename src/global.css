@@ -940,7 +940,44 @@ body.dark-mode .expandable-overlay {
     border-radius: 4px;
     font-size: 1rem;
   }
-  
+
+  /* Input de archivo y preview: legibles en claro y oscuro (usan variables). */
+  .create-user-form .foto-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px dashed var(--color-border);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    background-color: var(--color-surface);
+    color: var(--color-text-main);
+    cursor: pointer;
+  }
+
+  .create-user-form .foto-input::file-selector-button {
+    margin-right: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: var(--color-bg);
+    color: var(--color-text-main);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .create-user-form .foto-preview-wrapper {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .create-user-form .foto-preview-img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--color-border);
+  }
+
   .create-user-form button[type="submit"] {
     width: 100%;
     padding: 12px;
