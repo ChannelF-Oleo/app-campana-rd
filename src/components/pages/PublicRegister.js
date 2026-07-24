@@ -96,6 +96,11 @@ function PublicRegister() {
   // Estados de carga y búsqueda
   const [loading, setLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  // Geolocalización (GPS): estado de carga mientras se obtiene la posición.
+  const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
+  // Soporte del navegador; si no existe, se oculta el botón de auto-ubicar.
+  const geolocalizacionDisponible =
+    typeof navigator !== "undefined" && "geolocation" in navigator;
 
   const { trackCampaignEvents } = useAnalytics();
 
@@ -120,6 +125,56 @@ function PublicRegister() {
       lng: event.latLng.lng(),
     });
   }, []);
+
+  // Fija las coordenadas con el GPS del dispositivo. El marcador y el center del
+  // mapa siguen a `coordinates`, así que se mueven solos al actualizarlo. El
+  // arrastre del pin (onMarkerDragEnd) se conserva como ajuste fino.
+  //
+  // NOTA: la geolocalización del navegador requiere contexto seguro (HTTPS):
+  // funciona en localhost y en producción con dominio, pero NO en http:// por IP.
+  // En desktop la precisión puede ser baja (WiFi/IP); en móvil con GPS es buena
+  // — por eso se mantiene el drag del marcador como ajuste fino.
+  const handleUsarUbicacionActual = () => {
+    if (!geolocalizacionDisponible) {
+      setNotification({
+        message: "La geolocalización no está disponible en este navegador.",
+        type: "error",
+      });
+      return;
+    }
+
+    setObteniendoUbicacion(true);
+    setNotification({ message: "Obteniendo ubicación...", type: "info" });
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoordinates({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setObteniendoUbicacion(false);
+        setNotification({
+          message: "Ubicación fijada. Puedes arrastrar el pin para ajustarla.",
+          type: "success",
+        });
+      },
+      (error) => {
+        let message =
+          "No se pudo obtener la ubicación. Arrastra el pin manualmente.";
+        if (error.code === error.PERMISSION_DENIED) {
+          message =
+            "Permiso de ubicación denegado. Actívalo o arrastra el pin manualmente.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          message = "No se pudo obtener la ubicación. Arrastra el pin manualmente.";
+        } else if (error.code === error.TIMEOUT) {
+          message = "La ubicación tardó demasiado. Intenta de nuevo o arrastra el pin.";
+        }
+        setObteniendoUbicacion(false);
+        setNotification({ message, type: "error" });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   // Al cambiar un campo de ubicación; si cambia "recinto", resetea el colegio.
   const handleUbicacionChange = (campo, valor) => {
@@ -460,6 +515,23 @@ function PublicRegister() {
               onDragEnd={onMarkerDragEnd}
             />
           </GoogleMap>
+          {geolocalizacionDisponible ? (
+            <button
+              type="button"
+              className="geolocate-btn"
+              onClick={handleUsarUbicacionActual}
+              disabled={obteniendoUbicacion || loading || isSearching}
+            >
+              {obteniendoUbicacion
+                ? "Obteniendo ubicación..."
+                : "📍 Usar mi ubicación actual"}
+            </button>
+          ) : (
+            <p className="coords-display">
+              La geolocalización no está disponible en este navegador; arrastra el
+              pin manualmente.
+            </p>
+          )}
           <p className="coords-display">
             Coordenadas: Lat: {coordinates.lat.toFixed(6)}, Lng:{" "}
             {coordinates.lng.toFixed(6)}
