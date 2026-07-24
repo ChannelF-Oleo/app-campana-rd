@@ -17,12 +17,9 @@ import {
   FaMapMarkerAlt,
   FaLayerGroup,
   FaTimes,
-  FaFileExcel,
   FaFilePdf,
   FaFileImage,
-  FaPrint,
 } from "react-icons/fa";
-import * as XLSX from "xlsx";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
@@ -312,28 +309,6 @@ function Comandos() {
     }
   };
 
-  const handleExportExcel = () => {
-    const wb = XLSX.utils.book_new();
-    NIVELES.forEach((nivel) => {
-      const data = (organigrama[nivel] || []).map((item) => {
-        const u = users.find((user) => user.uid === item.userId);
-        return {
-          Cargo: item.cargo,
-          Responsable: u ? u.nombre : "Sin asignar",
-          Cédula: u ? u.cedula : "N/A",
-          Teléfono: u ? u.telefono : "N/A",
-          Zona: item.zona || "N/A",
-          Sector: item.sector || "N/A",
-        };
-      });
-      if (data.length > 0) {
-        const ws = XLSX.utils.json_to_sheet(data);
-        XLSX.utils.book_append_sheet(wb, ws, nivel);
-      }
-    });
-    XLSX.writeFile(wb, "Estructura_Comandos.xlsx");
-  };
-
   // --- EXPORTACIÓN CON FOTO (padrón de comandos) ---
   // Une todos los niveles del organigrama con el usuario responsable de cada
   // entrada, resolviendo la foto por su cédula.
@@ -405,10 +380,6 @@ function Comandos() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   if (loading)
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "200px", gap: "16px" }}>
@@ -428,13 +399,6 @@ function Comandos() {
 
         <div className="header-actions">
           <button
-            onClick={handleExportExcel}
-            className="action-btn excel-btn"
-            title="Exportar Excel"
-          >
-            <FaFileExcel /> Exportar
-          </button>
-          <button
             onClick={handleExportPDFFoto}
             className="action-btn excel-btn"
             title="Exportar PDF con foto (padrón)"
@@ -449,13 +413,6 @@ function Comandos() {
             disabled={exportando}
           >
             <FaFileImage /> {exportando ? textoProgreso : "Excel con foto"}
-          </button>
-          <button
-            onClick={handlePrint}
-            className="action-btn print-btn"
-            title="Imprimir"
-          >
-            <FaPrint /> Imprimir
           </button>
         </div>
       </div>

@@ -8,8 +8,7 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
-import * as XLSX from "xlsx";
-import { FaFileExcel, FaFilePdf, FaFileImage, FaPrint } from "react-icons/fa";
+import { FaFilePdf, FaFileImage } from "react-icons/fa";
 import { ROL_LIDER, ROL_MULTIPLICADOR } from "../../constants";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
@@ -48,9 +47,6 @@ function ManageTeams() {
   const [loading, setLoading] = useState(true);
   const [expandedLeaderId, setExpandedLeaderId] = useState(null);
   const [notification, setNotification] = useState({ message: "", type: "" });
-
-  // Estado para controlar qué se imprime (null = todo, ID = solo un líder)
-  const [printTargetId, setPrintTargetId] = useState(null);
 
   // Estado de los exports con foto (PDF padrón / Excel con foto).
   const [exportando, setExportando] = useState(false);
@@ -120,40 +116,6 @@ function ManageTeams() {
     return multipliers.filter((multiplier) =>
       assignedIds.includes(multiplier.id)
     );
-  };
-
-  // --- EXPORTACIÓN EXCEL ---
-  const exportAllTeams = () => {
-    if (leaders.length === 0) return;
-    const data = leaders.map((leader) => {
-      const assigned = getAssignedMultipliers(leader);
-      return {
-        Líder: leader.nombre,
-        Cédula: leader.cedula || "N/A",
-        "Total Soldados": assigned.length,
-        Nombres: assigned.map((m) => m.nombre).join(", "),
-      };
-    });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Resumen");
-    XLSX.writeFile(wb, "Equipos_Global.xlsx");
-  };
-
-  const exportIndividualTeam = (leader) => {
-    const assigned = getAssignedMultipliers(leader);
-    if (assigned.length === 0) {
-      setNotification({ message: `Pelotón vacío.`, type: "error" });
-      return;
-    }
-    const data = assigned.map((m) => ({
-      Líder: leader.nombre,
-      Soldado: m.nombre,
-      Cédula: m.cedula || "N/A",
-      Email: m.email,
-    }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Pelotón");
-    XLSX.writeFile(wb, `Peloton_${leader.nombre}.xlsx`);
   };
 
   // --- EXPORTACIÓN CON FOTO (padrón) ---
@@ -233,41 +195,13 @@ function ManageTeams() {
     }
   };
 
-  // --- IMPRESIÓN ---
-  const handlePrintGlobal = () => {
-    setPrintTargetId(null); // Imprimir todo
-    setTimeout(() => window.print(), 100);
-  };
-
-  const handlePrintIndividual = (leaderId) => {
-    setPrintTargetId(leaderId); // Marcar solo este líder para imprimir
-    // Abrimos el acordeón automáticamente para que salga el contenido
-    setExpandedLeaderId(leaderId);
-    setTimeout(() => {
-      window.print();
-      setPrintTargetId(null); // Resetear después de imprimir
-    }, 500);
-  };
-
   if (loading) return <LoadingSpinner message="Cargando pelotones..." />;
 
   return (
-    // Añadimos clase condicional para controlar estilos de impresión
-    <div
-      className={`manage-teams-container glass-panel ${
-        printTargetId ? "printing-single" : ""
-      }`}
-    >
+    <div className="manage-teams-container glass-panel">
       <div className="manage-teams-header no-print">
         <h2>Gestión de Pelotones</h2>
         <div className="header-actions">
-          <button
-            onClick={exportAllTeams}
-            className="export-teams-button"
-            disabled={leaders.length === 0}
-          >
-            <FaFileExcel /> Exportar Todo
-          </button>
           <button
             onClick={handleExportPDFFoto}
             className="export-teams-button"
@@ -281,9 +215,6 @@ function ManageTeams() {
             disabled={exportando || leaders.length + multipliers.length === 0}
           >
             <FaFileImage /> {exportando ? textoProgreso : "Excel con foto"}
-          </button>
-          <button onClick={handlePrintGlobal} className="action-btn print-btn">
-            <FaPrint /> Imprimir Todo
           </button>
         </div>
       </div>
@@ -301,15 +232,11 @@ function ManageTeams() {
         {leaders.map((leader) => {
           const assigned = getAssignedMultipliers(leader);
           const isExpanded = expandedLeaderId === leader.id;
-          // Verificar si este líder es el objetivo de impresión (o si no hay objetivo, se muestran todos)
-          const isPrintingThis = printTargetId === leader.id;
 
           return (
             <div
               key={leader.id}
-              className={`leader-item ${isExpanded ? "expanded" : ""} ${
-                isPrintingThis ? "print-target" : ""
-              }`}
+              className={`leader-item ${isExpanded ? "expanded" : ""}`}
             >
               <div
                 className="leader-header no-print"
@@ -337,25 +264,6 @@ function ManageTeams() {
                   className="actions-row"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    onClick={() => exportIndividualTeam(leader)}
-                    className="icon-button excel-mini"
-                    title="Descargar Excel"
-                    disabled={assigned.length === 0}
-                  >
-                    <FaFileExcel />
-                  </button>
-
-                  {/* BOTÓN RESTAURADO: IMPRIMIR UN SOLO PELOTÓN */}
-                  <button
-                    onClick={() => handlePrintIndividual(leader.id)}
-                    className="icon-button print-mini"
-                    title="Imprimir este Pelotón"
-                    disabled={assigned.length === 0}
-                  >
-                    <FaPrint />
-                  </button>
-
                   <span
                     className="expand-icon"
                     onClick={() => handleToggleExpand(leader.id)}

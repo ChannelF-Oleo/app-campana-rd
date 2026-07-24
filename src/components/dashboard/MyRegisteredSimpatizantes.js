@@ -7,8 +7,7 @@ import {
   onSnapshot,
   orderBy,
 } from "firebase/firestore";
-import * as XLSX from "xlsx";
-import { FaFileExcel, FaFilePdf, FaFileImage } from "react-icons/fa";
+import { FaFilePdf, FaFileImage } from "react-icons/fa";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
@@ -156,34 +155,6 @@ function MyRegisteredSimpatizantes({ user }) {
     );
   };
 
-  // --- FUNCIÓN DE EXPORTACIÓN A EXCEL (usa la lista YA FILTRADA) ---
-  const handleExport = () => {
-    if (simpatizantesFiltrados.length === 0) return sinDatos();
-
-    const dataToExport = simpatizantesFiltrados.map((simpatizante) => ({
-      Nombre: simpatizante.nombre || "N/A",
-      Cédula: simpatizante.cedula || "N/A",
-      Teléfono: simpatizante.telefono || "N/A",
-      Zona: simpatizante.zona || "N/A",
-      Sector: simpatizante.sector || "N/A",
-      Subsector: simpatizante.subsector || "N/A",
-      Recinto: simpatizante.recinto || "N/A",
-      Colegio: simpatizante.colegioElectoral || "N/A",
-      FechaRegistro: simpatizante.fechaRegistro
-        ? simpatizante.fechaRegistro.toDate().toLocaleDateString("es-DO")
-        : "N/A",
-      Registrador: user.nombre || "Yo mismo",
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Mis Registros");
-    XLSX.writeFile(
-      workbook,
-      nombreConFiltros(`Mis_Registros_Personales_${safeNombre}`, "xlsx")
-    );
-  };
-
   // Normaliza los simpatizantes al shape que consumen los generadores:
   // debe incluir `cedula` (para resolver la foto) y las `key` referenciadas.
   // La fecha se pre-formatea porque los generadores solo convierten a texto.
@@ -311,14 +282,6 @@ function MyRegisteredSimpatizantes({ user }) {
               Mostrando: <strong>{simpatizantesFiltrados.length}</strong> de{" "}
               {simpatizantes.length}
             </p>
-            <button
-              onClick={handleExport}
-              className="export-registros-button"
-              title="Exportar a Excel (lista filtrada)"
-              disabled={exportando || simpatizantesFiltrados.length === 0}
-            >
-              <FaFileExcel /> Exportar Excel
-            </button>
             <button
               onClick={handleExportPDF}
               className="export-registros-button"

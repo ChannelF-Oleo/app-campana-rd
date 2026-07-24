@@ -42,6 +42,7 @@ const Dashboard = lazy(() => import("./components/dashboard/Dashboard")); // grÃ
 const RegisterByActivist = lazy(() => import("./components/dashboard/RegisterByActivist")); // Google Maps
 const UserProfile = lazy(() => import("./components/pages/UserProfile"));
 const MetasPage = lazy(() => import("./components/dashboard/MetasPage"));
+const RankingPage = lazy(() => import("./components/dashboard/RankingPage"));
 const ManageUsers = lazy(() => import("./components/admin/ManageUsers"));
 const ManageTeams = lazy(() => import("./components/admin/ManageTeams"));
 const CreateUser = lazy(() => import("./components/admin/CreateUser"));
@@ -158,6 +159,10 @@ function AppRoutes() {
             />
             <Route path="/dashboard/perfil" element={<UserProfile />} />
             <Route path="/dashboard/metas" element={<MetasPage user={user} />} />
+            <Route
+              path="/dashboard/ranking"
+              element={<RankingPage user={user} />}
+            />
 
             {/* Admin */}
             {user?.rol === ROL_ADMIN && (

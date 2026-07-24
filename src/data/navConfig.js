@@ -1,7 +1,7 @@
 // src/data/navConfig.js
 // src/data/navConfig.js
 import {
-  FaHome, FaUserPlus, FaUsers, FaTasks, FaBullseye, FaLayerGroup, FaUser
+  FaHome, FaUserPlus, FaUsers, FaTasks, FaBullseye, FaLayerGroup, FaUser, FaTrophy
 } from 'react-icons/fa';
 import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from '../constants';
 
@@ -53,6 +53,12 @@ export const getVisibleNavItems = (user) => {
         path: '/admin/comandos',
         icon: FaLayerGroup,
       },
+      {
+        id: 'ranking',
+        label: 'Ranking',
+        path: '/dashboard/ranking',
+        icon: FaTrophy,
+      },
     ];
   }
 
@@ -65,6 +71,17 @@ export const getVisibleNavItems = (user) => {
       label: 'Metas',
       path: '/dashboard/metas', // Página propia (historial, logros, crear meta)
       icon: FaBullseye,
+    });
+  }
+
+  // Ranking: solo el líder ve su equipo (el multiplicador no puede listar otros
+  // usuarios por reglas de Firestore, así que no se le ofrece el enlace).
+  if (user.rol === ROL_LIDER) {
+    roleItems.push({
+      id: 'ranking',
+      label: 'Ranking',
+      path: '/dashboard/ranking',
+      icon: FaTrophy,
     });
   }
 

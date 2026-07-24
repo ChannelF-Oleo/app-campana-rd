@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import * as XLSX from "xlsx";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
@@ -378,26 +377,6 @@ function ManageUsers() {
     }
   };
 
-  const handleExport = () => {
-    if (filteredUsers.length === 0) {
-      alert("No hay usuarios para exportar.");
-      return;
-    }
-    const dataToExport = filteredUsers.map((user) => ({
-      Nombre: user.nombre || "N/A",
-      Cedula: user.cedula || "N/A",
-      Telefono: user.telefono || "",
-      Rol: user.rol || "N/A",
-      Zona: user.zona || "",
-      Direccion: user.direccion || "",
-      Registros: user.registrationCount || 0,
-    }));
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios Filtrados");
-    XLSX.writeFile(workbook, "Usuarios_Filtrados.xlsx");
-  };
-
   // Export PDF tipo padrón (foto grande + datos por ficha).
   const handleExportPDF = async () => {
     if (filteredUsers.length === 0) {
@@ -616,13 +595,6 @@ function ManageUsers() {
       {/* Acciones de exportación: fila propia con botones compactos (fuera del
           grid de filtros, para que no ocupen una columna completa cada uno). */}
       <div className="export-actions">
-        <button
-          onClick={handleExport}
-          className="export-excel-button"
-          disabled={loading || exportando || filteredUsers.length === 0}
-        >
-          Exportar Excel
-        </button>
         <button
           onClick={handleExportPDF}
           className="export-excel-button"

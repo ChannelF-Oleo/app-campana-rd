@@ -4,7 +4,6 @@ import MyTeam from "./MyTeam";
 import TotalRegistrations from "./TotalRegistrations";
 import RegistrationsByDayChart from "../charts/RegistrationsByDayChart";
 import MyGoals from "./MyGoals";
-import RankingMultiplicadores from "./RankingMultiplicadores";
 import RegistrationsByZoneChart from "../charts/RegistrationsByZoneChart";
 import RegistrationsBySectorChart from "../charts/RegistrationsBySectorChart";
 import RegistrationsBySubsectorChart from "../charts/RegistrationsBySubsectorChart";
@@ -39,10 +38,6 @@ const Dashboard = ({ user }) => {
   );
   const personalGoal = useMemo(
     () => <MyGoals key="goals" user={user} />,
-    [user]
-  );
-  const ranking = useMemo(
-    () => <RankingMultiplicadores key="ranking" user={user} />,
     [user]
   );
   const myRegistrationsList = useMemo(
@@ -95,8 +90,6 @@ const Dashboard = ({ user }) => {
           {myRegistrationsList}
           <div className="dashboard-section-title">Métricas de mi Equipo</div>
           {filteredMetrics}
-          <div className="dashboard-section-title">Ranking de mi Equipo</div>
-          {ranking}
           <div className="dashboard-section-title">Mi Pelotón Asignado</div>
           <MyTeam user={user} />
         </>
@@ -107,10 +100,6 @@ const Dashboard = ({ user }) => {
         <>
           <DashboardWelcome user={user} />
           {filteredMetrics}
-          <div className="dashboard-section-title">
-            Ranking de Multiplicadores
-          </div>
-          {ranking}
         </>
       )}
 
