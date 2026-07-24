@@ -4004,31 +4004,27 @@ body.dark-mode .progress-bar-container {
   box-shadow: var(--glass-shadow);
   border-radius: var(--radius-lg);
 
-  padding: 2rem;
-  text-align: center; /* Centrado para mayor impacto */
-  margin: 2rem 0;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
   transition: transform 0.3s ease;
 }
 
 .referral-link-container:hover {
-  transform: translateY(-3px); /* Elevación suave al pasar el mouse */
+  transform: translateY(-2px); /* Elevación sutil al pasar el mouse */
 }
 
 .referral-link-container h3 {
   margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.15rem;
   color: var(--primary); /* Azul Institucional */
-  font-size: 1.4rem;
+  font-size: 1.05rem;
   font-weight: 800;
 }
 
 .referral-link-container p {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: var(--color-text-muted);
-  margin-bottom: 1.5rem;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 0 0.75rem;
 }
 
 /* Caja del Link (Input + Botón) */
@@ -4039,8 +4035,7 @@ body.dark-mode .progress-bar-container {
   padding: 6px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  max-width: 600px;
-  margin: 0 auto; /* Centrado horizontal */
+  width: 100%;
   align-items: center;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
 }

@@ -9,9 +9,27 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import * as XLSX from "xlsx";
-import { FaFileExcel, FaPrint } from "react-icons/fa";
+import { FaFileExcel, FaFilePdf, FaFileImage, FaPrint } from "react-icons/fa";
 import { ROL_LIDER, ROL_MULTIPLICADOR } from "../../constants";
 import AvatarFoto from "../ui/AvatarFoto";
+import { generarPadronPDF } from "../../utils/pdfPadron";
+import { generarExcelConFoto } from "../../utils/excelConFoto";
+
+// Campos/columnas para los exports CON FOTO del roster de pelotones.
+const CAMPOS_PDF_ROSTER = [
+  { label: "Nombre", key: "nombre" },
+  { label: "Cédula", key: "cedula" },
+  { label: "Teléfono", key: "telefono" },
+  { label: "Rol", key: "rol" },
+  { label: "Líder", key: "lider" },
+];
+const COLUMNAS_EXCEL_ROSTER = [
+  { header: "Nombre", key: "nombre", width: 28 },
+  { header: "Cédula", key: "cedula", width: 16 },
+  { header: "Teléfono", key: "telefono", width: 16 },
+  { header: "Rol", key: "rol", width: 16 },
+  { header: "Líder", key: "lider", width: 24 },
+];
 
 // --- Spinner de carga ---
 function LoadingSpinner({ message = "Cargando..." }) {
@@ -33,6 +51,13 @@ function ManageTeams() {
 
   // Estado para controlar qué se imprime (null = todo, ID = solo un líder)
   const [printTargetId, setPrintTargetId] = useState(null);
+
+  // Estado de los exports con foto (PDF padrón / Excel con foto).
+  const [exportando, setExportando] = useState(false);
+  const [progreso, setProgreso] = useState(null);
+  const textoProgreso = progreso
+    ? `Generando... ${progreso.hechos}/${progreso.total}`
+    : "";
 
   // 1. CARGA DE DATOS EN TIEMPO REAL
   useEffect(() => {
@@ -131,6 +156,83 @@ function ManageTeams() {
     XLSX.writeFile(wb, `Peloton_${leader.nombre}.xlsx`);
   };
 
+  // --- EXPORTACIÓN CON FOTO (padrón) ---
+  // Roster completo: líderes + multiplicadores, con la foto (resuelta por cédula)
+  // y el líder asignado de cada multiplicador.
+  const buildRosterExport = () => {
+    const leaderNameById = {};
+    leaders.forEach((l) => {
+      leaderNameById[l.id] = l.nombre;
+    });
+    const rows = leaders.map((l) => ({
+      cedula: l.cedula,
+      nombre: l.nombre,
+      telefono: l.telefono || "",
+      rol: "Líder",
+      lider: "—",
+    }));
+    multipliers.forEach((m) =>
+      rows.push({
+        cedula: m.cedula,
+        nombre: m.nombre,
+        telefono: m.telefono || "",
+        rol: "Multiplicador",
+        lider: m.liderAsignado
+          ? leaderNameById[m.liderAsignado] || "—"
+          : "Sin asignar",
+      })
+    );
+    return rows;
+  };
+
+  const handleExportPDFFoto = async () => {
+    const personas = buildRosterExport();
+    if (personas.length === 0) {
+      setNotification({ message: "No hay usuarios para exportar.", type: "error" });
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: personas.length });
+    try {
+      await generarPadronPDF(personas, {
+        titulo: "Padrón de Pelotones",
+        campos: CAMPOS_PDF_ROSTER,
+        fileName: "Pelotones_Padron.pdf",
+        onProgress: (fase, hechos, total) => setProgreso({ fase, hechos, total }),
+      });
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      setNotification({ message: "Error al generar el PDF.", type: "error" });
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
+
+  const handleExportExcelFoto = async () => {
+    const personas = buildRosterExport();
+    if (personas.length === 0) {
+      setNotification({ message: "No hay usuarios para exportar.", type: "error" });
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: personas.length });
+    try {
+      await generarExcelConFoto(personas, {
+        hojaNombre: "Pelotones",
+        columnas: COLUMNAS_EXCEL_ROSTER,
+        fileName: "Pelotones_Con_Foto.xlsx",
+        onProgress: (fase, hechos, total) => setProgreso({ fase, hechos, total }),
+      });
+    } catch (error) {
+      console.error("Error generando Excel:", error);
+      setNotification({ message: "Error al generar el Excel.", type: "error" });
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
+
   // --- IMPRESIÓN ---
   const handlePrintGlobal = () => {
     setPrintTargetId(null); // Imprimir todo
@@ -165,6 +267,20 @@ function ManageTeams() {
             disabled={leaders.length === 0}
           >
             <FaFileExcel /> Exportar Todo
+          </button>
+          <button
+            onClick={handleExportPDFFoto}
+            className="export-teams-button"
+            disabled={exportando || leaders.length + multipliers.length === 0}
+          >
+            <FaFilePdf /> {exportando ? textoProgreso : "PDF con foto"}
+          </button>
+          <button
+            onClick={handleExportExcelFoto}
+            className="export-teams-button"
+            disabled={exportando || leaders.length + multipliers.length === 0}
+          >
+            <FaFileImage /> {exportando ? textoProgreso : "Excel con foto"}
           </button>
           <button onClick={handlePrintGlobal} className="action-btn print-btn">
             <FaPrint /> Imprimir Todo

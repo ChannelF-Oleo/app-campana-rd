@@ -42,17 +42,6 @@ const COLUMNAS_EXCEL_USUARIOS = [
   { header: "Registros", key: "registrationCount", width: 12 },
 ];
 
-// ¿La fecha (Timestamp Firestore) cae dentro del rango [desde, hasta]? Los
-// límites son cadenas "YYYY-MM-DD" (input date); vacío = sin límite por ese lado.
-const enRangoFecha = (ts, desde, hasta) => {
-  if (!desde && !hasta) return true;
-  if (!ts || !ts.toDate) return false; // filtrando por fecha, sin fecha => fuera
-  const d = ts.toDate();
-  if (desde && d < new Date(`${desde}T00:00:00`)) return false;
-  if (hasta && d > new Date(`${hasta}T23:59:59`)) return false;
-  return true;
-};
-
 // --- SPINNER DE CARGA ---
 function LoadingSpinner({ message = "Cargando..." }) {
   return (
@@ -272,8 +261,7 @@ function ManageUsers() {
   const [zonaFilter, setZonaFilter] = useState("todas");
   const [sectorFilter, setSectorFilter] = useState("todos");
   const [activistaFilter, setActivistaFilter] = useState("todos"); // uid
-  const [fechaDesde, setFechaDesde] = useState("");
-  const [fechaHasta, setFechaHasta] = useState("");
+  const [activistaInput, setActivistaInput] = useState(""); // texto typeahead
 
   // Zonas presentes en los usuarios cargados (para poblar el filtro por zona).
   const zonasDisponibles = Array.from(
@@ -426,8 +414,6 @@ function ManageUsers() {
       const act = allUsers.find((u) => u.uid === activistaFilter);
       if (act?.nombre) partes.push(act.nombre);
     }
-    if (fechaDesde) partes.push(`desde ${fechaDesde}`);
-    if (fechaHasta) partes.push(`hasta ${fechaHasta}`);
 
     const titulo = partes.length
       ? `Padrón de Usuarios - ${partes.join(" · ")}`
@@ -496,12 +482,6 @@ function ManageUsers() {
     if (activistaFilter !== "todos") {
       currentUsers = currentUsers.filter((user) => user.uid === activistaFilter);
     }
-    // Rango de fechas: sobre createdAt (fecha de alta del usuario).
-    if (fechaDesde || fechaHasta) {
-      currentUsers = currentUsers.filter((user) =>
-        enRangoFecha(user.createdAt, fechaDesde, fechaHasta)
-      );
-    }
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       currentUsers = currentUsers.filter(
@@ -514,16 +494,7 @@ function ManageUsers() {
     }
     setFilteredUsers(currentUsers);
     setCurrentPage(1); // Resetear a página 1 al filtrar
-  }, [
-    searchTerm,
-    roleFilter,
-    zonaFilter,
-    sectorFilter,
-    activistaFilter,
-    fechaDesde,
-    fechaHasta,
-    allUsers,
-  ]);
+  }, [searchTerm, roleFilter, zonaFilter, sectorFilter, activistaFilter, allUsers]);
 
   const handleEditClick = (user) => {
     setEditingUser(user);
@@ -616,36 +587,30 @@ function ManageUsers() {
             </option>
           ))}
         </select>
-        <select
-          value={activistaFilter}
-          onChange={(e) => setActivistaFilter(e.target.value)}
-          className="role-filter-select"
-        >
-          <option value="todos">Todos los Activistas</option>
+        {/* Activista: campo con autocompletado (escribe y aparecen coincidencias)
+            en vez de un desplegable largo que crece con el equipo. */}
+        <input
+          type="text"
+          list="activistas-datalist"
+          className="search-input"
+          placeholder="Filtrar por activista..."
+          value={activistaInput}
+          onChange={(e) => {
+            const val = e.target.value;
+            setActivistaInput(val);
+            if (!val.trim()) {
+              setActivistaFilter("todos");
+              return;
+            }
+            const match = activistasDisponibles.find((a) => a.nombre === val);
+            setActivistaFilter(match ? match.uid : "todos");
+          }}
+        />
+        <datalist id="activistas-datalist">
           {activistasDisponibles.map((act) => (
-            <option key={act.uid} value={act.uid}>
-              {act.nombre}
-            </option>
+            <option key={act.uid} value={act.nombre} />
           ))}
-        </select>
-        <label className="filtro-fecha">
-          <span>Alta desde</span>
-          <input
-            type="date"
-            className="search-input"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-          />
-        </label>
-        <label className="filtro-fecha">
-          <span>Alta hasta</span>
-          <input
-            type="date"
-            className="search-input"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-          />
-        </label>
+        </datalist>
       </div>
 
       {/* Acciones de exportación: fila propia con botones compactos (fuera del

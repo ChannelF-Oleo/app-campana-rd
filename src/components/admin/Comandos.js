@@ -18,13 +18,37 @@ import {
   FaLayerGroup,
   FaTimes,
   FaFileExcel,
+  FaFilePdf,
+  FaFileImage,
   FaPrint,
 } from "react-icons/fa";
 import * as XLSX from "xlsx";
 import AvatarFoto from "../ui/AvatarFoto";
+import { generarPadronPDF } from "../../utils/pdfPadron";
+import { generarExcelConFoto } from "../../utils/excelConFoto";
 
 // Importación de datos
 import zonasData from "../../data/zonas.json";
+
+// Campos/columnas para los exports CON FOTO de la estructura de comandos.
+const CAMPOS_PDF_COMANDOS = [
+  { label: "Nombre", key: "nombre" },
+  { label: "Cédula", key: "cedula" },
+  { label: "Teléfono", key: "telefono" },
+  { label: "Nivel", key: "nivel" },
+  { label: "Cargo", key: "cargo" },
+  { label: "Zona", key: "zona" },
+  { label: "Sector", key: "sector" },
+];
+const COLUMNAS_EXCEL_COMANDOS = [
+  { header: "Nombre", key: "nombre", width: 28 },
+  { header: "Cédula", key: "cedula", width: 16 },
+  { header: "Teléfono", key: "telefono", width: 16 },
+  { header: "Nivel", key: "nivel", width: 14 },
+  { header: "Cargo", key: "cargo", width: 22 },
+  { header: "Zona", key: "zona", width: 14 },
+  { header: "Sector", key: "sector", width: 22 },
+];
 
 const NIVELES = ["Municipal", "Zonal", "Sectorial"];
 const LISTA_ZONAS = zonasData.map((z) => z.zona).sort();
@@ -210,6 +234,13 @@ function Comandos() {
   const [editingItem, setEditingItem] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
 
+  // Estado de los exports con foto (PDF padrón / Excel con foto).
+  const [exportando, setExportando] = useState(false);
+  const [progreso, setProgreso] = useState(null);
+  const textoProgreso = progreso
+    ? `Generando... ${progreso.hechos}/${progreso.total}`
+    : "";
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -303,6 +334,77 @@ function Comandos() {
     XLSX.writeFile(wb, "Estructura_Comandos.xlsx");
   };
 
+  // --- EXPORTACIÓN CON FOTO (padrón de comandos) ---
+  // Une todos los niveles del organigrama con el usuario responsable de cada
+  // entrada, resolviendo la foto por su cédula.
+  const buildComandosExport = () => {
+    const rows = [];
+    NIVELES.forEach((nivel) => {
+      (organigrama[nivel] || []).forEach((item) => {
+        const u = users.find((user) => user.uid === item.userId);
+        if (!u) return; // sin responsable asignado: no aporta foto/persona
+        rows.push({
+          cedula: u.cedula,
+          nombre: u.nombre,
+          telefono: u.telefono || "",
+          nivel,
+          cargo: item.cargo || "",
+          zona: item.zona || "",
+          sector: item.sector || "",
+        });
+      });
+    });
+    return rows;
+  };
+
+  const handleExportPDFFoto = async () => {
+    const personas = buildComandosExport();
+    if (personas.length === 0) {
+      alert("No hay responsables asignados para exportar.");
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: personas.length });
+    try {
+      await generarPadronPDF(personas, {
+        titulo: "Padrón de Comandos",
+        campos: CAMPOS_PDF_COMANDOS,
+        fileName: "Comandos_Padron.pdf",
+        onProgress: (fase, hechos, total) => setProgreso({ fase, hechos, total }),
+      });
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      alert("Hubo un error al generar el PDF.");
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
+
+  const handleExportExcelFoto = async () => {
+    const personas = buildComandosExport();
+    if (personas.length === 0) {
+      alert("No hay responsables asignados para exportar.");
+      return;
+    }
+    setExportando(true);
+    setProgreso({ fase: "fotos", hechos: 0, total: personas.length });
+    try {
+      await generarExcelConFoto(personas, {
+        hojaNombre: "Comandos",
+        columnas: COLUMNAS_EXCEL_COMANDOS,
+        fileName: "Comandos_Con_Foto.xlsx",
+        onProgress: (fase, hechos, total) => setProgreso({ fase, hechos, total }),
+      });
+    } catch (error) {
+      console.error("Error generando Excel:", error);
+      alert("Hubo un error al generar el Excel.");
+    } finally {
+      setExportando(false);
+      setProgreso(null);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -331,6 +433,22 @@ function Comandos() {
             title="Exportar Excel"
           >
             <FaFileExcel /> Exportar
+          </button>
+          <button
+            onClick={handleExportPDFFoto}
+            className="action-btn excel-btn"
+            title="Exportar PDF con foto (padrón)"
+            disabled={exportando}
+          >
+            <FaFilePdf /> {exportando ? textoProgreso : "PDF con foto"}
+          </button>
+          <button
+            onClick={handleExportExcelFoto}
+            className="action-btn excel-btn"
+            title="Exportar Excel con foto"
+            disabled={exportando}
+          >
+            <FaFileImage /> {exportando ? textoProgreso : "Excel con foto"}
           </button>
           <button
             onClick={handlePrint}
