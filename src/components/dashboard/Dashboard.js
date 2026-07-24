@@ -4,6 +4,7 @@ import MyTeam from "./MyTeam";
 import TotalRegistrations from "./TotalRegistrations";
 import RegistrationsByDayChart from "../charts/RegistrationsByDayChart";
 import MyGoals from "./MyGoals";
+import GoalHistory from "./GoalHistory";
 import RegistrationsByZoneChart from "../charts/RegistrationsByZoneChart";
 import RegistrationsBySectorChart from "../charts/RegistrationsBySectorChart";
 import RegistrationsBySubsectorChart from "../charts/RegistrationsBySubsectorChart";
@@ -38,6 +39,10 @@ const Dashboard = ({ user }) => {
   );
   const personalGoal = useMemo(
     () => <MyGoals key="goals" user={user} />,
+    [user]
+  );
+  const goalHistory = useMemo(
+    () => <GoalHistory key="goal-history" user={user} />,
     [user]
   );
   const myRegistrationsList = useMemo(
@@ -87,6 +92,7 @@ const Dashboard = ({ user }) => {
           <DashboardWelcome user={user} />
           {referralLinkSection}
           {personalGoal}
+          {goalHistory}
           {myRegistrationsList}
           <div className="dashboard-section-title">Métricas de mi Equipo</div>
           {filteredMetrics}
@@ -110,6 +116,7 @@ const Dashboard = ({ user }) => {
           <DashboardWelcome user={user} />
           {referralLinkSection}
           {personalGoal}
+          {goalHistory}
           {myRegistrationsList}
           <div className="dashboard-section-title">Métricas Personales</div>
           {filteredMetrics}
