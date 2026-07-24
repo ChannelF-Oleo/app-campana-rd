@@ -5,24 +5,33 @@ import sectores from "./sectores.json";
 export const OPCION_NO_IDENTIFICADO = "No identificado";
 
 /**
- * Valor CENTINELA (solo UI) de la opción "Otro" del subsector. Nunca se guarda
- * en el payload: cuando está activa, el subsector efectivo es el texto libre
- * que el usuario escribe (normalizado con normalizarSubsector al enviar).
+ * Valor CENTINELA (solo UI) de la opción "Otro" de un desplegable de ubicación
+ * (Sector, Subsector, Recinto o Colegio). Nunca se guarda en el payload: cuando
+ * está activa, el valor efectivo del campo es el texto libre que el usuario
+ * escribe (normalizado con normalizarUbicacion al enviar).
  */
 export const OPCION_OTRO = "__OTRO__";
 
 /**
- * Normaliza un subsector escrito a mano al estilo del catálogo: sin espacios
- * sobrantes (trim + colapso de espacios internos) y en MAYÚSCULAS.
+ * Normaliza un valor de ubicación escrito a mano al estilo del catálogo: sin
+ * espacios sobrantes (trim + colapso de espacios internos) y en MAYÚSCULAS.
+ * Se usa para los cuatro campos con opción "Otro" (sector, subsector, recinto,
+ * colegio electoral).
  * @param {string} str
  * @returns {string}
  */
-export function normalizarSubsector(str) {
+export function normalizarUbicacion(str) {
   return String(str || "")
     .trim()
     .replace(/\s+/g, " ")
     .toUpperCase();
 }
+
+/**
+ * @deprecated Usa {@link normalizarUbicacion}. Alias conservado por
+ * compatibilidad con importaciones existentes.
+ */
+export const normalizarSubsector = normalizarUbicacion;
 
 /** Zona y sector fijos por ahora (a la espera de poblar el resto). */
 export const ZONA_FIJA = "ZONA N";

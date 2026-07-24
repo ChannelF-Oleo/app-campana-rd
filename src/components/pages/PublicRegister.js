@@ -9,7 +9,7 @@ import {
   ZONA_FIJA,
   SECTOR_FIJO,
   OPCION_NO_IDENTIFICADO,
-  normalizarSubsector,
+  normalizarUbicacion,
 } from "../../data/ubicacionElectoral";
 import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
 import logo from "../../Felix/Inscribete.png";
@@ -37,15 +37,35 @@ const libraries = ["places"];
 const UBICACION_INICIAL = {
   zona: ZONA_FIJA,
   sector: SECTOR_FIJO,
+  sectorEsOtro: false,
   subsector: "",
   subsectorEsOtro: false,
   recinto: "",
+  recintoEsOtro: false,
   colegioElectoral: "",
+  colegioElectoralEsOtro: false,
 };
+
+// Campos de ubicación con opción "Otro" (texto libre). El label se usa en la
+// notificación de validación cuando el texto queda vacío.
+const CAMPOS_UBICACION_OTRO = [
+  { campo: "sector", label: "sector" },
+  { campo: "subsector", label: "subsector" },
+  { campo: "recinto", label: "recinto" },
+  { campo: "colegioElectoral", label: "colegio electoral" },
+];
 
 // Convierte "No identificado" en cadena vacía para el payload.
 const limpiarUbicacion = (valor) =>
   valor === OPCION_NO_IDENTIFICADO ? "" : valor;
+
+// Valor final de un campo de ubicación hacia el payload: texto normalizado si la
+// opción activa es "Otro"; "" si es "No identificado"; el valor del catálogo en
+// otro caso.
+const valorUbicacionFinal = (ubicacion, campo) =>
+  ubicacion[`${campo}EsOtro`]
+    ? normalizarUbicacion(ubicacion[campo])
+    : limpiarUbicacion(ubicacion[campo]);
 
 function useQuery() {
   const location = useLocation();
@@ -105,8 +125,11 @@ function PublicRegister() {
   const handleUbicacionChange = (campo, valor) => {
     setUbicacion((prev) => {
       const next = { ...prev, [campo]: valor };
-      if (campo === "recinto") {
+      // Colegio encadenado a Recinto: al cambiar recinto (o su flag "Otro") se
+      // resetea el colegio y su flag, porque sus opciones dependen del recinto.
+      if (campo === "recinto" || campo === "recintoEsOtro") {
         next.colegioElectoral = "";
+        next.colegioElectoralEsOtro = false;
       }
       return next;
     });
@@ -195,10 +218,13 @@ function PublicRegister() {
       setNotification({ message: "Teléfono inválido (mínimo 7 dígitos).", type: "error" });
       return;
     }
-    // Subsector "Otro": el texto libre no puede quedar vacío.
-    if (ubicacion.subsectorEsOtro && !normalizarSubsector(ubicacion.subsector)) {
-      setNotification({ message: "Escribe el subsector", type: "error" });
-      return;
+    // Campos con opción "Otro": si está activa, el texto libre no puede quedar
+    // vacío (aplica a sector, subsector, recinto y colegio electoral).
+    for (const { campo, label } of CAMPOS_UBICACION_OTRO) {
+      if (ubicacion[`${campo}EsOtro`] && !normalizarUbicacion(ubicacion[campo])) {
+        setNotification({ message: `Escribe el ${label}`, type: "error" });
+        return;
+      }
     }
     // Validación de ubicación electoral: sector, subsector, recinto y colegio
     // deben tener valor (incluido "No identificado"). La zona ya viene fija.
@@ -261,14 +287,13 @@ function PublicRegister() {
         telefono,
         provincia: selectedProvincia,
         municipio: selectedMunicipio,
-        // Ubicación electoral ("No identificado" se envía como "")
+        // Ubicación electoral: cada campo envía su valor final ("No identificado"
+        // -> ""; "Otro" -> texto normalizado; en otro caso el valor de catálogo).
         zona: limpiarUbicacion(ubicacion.zona),
-        sector: limpiarUbicacion(ubicacion.sector),
-        subsector: ubicacion.subsectorEsOtro
-          ? normalizarSubsector(ubicacion.subsector)
-          : limpiarUbicacion(ubicacion.subsector),
-        recinto: limpiarUbicacion(ubicacion.recinto),
-        colegioElectoral: limpiarUbicacion(ubicacion.colegioElectoral),
+        sector: valorUbicacionFinal(ubicacion, "sector"),
+        subsector: valorUbicacionFinal(ubicacion, "subsector"),
+        recinto: valorUbicacionFinal(ubicacion, "recinto"),
+        colegioElectoral: valorUbicacionFinal(ubicacion, "colegioElectoral"),
         lat: coordinates.lat,
         lng: coordinates.lng,
         ...registeredByData,

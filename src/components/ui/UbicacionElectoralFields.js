@@ -15,62 +15,145 @@ import {
  *
  * Contrato (estado controlado por el padre):
  *   props:
- *     value = { zona, sector, subsector, recinto, colegioElectoral }
+ *     value = { zona, sector, subsector, recinto, colegioElectoral,
+ *               sectorEsOtro, subsectorEsOtro, recintoEsOtro,
+ *               colegioElectoralEsOtro }
  *     onChange(campo, valor)   -> el padre actualiza value[campo]
  *     disabled                 -> deshabilita los selects editables
  *
- * IMPORTANTE (resets, los hará el padre en la Fase 2):
+ * IMPORTANTE (resets, los hace el padre):
  *   Colegio Electoral está encadenado a Recinto. Cuando el padre reciba un
- *   onChange("recinto", ...) DEBE resetear "colegioElectoral" (a "" o a
- *   OPCION_NO_IDENTIFICADO), porque las opciones de colegio dependen del
- *   recinto elegido. Sector y Subsector NO dependen de Recinto: son ramas
- *   independientes y no requieren reset al cambiar Recinto.
+ *   onChange("recinto", ...) o onChange("recintoEsOtro", ...) DEBE resetear
+ *   "colegioElectoral" y "colegioElectoralEsOtro", porque las opciones de
+ *   colegio dependen del recinto elegido. Sector y Subsector NO dependen de
+ *   Recinto: son ramas independientes y no requieren reset al cambiar Recinto.
  *
  * La opción "No identificado" es un valor SELECCIONABLE y válido (distinto del
- * placeholder vacío inicial), presente en Sector, Subsector, Recinto y Colegio.
+ * placeholder vacío inicial), presente en los cuatro selects editables.
  *
- * SUBSECTOR "Otro" (texto libre): además del catálogo y "No identificado", el
- * subsector ofrece "Otro". El estado vive en el padre mediante DOS campos:
- *   - subsectorEsOtro (bool): si la opción activa es "Otro".
- *   - subsector (string): cuando esOtro, guarda el texto libre TAL CUAL se
+ * OPCIÓN "Otro" (texto libre) en los CUATRO selects (Sector, Subsector, Recinto,
+ * Colegio): además del catálogo y "No identificado", cada campo ofrece "Otro".
+ * El estado vive en el padre mediante DOS campos por cada uno:
+ *   - <campo>EsOtro (bool): si la opción activa es "Otro".
+ *   - <campo> (string): cuando esOtro, guarda el texto libre TAL CUAL se
  *     escribe; en otro caso, el valor del catálogo o "No identificado".
- * Hacia el payload solo sale `subsector` con el valor final (el padre normaliza
- * el texto libre con normalizarSubsector al enviar). El centinela OPCION_OTRO
- * es solo el value del <option>: nunca se persiste.
+ * Hacia el payload solo sale `<campo>` con el valor final (el padre normaliza el
+ * texto libre con normalizarUbicacion al enviar). El centinela OPCION_OTRO es
+ * solo el value del <option>: nunca se persiste.
+ *
+ * ADVERTENCIA: un Colegio o Recinto escrito a mano ("Otro") NO existe en
+ * zonas.json, por lo que la función de relleno desde el padrón (script) no podrá
+ * derivar zona/recinto a partir de él. Es un comportamiento ACEPTADO: el texto
+ * libre queda persistido tal cual (normalizado) pero fuera del catálogo.
  */
 function UbicacionElectoralFields({ value, onChange, disabled }) {
-  const {
-    zona = ZONA_FIJA,
-    sector = "",
-    subsector = "",
-    subsectorEsOtro = false,
-    recinto = "",
-    colegioElectoral = "",
-  } = value || {};
+  const v = value || {};
+  const zona = v.zona ?? ZONA_FIJA;
+  const sector = v.sector ?? "";
+  const sectorEsOtro = v.sectorEsOtro ?? false;
+  const recinto = v.recinto ?? "";
+  const recintoEsOtro = v.recintoEsOtro ?? false;
 
-  // Al elegir en el select de subsector: "Otro" activa el texto libre (y limpia
-  // el campo para empezar en blanco); cualquier otra opción desactiva "Otro".
-  const handleSubsectorSelect = (e) => {
-    const v = e.target.value;
-    if (v === OPCION_OTRO) {
-      onChange("subsectorEsOtro", true);
-      onChange("subsector", "");
+  // Al elegir en un select con "Otro": "Otro" activa el texto libre (y limpia el
+  // campo para empezar en blanco); cualquier otra opción desactiva "Otro".
+  const handleSelect = (campo) => (e) => {
+    const val = e.target.value;
+    if (val === OPCION_OTRO) {
+      onChange(`${campo}EsOtro`, true);
+      onChange(campo, "");
     } else {
-      onChange("subsectorEsOtro", false);
-      onChange("subsector", v);
+      onChange(`${campo}EsOtro`, false);
+      onChange(campo, val);
     }
   };
 
-  const subsectores = getSubsectores(zona, sector);
+  // Subsectores dependen del Sector; si el sector es texto libre ("Otro"), no
+  // hay match en el catálogo y la lista queda vacía (solo Otro/No identificado).
+  const subsectores = sectorEsOtro ? [] : getSubsectores(zona, sector);
   const recintos = getRecintos(zona);
-  // Encadenado a Recinto: sin recinto elegido (vacío o "No identificado"),
-  // solo se permite "No identificado" como colegio.
-  const hayRecinto = recinto && recinto !== OPCION_NO_IDENTIFICADO;
+  // Colegios encadenados a Recinto: un recinto vacío, "No identificado" o texto
+  // libre ("Otro") no deriva colegios del catálogo.
+  const hayRecinto =
+    !recintoEsOtro && recinto && recinto !== OPCION_NO_IDENTIFICADO;
   const colegios = hayRecinto ? getColegios(zona, recinto) : [];
+
+  // Config declarativa de los cuatro selects con opción "Otro". El orden del
+  // array es el orden de render (Sector → Subsector → Recinto → Colegio).
+  const campos = [
+    {
+      campo: "sector",
+      label: "Sector",
+      id: "ubic-sector",
+      opciones: [SECTOR_FIJO],
+      placeholderOtro: "Escribe el sector",
+    },
+    {
+      campo: "subsector",
+      label: "Subsector",
+      id: "ubic-subsector",
+      opciones: subsectores,
+      placeholderOtro: "Escribe el subsector",
+    },
+    {
+      campo: "recinto",
+      label: "Recinto",
+      id: "ubic-recinto",
+      opciones: recintos,
+      placeholderOtro: "Escribe el recinto",
+    },
+    {
+      campo: "colegioElectoral",
+      label: "Colegio Electoral",
+      id: "ubic-colegio",
+      opciones: colegios,
+      placeholderOtro: "Escribe el colegio electoral",
+    },
+  ];
+
+  // Renderiza un select del catálogo + "Otro" + "No identificado", y el input de
+  // texto libre cuando la opción activa es "Otro". La normalización y la
+  // validación de vacío viven en el submit del padre (notificación del form).
+  const renderCampo = ({ campo, label, id, opciones, placeholderOtro }) => {
+    const esOtro = v[`${campo}EsOtro`] ?? false;
+    const valor = v[campo] ?? "";
+    return (
+      <div className="input-group" key={campo}>
+        <label htmlFor={id}>{label}</label>
+        <select
+          id={id}
+          value={esOtro ? OPCION_OTRO : valor}
+          onChange={handleSelect(campo)}
+          required
+          disabled={disabled}
+        >
+          <option value="">-- Selecciona --</option>
+          {opciones.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+          <option value={OPCION_OTRO}>Otro</option>
+          <option value={OPCION_NO_IDENTIFICADO}>
+            {OPCION_NO_IDENTIFICADO}
+          </option>
+        </select>
+        {esOtro && (
+          <input
+            type="text"
+            id={`${id}-otro`}
+            placeholder={placeholderOtro}
+            value={valor}
+            onChange={(e) => onChange(campo, e.target.value)}
+            disabled={disabled}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
-      {/* Zona: bloqueada, sin opción "No identificado". */}
+      {/* Zona: bloqueada, sin opción "Otro" ni "No identificado". */}
       <div className="input-group">
         <label htmlFor="ubic-zona">Zona</label>
         <select id="ubic-zona" value={zona} disabled={true}>
@@ -78,96 +161,8 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
         </select>
       </div>
 
-      {/* Sector: único por ahora (fijo en SECTOR_FIJO), pero editable/required. */}
-      <div className="input-group">
-        <label htmlFor="ubic-sector">Sector</label>
-        <select
-          id="ubic-sector"
-          value={sector}
-          onChange={(e) => onChange("sector", e.target.value)}
-          required
-          disabled={disabled}
-        >
-          <option value="">-- Selecciona --</option>
-          <option value={SECTOR_FIJO}>{SECTOR_FIJO}</option>
-          <option value={OPCION_NO_IDENTIFICADO}>{OPCION_NO_IDENTIFICADO}</option>
-        </select>
-      </div>
-
-      {/* Subsector: catálogo + "Otro" (texto libre) + "No identificado". */}
-      <div className="input-group">
-        <label htmlFor="ubic-subsector">Subsector</label>
-        <select
-          id="ubic-subsector"
-          value={subsectorEsOtro ? OPCION_OTRO : subsector}
-          onChange={handleSubsectorSelect}
-          required
-          disabled={disabled}
-        >
-          <option value="">-- Selecciona --</option>
-          {subsectores.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-          <option value={OPCION_OTRO}>Otro</option>
-          <option value={OPCION_NO_IDENTIFICADO}>{OPCION_NO_IDENTIFICADO}</option>
-        </select>
-        {/* Texto libre cuando la opción activa es "Otro". Se normaliza (mayúsculas,
-            sin espacios sobrantes) en el submit del padre. La validación de vacío
-            también vive en el submit, para mostrar la notificación del formulario. */}
-        {subsectorEsOtro && (
-          <input
-            type="text"
-            id="ubic-subsector-otro"
-            placeholder="Escribe el subsector"
-            value={subsector}
-            onChange={(e) => onChange("subsector", e.target.value)}
-            disabled={disabled}
-          />
-        )}
-      </div>
-
-      {/* Recinto: centros de la zona + "No identificado". */}
-      <div className="input-group">
-        <label htmlFor="ubic-recinto">Recinto</label>
-        <select
-          id="ubic-recinto"
-          value={recinto}
-          onChange={(e) => onChange("recinto", e.target.value)}
-          required
-          disabled={disabled}
-        >
-          <option value="">-- Selecciona --</option>
-          {recintos.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-          <option value={OPCION_NO_IDENTIFICADO}>{OPCION_NO_IDENTIFICADO}</option>
-        </select>
-      </div>
-
-      {/* Colegio Electoral: padrones del recinto + "No identificado".
-          Encadenado a Recinto: sin recinto, solo "No identificado". */}
-      <div className="input-group">
-        <label htmlFor="ubic-colegio">Colegio Electoral</label>
-        <select
-          id="ubic-colegio"
-          value={colegioElectoral}
-          onChange={(e) => onChange("colegioElectoral", e.target.value)}
-          required
-          disabled={disabled}
-        >
-          <option value="">-- Selecciona --</option>
-          {colegios.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-          <option value={OPCION_NO_IDENTIFICADO}>{OPCION_NO_IDENTIFICADO}</option>
-        </select>
-      </div>
+      {/* Sector → Subsector → Recinto → Colegio, todos con opción "Otro". */}
+      {campos.map(renderCampo)}
     </>
   );
 }
