@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { Bar } from "react-chartjs-2";
+import ScrollableBar from "./ScrollableBar";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -155,7 +155,7 @@ function RegistrationsBySubsectorChart({ filterUserIds }) {
       {loading ? (
         <p>Cargando subsectores...</p>
       ) : (
-        <Bar options={chartOptions} data={chartData} />
+        <ScrollableBar data={chartData} options={chartOptions} />
       )}
     </div>
   );

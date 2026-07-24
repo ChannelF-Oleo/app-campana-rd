@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { Bar } from 'react-chartjs-2';
+import ScrollableBar from './ScrollableBar';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -103,7 +103,7 @@ function RegistrationsByDayChart({ filterUserIds }) {
   return (
     // Added a container div to control chart height
     <div className="metric-card chart-card" style={{ height: '400px' }}>
-      {loading ? <p>Generando gráfico...</p> : <Bar options={chartOptions} data={chartData} />}
+      {loading ? <p>Generando gráfico...</p> : <ScrollableBar data={chartData} options={chartOptions} />}
     </div>
   );
 }
