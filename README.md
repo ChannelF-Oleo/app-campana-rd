@@ -107,6 +107,7 @@ Se ejecutan con Node usando la clave de servicio del Admin SDK (ver Prerrequisit
 - `scripts/fase1-backup-audit.js` — **solo lectura**: exporta `users` y `simpatizantes` a `backups/` y audita el formato de cédula.
 - `scripts/fase2-migracion.js` — normaliza cédulas, deduplica `simpatizantes` y vincula por `usuarioId`. **Dry-run por defecto**; `--apply` es el único modo que escribe (hace backup previo). Simulación offline con `--source=backup`.
 - `scripts/recomprimirFotos.js` — recompresión one-off de fotos crudas en Storage (`votantes_fotos/`) con **sharp** (lado mayor 1000px, JPEG q82). Salta las que ya están optimizadas (< 400KB o lado mayor ≤ 1000px) y **sobreescribe** las grandes. **Dry-run por defecto**; `--apply` es el único modo que escribe.
+- `scripts/rellenarUbicacionDesdePadron.js` — rellena `colegioElectoral`, `zona` y `recinto` de los `simpatizantes` que quedaron en "No identificado" (guardado como `""`), cruzando su cédula con el padrón (`votantes.origen`) y `functions/zonas.json`. **Aditivo** (solo rellena campos vacíos; nunca sobreescribe lo que puso el usuario) y **nunca** toca `sector`/`subsector` (no derivables). **Dry-run por defecto**; `--apply` es el único modo que escribe.
 
 > `backups/` y las claves `*-firebase-adminsdk-*.json` están en `.gitignore`; nunca se versionan.
 
@@ -129,6 +130,22 @@ gcloud storage cp -r \
   gs://politicard-cfd.firebasestorage.app/backup_votantes_fotos_YYYYMMDD/* \
   gs://politicard-cfd.firebasestorage.app/votantes_fotos/
 ```
+
+### Relleno de ubicación desde el padrón (`rellenarUbicacionDesdePadron.js`)
+
+Algunos simpatizantes se registraron con **"No identificado"** (guardado como `""`) en `colegioElectoral`/`zona`/`recinto`. El padrón (`votantes`) tiene, por cédula, el colegio en el campo `origen`; de él se **deriva** zona y recinto cruzando con `functions/zonas.json` (misma lógica del antiguo trigger `asignarZonaYRecinto`).
+
+El script es **aditivo y reversible**: solo escribe en campos vacíos, **nunca** sobreescribe un valor puesto por el usuario y **nunca** toca `sector`/`subsector` (el padrón no los tiene). En `--apply` vuelca **antes de escribir** un backup JSONL (`backups/rellenoUbicacion_<timestamp>.jsonl`) con `before`/`after` de cada doc tocado, y marca cada doc con `ubicacionRellenadaDesdePadron: true` para auditoría.
+
+```bash
+# 1) Dry-run OBLIGATORIO primero: reporta cuántos y con qué valores (no escribe nada)
+node scripts/rellenarUbicacionDesdePadron.js --dry-run
+
+# 2) Corrida real (SUPERVISADA, tras revisar el reporte del dry-run)
+node scripts/rellenarUbicacionDesdePadron.js --apply
+```
+
+**Revertir**: como el cambio es aditivo sobre campos que estaban vacíos, basta con reponer los `before` (todos `""`) que quedaron registrados en el JSONL de `backups/`, o borrar los campos rellenados en los docs marcados con `ubicacionRellenadaDesdePadron: true`.
 
 ## 🖼️ CORS de Storage (fotos en el export a PDF/Excel)
 
