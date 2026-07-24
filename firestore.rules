@@ -60,6 +60,17 @@ service cloud.firestore {
 
       // BORRAR: Solo Admin.
       allow delete: if isAdmin();
+
+      // ------------------------------------------------------
+      // SUBCOLECCIÓN: METAS (users/{uid}/metas/{metaId})
+      // Las subcolecciones NO heredan las reglas del padre: hay que
+      // declararlas explícitamente. Cada quien gestiona sus propias metas;
+      // el admin puede leerlas para seguimiento.
+      // ------------------------------------------------------
+      match /metas/{metaId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if isOwner(userId);
+      }
     }
 
     // ==========================================================
