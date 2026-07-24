@@ -166,24 +166,21 @@ body {
 }
 
 /* Contenido */
+/* El sidebar es un flex-item EN FLUJO (position: sticky, flex-shrink: 0), así
+   que YA ocupa su ancho dentro de la fila flex. El contenido solo debe llenar el
+   espacio restante con flex-grow — NO debe reservar de nuevo el sidebar con
+   margin-left + width:calc(100% - sidebar), porque eso lo contaría dos veces y
+   desbordaría por la derecha (el overflow-x:hidden del layout lo recortaba,
+   pegando el contenido al borde derecho). Con flex, el estado colapsado se
+   ajusta solo porque cambia el ancho del propio sidebar.
+   El padding de 20px da el MISMO margen a izquierda (entre sidebar y contenido)
+   y a derecha (borde de pantalla). min-width:0 evita que contenido ancho
+   (gráficos) fuerce el ancho del contenido más allá de su espacio. */
 .dashboard-content {
-  flex-grow: 1;
-
-  /* Layout */
-  margin-left: var(--sidebar-width);
-  width: calc(100% - var(--sidebar-width));
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 20px;
   box-sizing: border-box;
-
-  /* Transiciones de layout (no de color, eso va en body) */
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Sidebar Colapsado */
-.dashboard-layout.sidebar-collapsed .dashboard-content {
-  margin-left: var(--sidebar-collapsed-width);
-  width: calc(100% - var(--sidebar-collapsed-width));
 }
 
 /* Móvil */
