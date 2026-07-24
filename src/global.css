@@ -3535,12 +3535,33 @@ body.dark-mode .loading-overlay {
 }
 
 /* --- Contenedor scrolleable de gráficos de barras (ScrollableBar) --- */
-/* El alto lo da el card (chart-card, 400px); aquí solo controlamos el ancho y
-   el scroll horizontal. Scrollbar legible en claro/oscuro con --color-*. */
+/* Cuerpo en columna: título FIJO arriba + área de scroll debajo. Así el título
+   siempre se ve (no se pierde al desplazar el canvas ancho). */
+.scrollable-chart-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Título fijo del gráfico (extraído del canvas por ScrollableBar). */
+.scrollable-chart-title {
+  flex: 0 0 auto;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: 10px;
+}
+
+/* Área de scroll: el alto lo da el card (chart-card, 400px) vía flex:1; aquí
+   solo controlamos el ancho y el scroll horizontal. Scrollbar legible en
+   claro/oscuro con --color-*. */
 .scrollable-chart {
   width: 100%;
   max-width: 100%; /* Nunca más ancho que el card: el canvas grande scrollea AQUÍ dentro */
-  height: 100%;
   flex: 1;
   min-width: 0;
   min-height: 0;
