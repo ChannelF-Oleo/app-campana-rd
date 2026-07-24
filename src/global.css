@@ -1116,19 +1116,32 @@ body.dark-mode .expandable-overlay {
 /* --- 3. GRID DE WIDGETS (Métricas) --- */
 .metrics-grid {
   display: grid;
-  /* Columnas responsivas automáticas */
+  /* Columnas responsivas automáticas. minmax(280px, 1fr) mantiene un mínimo,
+     pero los hijos llevan min-width:0 (abajo) para que su contenido no fuerce
+     ancho extra y desborde. */
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   width: 100%;
 }
 
 /* Grid específico para gráficas: 2 por fila en desktop (móvil pasa a 1fr en la
-   media query de abajo). */
+   media query de abajo). minmax(0, 1fr) anula el min-width:auto implícito de las
+   pistas de grid, que si no expande las columnas para acomodar el canvas/wrapper
+   interno y desborda por la derecha. */
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   width: 100%;
+}
+
+/* Los hijos de ambas grillas no deben forzar su ancho por su contenido interno
+   (canvas de chart, wrapper scrolleable): min-width:0 permite que respeten su
+   pista y que el scroll ocurra DENTRO de la tarjeta, no empujando la grilla. */
+.charts-grid > *,
+.metrics-grid > * {
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* --- 4. ANIMACIONES --- */
@@ -3506,8 +3519,10 @@ body.dark-mode .loading-overlay {
    el scroll horizontal. Scrollbar legible en claro/oscuro con --color-*. */
 .scrollable-chart {
   width: 100%;
+  max-width: 100%; /* Nunca más ancho que el card: el canvas grande scrollea AQUÍ dentro */
   height: 100%;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
