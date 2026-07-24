@@ -548,6 +548,11 @@ function ManageUsers() {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Acciones de exportación: fila propia con botones compactos (fuera del
+          grid de filtros, para que no ocupen una columna completa cada uno). */}
+      <div className="export-actions">
         <button
           onClick={handleExport}
           className="export-excel-button"

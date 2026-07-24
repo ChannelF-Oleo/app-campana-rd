@@ -2971,6 +2971,9 @@ button:disabled {
   max-width: 1440px;
   margin: 0 auto;
   padding: 20px;
+  /* Sin border-box, width:100% + padding + borde del glass-panel desbordaban el
+     contenedor ~40px a la derecha (no hay reset universal de box-sizing). */
+  box-sizing: border-box;
 
   /* Animación de entrada suave */
   animation: fadeIn 0.4s ease-out;
@@ -3081,20 +3084,40 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Botón Exportar Excel */
+/* Fila de acciones de exportación: botones compactos, alineados a la derecha,
+   que bajan de línea en pantallas estrechas. */
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+/* Botón Exportar Excel (compacto) */
 .export-excel-button {
+  /* width:auto anula la regla global `button { width: 100% }`, que si no hacía
+     que cada botón ocupara toda una columna del grid de filtros. */
+  width: auto;
+  flex: 0 0 auto;
   background-color: var(--success);
   color: white;
   border: none;
-  padding: 12px 20px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
   border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.export-excel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .export-excel-button:hover {
