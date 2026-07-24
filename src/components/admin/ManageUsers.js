@@ -258,6 +258,12 @@ function ManageUsers() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("todos");
+  const [zonaFilter, setZonaFilter] = useState("todas");
+
+  // Zonas presentes en los usuarios cargados (para poblar el filtro por zona).
+  const zonasDisponibles = Array.from(
+    new Set(allUsers.map((u) => u.zona).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
 
   // Estado de los exports con foto (PDF/Excel).
   const [exportando, setExportando] = useState(false);
@@ -387,11 +393,19 @@ function ManageUsers() {
     }
     setExportando(true);
     setProgreso({ fase: "fotos", hechos: 0, total: filteredUsers.length });
+    // Reflejar la zona filtrada en el título y el nombre del archivo.
+    const zonaActiva = zonaFilter !== "todas";
+    const titulo = zonaActiva
+      ? `Padrón de Usuarios - ${zonaFilter}`
+      : "Padrón de Usuarios";
+    const fileName = zonaActiva
+      ? `Usuarios_Padron_${zonaFilter.replace(/\s+/g, "_")}.pdf`
+      : "Usuarios_Padron.pdf";
     try {
       await generarPadronPDF(filteredUsers, {
-        titulo: "Padrón de Usuarios",
+        titulo,
         campos: CAMPOS_PDF_USUARIOS,
-        fileName: "Usuarios_Padron.pdf",
+        fileName,
         onProgress: (fase, hechos, total) =>
           setProgreso({ fase, hechos, total }),
       });
@@ -438,6 +452,9 @@ function ManageUsers() {
     if (roleFilter !== "todos") {
       currentUsers = currentUsers.filter((user) => user.rol === roleFilter);
     }
+    if (zonaFilter !== "todas") {
+      currentUsers = currentUsers.filter((user) => user.zona === zonaFilter);
+    }
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       currentUsers = currentUsers.filter(
@@ -450,7 +467,7 @@ function ManageUsers() {
     }
     setFilteredUsers(currentUsers);
     setCurrentPage(1); // Resetear a página 1 al filtrar
-  }, [searchTerm, roleFilter, allUsers]);
+  }, [searchTerm, roleFilter, zonaFilter, allUsers]);
 
   const handleEditClick = (user) => {
     setEditingUser(user);
@@ -518,6 +535,18 @@ function ManageUsers() {
           <option value={ROL_ADMIN}>Administrador</option>
           <option value={ROL_LIDER}>Lider de Zona</option>
           <option value={ROL_MULTIPLICADOR}>Multiplicador</option>
+        </select>
+        <select
+          value={zonaFilter}
+          onChange={(e) => setZonaFilter(e.target.value)}
+          className="role-filter-select"
+        >
+          <option value="todas">Todas las Zonas</option>
+          {zonasDisponibles.map((zona) => (
+            <option key={zona} value={zona}>
+              {zona}
+            </option>
+          ))}
         </select>
         <button
           onClick={handleExport}
