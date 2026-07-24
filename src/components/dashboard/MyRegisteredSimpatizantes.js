@@ -38,10 +38,27 @@ const COLUMNAS_EXCEL_SIMP = [
   { header: "FechaRegistro", key: "fechaRegistro", width: 16 },
 ];
 
+// ¿La fecha (Timestamp Firestore) cae dentro del rango [desde, hasta]? Los
+// límites son cadenas "YYYY-MM-DD" (input date); vacío = sin límite por ese lado.
+const enRangoFecha = (ts, desde, hasta) => {
+  if (!desde && !hasta) return true;
+  if (!ts || !ts.toDate) return false; // filtrando por fecha, sin fecha => fuera
+  const d = ts.toDate();
+  if (desde && d < new Date(`${desde}T00:00:00`)) return false;
+  if (hasta && d > new Date(`${hasta}T23:59:59`)) return false;
+  return true;
+};
+
 function MyRegisteredSimpatizantes({ user }) {
   const [simpatizantes, setSimpatizantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // --- Filtros combinables (además del activista, que aquí es el propio user) ---
+  const [zonaFilter, setZonaFilter] = useState("todas");
+  const [sectorFilter, setSectorFilter] = useState("todos");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   // Estado de los exports con foto (PDF/Excel).
   const [exportando, setExportando] = useState(false);
@@ -88,14 +105,62 @@ function MyRegisteredSimpatizantes({ user }) {
     return () => unsubscribe();
   }, [user]);
 
-  // --- FUNCIÓN DE EXPORTACIÓN A EXCEL ---
-  const handleExport = () => {
-    if (simpatizantes.length === 0) {
-      alert("No tienes registros para exportar.");
-      return;
-    }
+  // Opciones de los selectores, derivadas de los registros cargados.
+  const zonasDisponibles = Array.from(
+    new Set(simpatizantes.map((s) => s.zona).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+  const sectoresDisponibles = Array.from(
+    new Set(simpatizantes.map((s) => s.sector).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
 
-    const dataToExport = simpatizantes.map((simpatizante) => ({
+  // Lista tras aplicar TODOS los filtros activos (zona + sector + rango fechas).
+  const simpatizantesFiltrados = simpatizantes.filter((s) => {
+    if (zonaFilter !== "todas" && s.zona !== zonaFilter) return false;
+    if (sectorFilter !== "todos" && s.sector !== sectorFilter) return false;
+    if (!enRangoFecha(s.fechaRegistro, fechaDesde, fechaHasta)) return false;
+    return true;
+  });
+
+  const hayFiltros =
+    zonaFilter !== "todas" ||
+    sectorFilter !== "todos" ||
+    !!fechaDesde ||
+    !!fechaHasta;
+
+  // Partes legibles de los filtros activos (para título/nombre de archivo).
+  const partesFiltro = () => {
+    const p = [];
+    if (zonaFilter !== "todas") p.push(zonaFilter);
+    if (sectorFilter !== "todos") p.push(sectorFilter);
+    if (fechaDesde) p.push(`desde ${fechaDesde}`);
+    if (fechaHasta) p.push(`hasta ${fechaHasta}`);
+    return p;
+  };
+  const tituloConFiltros = (base) => {
+    const p = partesFiltro();
+    return p.length ? `${base} - ${p.join(" · ")}` : base;
+  };
+  const nombreConFiltros = (base, ext) => {
+    const p = partesFiltro();
+    const suf = p.length ? `_${p.join("_").replace(/[\s·]+/g, "_")}` : "";
+    return `${base}${suf}.${ext}`;
+  };
+
+  const safeNombre = (user.nombre || "usuario").replace(/\s/g, "_");
+
+  const sinDatos = () => {
+    alert(
+      hayFiltros
+        ? "No hay registros que coincidan con los filtros."
+        : "No tienes registros para exportar."
+    );
+  };
+
+  // --- FUNCIÓN DE EXPORTACIÓN A EXCEL (usa la lista YA FILTRADA) ---
+  const handleExport = () => {
+    if (simpatizantesFiltrados.length === 0) return sinDatos();
+
+    const dataToExport = simpatizantesFiltrados.map((simpatizante) => ({
       Nombre: simpatizante.nombre || "N/A",
       Cédula: simpatizante.cedula || "N/A",
       Teléfono: simpatizante.telefono || "N/A",
@@ -113,19 +178,17 @@ function MyRegisteredSimpatizantes({ user }) {
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Mis Registros");
-
-    const fileName = `Mis_Registros_Personales_${user.nombre.replace(
-      /\s/g,
-      "_"
-    )}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
+    XLSX.writeFile(
+      workbook,
+      nombreConFiltros(`Mis_Registros_Personales_${safeNombre}`, "xlsx")
+    );
   };
 
   // Normaliza los simpatizantes al shape que consumen los generadores:
   // debe incluir `cedula` (para resolver la foto) y las `key` referenciadas.
   // La fecha se pre-formatea porque los generadores solo convierten a texto.
   const buildPersonasExport = () =>
-    simpatizantes.map((s) => ({
+    simpatizantesFiltrados.map((s) => ({
       cedula: s.cedula,
       nombre: s.nombre,
       telefono: s.telefono,
@@ -139,21 +202,16 @@ function MyRegisteredSimpatizantes({ user }) {
         : "",
     }));
 
-  const safeNombre = (user.nombre || "usuario").replace(/\s/g, "_");
-
   // Export PDF tipo padrón (foto grande + datos por ficha).
   const handleExportPDF = async () => {
-    if (simpatizantes.length === 0) {
-      alert("No tienes registros para exportar.");
-      return;
-    }
+    if (simpatizantesFiltrados.length === 0) return sinDatos();
     setExportando(true);
-    setProgreso({ fase: "fotos", hechos: 0, total: simpatizantes.length });
+    setProgreso({ fase: "fotos", hechos: 0, total: simpatizantesFiltrados.length });
     try {
       await generarPadronPDF(buildPersonasExport(), {
-        titulo: "Padrón de Simpatizantes",
+        titulo: tituloConFiltros("Padrón de Simpatizantes"),
         campos: CAMPOS_PDF_SIMP,
-        fileName: `Mis_Registros_Padron_${safeNombre}.pdf`,
+        fileName: nombreConFiltros(`Mis_Registros_Padron_${safeNombre}`, "pdf"),
         onProgress: (fase, hechos, total) =>
           setProgreso({ fase, hechos, total }),
       });
@@ -168,17 +226,14 @@ function MyRegisteredSimpatizantes({ user }) {
 
   // Export Excel con la foto embebida en cada fila.
   const handleExportExcelFoto = async () => {
-    if (simpatizantes.length === 0) {
-      alert("No tienes registros para exportar.");
-      return;
-    }
+    if (simpatizantesFiltrados.length === 0) return sinDatos();
     setExportando(true);
-    setProgreso({ fase: "fotos", hechos: 0, total: simpatizantes.length });
+    setProgreso({ fase: "fotos", hechos: 0, total: simpatizantesFiltrados.length });
     try {
       await generarExcelConFoto(buildPersonasExport(), {
         hojaNombre: "Mis Registros",
         columnas: COLUMNAS_EXCEL_SIMP,
-        fileName: `Mis_Registros_Con_Foto_${safeNombre}.xlsx`,
+        fileName: nombreConFiltros(`Mis_Registros_Con_Foto_${safeNombre}`, "xlsx"),
         onProgress: (fase, hechos, total) =>
           setProgreso({ fase, hechos, total }),
       });
@@ -202,74 +257,137 @@ function MyRegisteredSimpatizantes({ user }) {
 
   return (
     <div className="my-registrations-container glass-panel">
-      {/* Barra de Acciones y Botón de Exportar */}
       {simpatizantes.length > 0 && (
-        <div className="registration-actions-bar">
-          <p className="registration-count">
-             Total Registrados: <strong>{simpatizantes.length}</strong>
-          </p>
-          <button
-            onClick={handleExport}
-            className="export-registros-button"
-            title="Exportar mis registros a Excel"
-            disabled={exportando}
-          >
-            <FaFileExcel /> Exportar Excel
-          </button>
-          <button
-            onClick={handleExportPDF}
-            className="export-registros-button"
-            title="Exportar PDF tipo padrón con foto"
-            disabled={exportando}
-          >
-            <FaFilePdf /> {exportando ? textoProgreso : "PDF con foto (padrón)"}
-          </button>
-          <button
-            onClick={handleExportExcelFoto}
-            className="export-registros-button"
-            title="Exportar Excel con foto embebida"
-            disabled={exportando}
-          >
-            <FaFileImage /> {exportando ? textoProgreso : "Excel con foto"}
-          </button>
-        </div>
+        <>
+          {/* Filtros combinables (zona + sector + rango de fechas). */}
+          <div className="filters-bar-wrapper">
+            <select
+              className="role-filter-select"
+              value={zonaFilter}
+              onChange={(e) => setZonaFilter(e.target.value)}
+            >
+              <option value="todas">Todas las zonas</option>
+              {zonasDisponibles.map((z) => (
+                <option key={z} value={z}>
+                  {z}
+                </option>
+              ))}
+            </select>
+            <select
+              className="role-filter-select"
+              value={sectorFilter}
+              onChange={(e) => setSectorFilter(e.target.value)}
+            >
+              <option value="todos">Todos los sectores</option>
+              {sectoresDisponibles.map((sec) => (
+                <option key={sec} value={sec}>
+                  {sec}
+                </option>
+              ))}
+            </select>
+            <label className="filtro-fecha">
+              <span>Desde</span>
+              <input
+                type="date"
+                className="search-input"
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+              />
+            </label>
+            <label className="filtro-fecha">
+              <span>Hasta</span>
+              <input
+                type="date"
+                className="search-input"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+              />
+            </label>
+          </div>
+
+          {/* Barra de Acciones y Botones de Exportar */}
+          <div className="registration-actions-bar">
+            <p className="registration-count">
+              Mostrando: <strong>{simpatizantesFiltrados.length}</strong> de{" "}
+              {simpatizantes.length}
+            </p>
+            <button
+              onClick={handleExport}
+              className="export-registros-button"
+              title="Exportar a Excel (lista filtrada)"
+              disabled={exportando || simpatizantesFiltrados.length === 0}
+            >
+              <FaFileExcel /> Exportar Excel
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="export-registros-button"
+              title="Exportar PDF tipo padrón con foto (lista filtrada)"
+              disabled={exportando || simpatizantesFiltrados.length === 0}
+            >
+              <FaFilePdf /> {exportando ? textoProgreso : "PDF con foto (padrón)"}
+            </button>
+            <button
+              onClick={handleExportExcelFoto}
+              className="export-registros-button"
+              title="Exportar Excel con foto embebida (lista filtrada)"
+              disabled={exportando || simpatizantesFiltrados.length === 0}
+            >
+              <FaFileImage /> {exportando ? textoProgreso : "Excel con foto"}
+            </button>
+          </div>
+        </>
       )}
 
-      {simpatizantes.length > 0 ? (
+      {simpatizantes.length === 0 ? (
+        <div className="empty-state">
+          <p>Aún no has registrado ningún simpatizante.</p>
+          <p style={{ fontSize: "0.9rem", color: "#666" }}>
+            ¡Empieza hoy mismo usando el formulario de registro!
+          </p>
+        </div>
+      ) : simpatizantesFiltrados.length === 0 ? (
+        <div className="empty-state">
+          <p>Ningún registro coincide con los filtros seleccionados.</p>
+        </div>
+      ) : (
         <div className="table-wrapper">
           <table className="registrations-table">
             <thead>
               <tr>
-                <th>Foto</th> {/* Nueva Columna */}
+                <th>Foto</th>
                 <th>Nombre</th>
                 <th>Sector</th>
                 <th>Fecha de Registro</th>
               </tr>
             </thead>
             <tbody>
-              {simpatizantes.map((simpatizante) => (
+              {simpatizantesFiltrados.map((simpatizante) => (
                 <tr key={simpatizante.id}>
-                  {/* Célula de Foto */}
-                  <td style={{ width: '60px' }}>
-                    <AvatarFoto 
-                        cedula={simpatizante.cedula} 
-                        nombre={simpatizante.nombre} 
-                        size="40px" 
-                        allowReport={true}
+                  <td style={{ width: "60px" }}>
+                    <AvatarFoto
+                      cedula={simpatizante.cedula}
+                      nombre={simpatizante.nombre}
+                      size="40px"
+                      allowReport={true}
                     />
                   </td>
 
                   <td>
-                    <div style={{fontWeight: '600'}}>{simpatizante.nombre}</div>
+                    <div style={{ fontWeight: "600" }}>
+                      {simpatizante.nombre}
+                    </div>
                     {simpatizante.cedula ? (
-                        <small style={{color: '#666'}}>{simpatizante.cedula}</small>
+                      <small style={{ color: "#666" }}>
+                        {simpatizante.cedula}
+                      </small>
                     ) : (
-                        <small style={{color: '#e63946'}}>Sin Cédula</small>
+                      <small style={{ color: "#e63946" }}>Sin Cédula</small>
                     )}
                   </td>
 
                   <td>{simpatizante.sector}</td>
-                  
+
                   <td>
                     {simpatizante.fechaRegistro
                       ?.toDate()
@@ -284,15 +402,9 @@ function MyRegisteredSimpatizantes({ user }) {
             </tbody>
           </table>
         </div>
-      ) : (
-        <div className="empty-state">
-          <p>Aún no has registrado ningún simpatizante.</p>
-          <p style={{fontSize: '0.9rem', color: '#666'}}>¡Empieza hoy mismo usando el formulario de registro!</p>
-        </div>
       )}
     </div>
   );
 }
 
 export default MyRegisteredSimpatizantes;
-

@@ -42,6 +42,17 @@ const COLUMNAS_EXCEL_USUARIOS = [
   { header: "Registros", key: "registrationCount", width: 12 },
 ];
 
+// ¿La fecha (Timestamp Firestore) cae dentro del rango [desde, hasta]? Los
+// límites son cadenas "YYYY-MM-DD" (input date); vacío = sin límite por ese lado.
+const enRangoFecha = (ts, desde, hasta) => {
+  if (!desde && !hasta) return true;
+  if (!ts || !ts.toDate) return false; // filtrando por fecha, sin fecha => fuera
+  const d = ts.toDate();
+  if (desde && d < new Date(`${desde}T00:00:00`)) return false;
+  if (hasta && d > new Date(`${hasta}T23:59:59`)) return false;
+  return true;
+};
+
 // --- SPINNER DE CARGA ---
 function LoadingSpinner({ message = "Cargando..." }) {
   return (
@@ -259,11 +270,23 @@ function ManageUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("todos");
   const [zonaFilter, setZonaFilter] = useState("todas");
+  const [sectorFilter, setSectorFilter] = useState("todos");
+  const [activistaFilter, setActivistaFilter] = useState("todos"); // uid
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   // Zonas presentes en los usuarios cargados (para poblar el filtro por zona).
   const zonasDisponibles = Array.from(
     new Set(allUsers.map((u) => u.zona).filter(Boolean))
   ).sort((a, b) => a.localeCompare(b));
+  // Sectores presentes (derivados del simpatizante vinculado, como la zona).
+  const sectoresDisponibles = Array.from(
+    new Set(allUsers.map((u) => u.sector).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+  // Activistas (usuarios) para el filtro "por activista".
+  const activistasDisponibles = [...allUsers]
+    .filter((u) => u.nombre)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   // Estado de los exports con foto (PDF/Excel).
   const [exportando, setExportando] = useState(false);
@@ -316,6 +339,7 @@ function ManageUsers() {
           datosSimpPorCedula[ced] = {
             telefono: data.telefono || "",
             zona: data.zona || "",
+            sector: data.sector || "",
             direccion: data.direccion || "",
           };
         }
@@ -328,6 +352,7 @@ function ManageUsers() {
           registrationCount: registrationCounts[user.uid] || 0,
           telefono: user.telefono || simp.telefono || "",
           zona: user.zona || simp.zona || "",
+          sector: user.sector || simp.sector || "",
           direccion: user.direccion || simp.direccion || "",
         };
       });
@@ -393,13 +418,22 @@ function ManageUsers() {
     }
     setExportando(true);
     setProgreso({ fase: "fotos", hechos: 0, total: filteredUsers.length });
-    // Reflejar la zona filtrada en el título y el nombre del archivo.
-    const zonaActiva = zonaFilter !== "todas";
-    const titulo = zonaActiva
-      ? `Padrón de Usuarios - ${zonaFilter}`
+    // Reflejar TODOS los filtros activos en el título y el nombre del archivo.
+    const partes = [];
+    if (zonaFilter !== "todas") partes.push(zonaFilter);
+    if (sectorFilter !== "todos") partes.push(sectorFilter);
+    if (activistaFilter !== "todos") {
+      const act = allUsers.find((u) => u.uid === activistaFilter);
+      if (act?.nombre) partes.push(act.nombre);
+    }
+    if (fechaDesde) partes.push(`desde ${fechaDesde}`);
+    if (fechaHasta) partes.push(`hasta ${fechaHasta}`);
+
+    const titulo = partes.length
+      ? `Padrón de Usuarios - ${partes.join(" · ")}`
       : "Padrón de Usuarios";
-    const fileName = zonaActiva
-      ? `Usuarios_Padron_${zonaFilter.replace(/\s+/g, "_")}.pdf`
+    const fileName = partes.length
+      ? `Usuarios_Padron_${partes.join("_").replace(/[\s·]+/g, "_")}.pdf`
       : "Usuarios_Padron.pdf";
     try {
       await generarPadronPDF(filteredUsers, {
@@ -455,6 +489,19 @@ function ManageUsers() {
     if (zonaFilter !== "todas") {
       currentUsers = currentUsers.filter((user) => user.zona === zonaFilter);
     }
+    if (sectorFilter !== "todos") {
+      currentUsers = currentUsers.filter((user) => user.sector === sectorFilter);
+    }
+    // Por activista: se filtra a un usuario concreto (el activista seleccionado).
+    if (activistaFilter !== "todos") {
+      currentUsers = currentUsers.filter((user) => user.uid === activistaFilter);
+    }
+    // Rango de fechas: sobre createdAt (fecha de alta del usuario).
+    if (fechaDesde || fechaHasta) {
+      currentUsers = currentUsers.filter((user) =>
+        enRangoFecha(user.createdAt, fechaDesde, fechaHasta)
+      );
+    }
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       currentUsers = currentUsers.filter(
@@ -467,7 +514,16 @@ function ManageUsers() {
     }
     setFilteredUsers(currentUsers);
     setCurrentPage(1); // Resetear a página 1 al filtrar
-  }, [searchTerm, roleFilter, zonaFilter, allUsers]);
+  }, [
+    searchTerm,
+    roleFilter,
+    zonaFilter,
+    sectorFilter,
+    activistaFilter,
+    fechaDesde,
+    fechaHasta,
+    allUsers,
+  ]);
 
   const handleEditClick = (user) => {
     setEditingUser(user);
@@ -548,6 +604,48 @@ function ManageUsers() {
             </option>
           ))}
         </select>
+        <select
+          value={sectorFilter}
+          onChange={(e) => setSectorFilter(e.target.value)}
+          className="role-filter-select"
+        >
+          <option value="todos">Todos los Sectores</option>
+          {sectoresDisponibles.map((sec) => (
+            <option key={sec} value={sec}>
+              {sec}
+            </option>
+          ))}
+        </select>
+        <select
+          value={activistaFilter}
+          onChange={(e) => setActivistaFilter(e.target.value)}
+          className="role-filter-select"
+        >
+          <option value="todos">Todos los Activistas</option>
+          {activistasDisponibles.map((act) => (
+            <option key={act.uid} value={act.uid}>
+              {act.nombre}
+            </option>
+          ))}
+        </select>
+        <label className="filtro-fecha">
+          <span>Alta desde</span>
+          <input
+            type="date"
+            className="search-input"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+          />
+        </label>
+        <label className="filtro-fecha">
+          <span>Alta hasta</span>
+          <input
+            type="date"
+            className="search-input"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+          />
+        </label>
       </div>
 
       {/* Acciones de exportación: fila propia con botones compactos (fuera del

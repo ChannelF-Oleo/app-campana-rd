@@ -3094,6 +3094,16 @@ button:disabled {
   margin-bottom: 25px;
 }
 
+/* Campo de filtro por fecha (label + input date) dentro del grid de filtros. */
+.filtro-fecha {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
 /* Botón Exportar Excel (compacto) */
 .export-excel-button {
   /* width:auto anula la regla global `button { width: 100% }`, que si no hacía
