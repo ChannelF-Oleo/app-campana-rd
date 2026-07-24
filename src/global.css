@@ -3760,6 +3760,27 @@ body.dark-mode .progress-bar-container {
   text-align: right;
 }
 
+/* --- Meta cumplida: badge y tarjeta de celebración --- */
+.goal-completed-badge {
+  display: inline-block;
+  align-self: flex-start;
+  background: var(--success);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+
+.goal-card--completed {
+  border: 1px solid var(--success);
+}
+
+.goal-card--completed .save-button {
+  margin-top: 1rem;
+}
+
 /* --- Botón Editar Objetivo --- */
 .edit-goal-button {
   background: transparent;

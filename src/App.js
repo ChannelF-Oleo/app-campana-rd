@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, lazy, Suspense } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,6 +10,7 @@ import {
 // --- CONTEXTOS ---
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ThemeProvider } from "./ThemeContext";
+import { LayoutContext, useLayoutContext } from "./LayoutContext";
 import { ROL_ADMIN } from "./constants";
 
 // --- HOOKS ---
@@ -44,10 +45,6 @@ const ManageUsers = lazy(() => import("./components/admin/ManageUsers"));
 const ManageTeams = lazy(() => import("./components/admin/ManageTeams"));
 const CreateUser = lazy(() => import("./components/admin/CreateUser"));
 const Comandos = lazy(() => import("./components/admin/Comandos"));
-
-// Contexto para UI del Layout
-const LayoutContext = createContext(null);
-const useLayoutContext = () => useContext(LayoutContext);
 
 // --- LAYOUTS ---
 function PublicLayout() {
