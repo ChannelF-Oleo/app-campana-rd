@@ -5,6 +5,8 @@ import TotalRegistrations from "./TotalRegistrations";
 import RegistrationsByDayChart from "../charts/RegistrationsByDayChart";
 import MyGoals from "./MyGoals";
 import RegistrationsByZoneChart from "../charts/RegistrationsByZoneChart";
+import RegistrationsBySectorChart from "../charts/RegistrationsBySectorChart";
+import RegistrationsBySubsectorChart from "../charts/RegistrationsBySubsectorChart";
 import MyReferralLink from "./MyReferralLink";
 import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
 import PadronCoverageChart from "../charts/PadronCoverageChart";
@@ -66,6 +68,11 @@ const Dashboard = ({ user }) => {
         >
           <RegistrationsByDayChart filterUserIds={relevantUserIds} />
           <RegistrationsByZoneChart filterUserIds={relevantUserIds} />
+          {/* NOTA: hoy solo ZONA N tiene sector/subsector poblado, así que estos
+              dos gráficos mostrarán la mayoría en "Por Asignar" hasta que haya
+              registros de Hato Nuevo. Es correcto, no un bug. */}
+          <RegistrationsBySectorChart filterUserIds={relevantUserIds} />
+          <RegistrationsBySubsectorChart filterUserIds={relevantUserIds} />
         </div>
       </>
     ),
