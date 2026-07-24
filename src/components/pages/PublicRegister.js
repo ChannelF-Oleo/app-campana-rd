@@ -68,6 +68,7 @@ const searchVotanteCallable = httpsCallable(functions, "searchVotanteByCedula");
 function PublicRegister() {
   // Form field states
   const [nombre, setNombre] = useState("");
+  const [apodo, setApodo] = useState("");
   const [cedula, setCedula] = useState("");
   const [telefono, setTelefono] = useState("");
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
@@ -255,6 +256,7 @@ function PublicRegister() {
     try {
       const registrationData = {
         nombre,
+        apodo,
         cedula: cedulaFormateada,
         telefono,
         provincia: selectedProvincia,
@@ -281,6 +283,7 @@ function PublicRegister() {
 
         // Limpiar el estado del formulario
         setNombre("");
+        setApodo("");
         setCedula("");
         setTelefono("");
         setAceptaTerminos(false);
@@ -353,6 +356,18 @@ function PublicRegister() {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
+            disabled={isSearching || loading}
+          />
+        </div>
+
+        {/* Apodo (opcional) */}
+        <div className="input-group">
+          <label htmlFor="apodo">Apodo (opcional)</label>
+          <input
+            type="text"
+            id="apodo"
+            value={apodo}
+            onChange={(e) => setApodo(e.target.value)}
             disabled={isSearching || loading}
           />
         </div>

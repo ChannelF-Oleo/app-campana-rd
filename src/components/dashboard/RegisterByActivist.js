@@ -55,6 +55,7 @@ const searchVotanteCallable = httpsCallable(functions, "searchVotanteByCedula");
 function RegisterByActivist({ user }) {
   // Form field states
   const [nombre, setNombre] = useState("");
+  const [apodo, setApodo] = useState("");
   const [cedula, setCedula] = useState("");
   const [telefono, setTelefono] = useState("");
   // Estados de carga y búsqueda
@@ -255,6 +256,7 @@ function RegisterByActivist({ user }) {
       const result = await registerSimpatizanteCallable({
         // Pass form data
         nombre,
+        apodo,
         cedula: cedulaFormateada,
         telefono,
         provincia: selectedProvincia, // Valor fijo: Santo Domingo
@@ -279,6 +281,7 @@ function RegisterByActivist({ user }) {
         setNotification({ message: result.data.message, type: "success" });
         // Clear form y reset location states a fixed values
         setNombre("");
+        setApodo("");
         setCedula("");
         setTelefono("");
         setSelectedProvincia(PROVINCIA_FIJA);
@@ -330,6 +333,16 @@ function RegisterByActivist({ user }) {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
+            disabled={isSearching || loading}
+          />
+        </div>
+        <div className="input-group">
+          <label htmlFor="apodo">Apodo (opcional)</label>
+          <input
+            type="text"
+            id="apodo"
+            value={apodo}
+            onChange={(e) => setApodo(e.target.value)}
             disabled={isSearching || loading}
           />
         </div>

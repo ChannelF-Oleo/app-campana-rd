@@ -43,6 +43,7 @@ const limpiarUbicacion = (valor) =>
 
 function CreateUser() {
   const [nombre, setNombre] = useState("");
+  const [apodo, setApodo] = useState("");
   const [cedula, setCedula] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -166,6 +167,7 @@ function CreateUser() {
     try {
       const result = await createUserAdminCallable({
         nombre,
+        apodo,
         cedula: cedulaNormalizada,
         email, // opcional; el backend sintetiza uno si viene vacío
         telefono,
@@ -210,6 +212,7 @@ function CreateUser() {
         setNotification({ message: mensaje, type: tipo });
         // Limpiar formulario
         setNombre("");
+        setApodo("");
         setCedula("");
         setEmail("");
         setTelefono("");
@@ -258,6 +261,17 @@ function CreateUser() {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
+            disabled={loading || isSearching}
+          />
+        </div>
+
+        <div className="input-group">
+          <label htmlFor="apodo">Apodo (opcional)</label>
+          <input
+            type="text"
+            id="apodo"
+            value={apodo}
+            onChange={(e) => setApodo(e.target.value)}
             disabled={loading || isSearching}
           />
         </div>

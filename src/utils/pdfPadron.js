@@ -173,6 +173,23 @@ function dibujarFicha(doc, x, y, persona, campos, foto) {
   doc.text(truncar(doc, nombre, datosW), datosX, cursorY);
   cursorY += 5;
 
+  // Apodo (opcional): justo debajo del nombre. Solo si el registro lo trae;
+  // si está vacío se omite la línea para no desperdiciar espacio en la ficha.
+  const apodo = persona.apodo;
+  if (apodo != null && String(apodo).trim() !== "") {
+    doc.setFontSize(8);
+    const etiqueta = "Apodo: ";
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(90);
+    const etW = doc.getTextWidth(etiqueta);
+    doc.text(etiqueta, datosX, cursorY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(40);
+    doc.text(truncar(doc, String(apodo), datosW - etW), datosX + etW, cursorY);
+    cursorY += 4;
+  }
+
   // Campos label: valor.
   doc.setFontSize(8);
   for (const campo of campos || []) {

@@ -203,6 +203,7 @@ exports.deleteUserAndData = onCall(async (request) => {
 exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) => {
   const {
     nombre,
+    apodo,
     email,
     password,
     rol,
@@ -246,6 +247,7 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
     const userData = {
       uid: userRecord.uid,
       nombre,
+      apodo: apodo || "",
       email: authEmail,
       telefono,
       rol,
@@ -260,6 +262,7 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
     // Datos del perfil de simpatizante (mismos campos que el form de simpatizante).
     const perfilSimpatizante = {
       nombre,
+      apodo: apodo || "",
       cedula: cedulaNorm,
       email: authEmail,
       telefono,
