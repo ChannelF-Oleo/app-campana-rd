@@ -61,10 +61,9 @@ export const getVisibleNavItems = (user) => {
 
   if ([ROL_MULTIPLICADOR, ROL_LIDER].includes(user.rol)) {
     roleItems.push({
-      id: 'meta',
-      label: 'Meta',
-      path: null, // Es una acción (botón), no una ruta
-      isAction: true,
+      id: 'metas',
+      label: 'Metas',
+      path: '/dashboard/metas', // Página propia (historial, logros, crear meta)
       icon: FaBullseye,
     });
   }

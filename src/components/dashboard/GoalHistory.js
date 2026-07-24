@@ -26,7 +26,7 @@ const describirMeta = (m) =>
     ? `${m.amount} registros (acumulada)`
     : `${m.amount} registros (${m.period || "período"})`;
 
-function GoalHistory({ user }) {
+function GoalHistory({ user, alwaysShow = false }) {
   const [metas, setMetas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -65,12 +65,28 @@ function GoalHistory({ user }) {
     );
   }
 
-  // Mientras carga o si no hay metas cumplidas aún, no ocupamos espacio.
-  if (loading || metas.length === 0) return null;
+  // En el dashboard (alwaysShow=false) no ocupamos espacio si no hay nada; en la
+  // página de Metas (alwaysShow=true) mostramos el estado vacío.
+  if (loading) return null;
+  if (metas.length === 0) {
+    if (!alwaysShow) return null;
+    return (
+      <div className="metric-card goal-history-card">
+        <h3>Logros</h3>
+        <p className="progress-text" style={{ textAlign: "left" }}>
+          Aún no has cumplido ninguna meta. ¡Crea una y ve por ella!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="metric-card goal-history-card">
-      <h3>Historial de Metas</h3>
+      <h3>Logros</h3>
+      <p className="progress-text" style={{ textAlign: "left" }}>
+        {metas.length} meta{metas.length === 1 ? "" : "s"} cumplida
+        {metas.length === 1 ? "" : "s"}
+      </p>
       <ul className="goal-history-list">
         {metas.map((m) => (
           <li key={m.id} className="goal-history-item">
