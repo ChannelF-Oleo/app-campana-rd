@@ -1122,10 +1122,11 @@ body.dark-mode .expandable-overlay {
   width: 100%;
 }
 
-/* Grid específico para gráficas (pueden necesitar más ancho) */
+/* Grid específico para gráficas: 2 por fila en desktop (móvil pasa a 1fr en la
+   media query de abajo). */
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   width: 100%;
 }

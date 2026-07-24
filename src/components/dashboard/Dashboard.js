@@ -60,8 +60,6 @@ const Dashboard = ({ user }) => {
         <div
           className="charts-grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
             gap: "20px",
             marginTop: "20px",
           }}
