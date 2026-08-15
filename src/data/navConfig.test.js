@@ -14,7 +14,7 @@ describe("getVisibleNavItems", () => {
     expect(ids(items)).toEqual(expect.arrayContaining(["home", "registro", "perfil"]));
   });
 
-  it("admin: muestra usuarios, equipos y comandos, sin acción de meta", () => {
+  it("admin: muestra usuarios, equipos, comandos y ranking, sin metas", () => {
     const items = getVisibleNavItems({ rol: ROL_ADMIN });
     expect(ids(items)).toEqual([
       "home",
@@ -23,24 +23,24 @@ describe("getVisibleNavItems", () => {
       "usuarios",
       "equipos",
       "comandos",
+      "ranking",
     ]);
-    expect(ids(items)).not.toContain("meta");
+    expect(ids(items)).not.toContain("metas");
   });
 
-  it("multiplicador: incluye la acción de meta", () => {
+  it("multiplicador: incluye el enlace a la página de metas", () => {
     const items = getVisibleNavItems({ rol: ROL_MULTIPLICADOR });
-    expect(ids(items)).toContain("meta");
-    const meta = items.find((item) => item.id === "meta");
-    expect(meta.isAction).toBe(true);
-    expect(meta.path).toBeNull();
+    expect(ids(items)).toContain("metas");
+    const metas = items.find((item) => item.id === "metas");
+    expect(metas.path).toBe("/dashboard/metas");
   });
 
-  it("líder de zona: incluye la acción de meta", () => {
+  it("líder de zona: incluye el enlace a la página de metas", () => {
     const items = getVisibleNavItems({ rol: ROL_LIDER });
-    expect(ids(items)).toContain("meta");
+    expect(ids(items)).toContain("metas");
   });
 
-  it("rol desconocido: solo ítems comunes, sin meta ni opciones de admin", () => {
+  it("rol desconocido: solo ítems comunes, sin metas ni opciones de admin", () => {
     const items = getVisibleNavItems({ rol: "invitado" });
     expect(ids(items)).toEqual(["home", "registro", "perfil"]);
   });
