@@ -15,9 +15,8 @@ import {
   validarTelefono,
 } from "../../constants";
 import {
-  ZONA_FIJA,
-  SECTOR_FIJO,
   OPCION_NO_IDENTIFICADO,
+  aplicarCambioUbicacion,
   normalizarUbicacion,
 } from "../../data/ubicacionElectoral";
 import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
@@ -27,10 +26,11 @@ const functions = getFunctions();
 const createUserAdminCallable = httpsCallable(functions, "createUserAdmin");
 const searchVotanteCallable = httpsCallable(functions, "searchVotanteByCedula");
 
-// Estado inicial de la ubicación electoral (zona y sector fijos por ahora)
+// Estado inicial de la ubicación electoral: cascada vacía, se elige desde Zona.
 const UBICACION_INICIAL = {
-  zona: ZONA_FIJA,
-  sector: SECTOR_FIJO,
+  zona: "",
+  zonaEsOtro: false,
+  sector: "",
   sectorEsOtro: false,
   subsector: "",
   subsectorEsOtro: false,
@@ -43,10 +43,11 @@ const UBICACION_INICIAL = {
 // Campos de ubicación con opción "Otro" (texto libre). El label se usa en la
 // notificación de validación cuando el texto queda vacío.
 const CAMPOS_UBICACION_OTRO = [
-  { campo: "sector", label: "sector" },
-  { campo: "subsector", label: "subsector" },
-  { campo: "recinto", label: "recinto" },
-  { campo: "colegioElectoral", label: "colegio electoral" },
+  { campo: "zona", label: "la zona" },
+  { campo: "sector", label: "el sector" },
+  { campo: "subsector", label: "el subsector" },
+  { campo: "recinto", label: "el recinto" },
+  { campo: "colegioElectoral", label: "el colegio electoral" },
 ];
 
 // Convierte "No identificado" en cadena vacía para el payload.
@@ -100,18 +101,11 @@ function CreateUser() {
     setFotoFile(file || null);
   };
 
-  // Al cambiar un campo de ubicación; si cambia "recinto", resetea el colegio.
+  // Al cambiar un campo de ubicación se resetean los niveles inferiores que
+  // dependen de él (Zona -> sector, subsector, recinto y colegio;
+  // Sector -> subsector; Recinto -> colegio).
   const handleUbicacionChange = (campo, valor) => {
-    setUbicacion((prev) => {
-      const next = { ...prev, [campo]: valor };
-      // Colegio encadenado a Recinto: al cambiar recinto (o su flag "Otro") se
-      // resetea el colegio y su flag, porque sus opciones dependen del recinto.
-      if (campo === "recinto" || campo === "recintoEsOtro") {
-        next.colegioElectoral = "";
-        next.colegioElectoralEsOtro = false;
-      }
-      return next;
-    });
+    setUbicacion((prev) => aplicarCambioUbicacion(prev, campo, valor));
   };
 
   // Autocompletar desde el padrón cuando la cédula está completa
@@ -166,16 +160,17 @@ function CreateUser() {
       return;
     }
     // Campos con opción "Otro": si está activa, el texto libre no puede quedar
-    // vacío (aplica a sector, subsector, recinto y colegio electoral).
+    // vacío (aplica a los cinco niveles de la cascada).
     for (const { campo, label } of CAMPOS_UBICACION_OTRO) {
       if (ubicacion[`${campo}EsOtro`] && !normalizarUbicacion(ubicacion[campo])) {
-        setNotification({ message: `Escribe el ${label}`, type: "error" });
+        setNotification({ message: `Escribe ${label}`, type: "error" });
         return;
       }
     }
-    // Validación de ubicación electoral: sector, subsector, recinto y colegio
-    // deben tener valor (incluido "No identificado"). La zona ya viene fija.
+    // Validación de ubicación electoral: los cinco niveles deben tener valor
+    // (de catálogo, texto libre de "Otro" o "No identificado").
     if (
+      !ubicacion.zona ||
       !ubicacion.sector ||
       !ubicacion.subsector ||
       !ubicacion.recinto ||
@@ -183,7 +178,7 @@ function CreateUser() {
     ) {
       setNotification({
         message:
-          "Por favor, completa la ubicación electoral (sector, subsector, recinto y colegio).",
+          "Por favor, completa la ubicación electoral (zona, sector, subsector, recinto y colegio).",
         type: "error",
       });
       return;
@@ -201,7 +196,7 @@ function CreateUser() {
         municipio: MUNICIPIO_FIJO,
         // Ubicación electoral: cada campo envía su valor final ("No identificado"
         // -> ""; "Otro" -> texto normalizado; en otro caso el valor de catálogo).
-        zona: limpiarUbicacion(ubicacion.zona),
+        zona: valorUbicacionFinal(ubicacion, "zona"),
         sector: valorUbicacionFinal(ubicacion, "sector"),
         subsector: valorUbicacionFinal(ubicacion, "subsector"),
         recinto: valorUbicacionFinal(ubicacion, "recinto"),

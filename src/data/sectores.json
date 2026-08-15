@@ -1,47 +1,671 @@
 [
   {
+    "zona": "ZONA A",
+    "sectores": [
+      {
+        "sector": "EL CAFÉ DE HERRERA",
+        "subsectores": [
+          "3 CASITAS",
+          "BARRIO GREGORIO PEREZ",
+          "BRISA DEL SUR",
+          "CAJUQUI",
+          "CALLE 1ERA",
+          "CALLE 2DA",
+          "CALLE 6",
+          "CALLE 62",
+          "CALLE 68",
+          "CALLE PATIO OS PEREZ",
+          "KM 12",
+          "KM 13",
+          "LA DOLLY",
+          "LA LOMA DEL CHIVO",
+          "LA PROYECTO",
+          "MIRADOR DEL OESTE",
+          "PATIO LOS ROJAS",
+          "SANTA ROSA DE LIMA",
+          "SOLARES NUEVOS"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA A1",
+    "sectores": [
+      {
+        "sector": "EL CAFÉ DE HERRERA",
+        "subsectores": [
+          "BRISA DEL SUR",
+          "CALLE 4",
+          "CALLE 5",
+          "CALLE 6",
+          "CALLE 8",
+          "CALLE 10",
+          "CALLE 14",
+          "CALLE 15",
+          "CALLE 19",
+          "CALLE CENTRAL",
+          "CALLE PRINCIPAL",
+          "CALLEJON LAS CAOBAS",
+          "EL BADEN",
+          "FLOR DEL CAFE",
+          "GALLERA",
+          "LOS RESIDENCIALES",
+          "RESIDENCIAL CANAAN",
+          "RESPALDO 15",
+          "SOLARES ABAJO",
+          "SOLARES NUEVOS"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA B",
+    "sectores": [
+      {
+        "sector": "ENS. ALTAGRACIA",
+        "subsectores": [
+          "1- RES. POPULAR",
+          "2- ALTO DE ENGOMBE",
+          "3- RESP. 27 Y SANTIAGO",
+          "4-BARRIO NUEVO Y EL BOLSILLO",
+          "5-BARRIO PARAISO",
+          "6- EL TANQUE Y 24 DE ABRIL",
+          "7- RES. SANTO DOMINGO"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA C",
+    "sectores": [
+      {
+        "sector": "BAYONA",
+        "subsectores": [
+          "ABREU",
+          "CACHIMAN",
+          "EL CIELO",
+          "EL PLEY",
+          "GUAJIMIA 2",
+          "HACIENDA",
+          "HACIENDA JIMÉNEZ",
+          "JARDINES DE ENGOMBE",
+          "LA AVENIDA",
+          "LA MARAÑONA",
+          "LA PRIVADA",
+          "LOS MONOS",
+          "LOS MUDOS",
+          "LOS RESIDENCIALES",
+          "PARAISO DEL CARIBE",
+          "RIVERAS DE HAINA",
+          "ROGELIO ROSEAU",
+          "TELOFORO JAIME",
+          "VILLA NAZARET"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA D",
+    "sectores": [
+      {
+        "sector": "EL ABANICO DE HERRERA",
+        "subsectores": [
+          "24 DE ABRIL",
+          "BONANZA",
+          "CALLE 1ERA",
+          "CALLE CENTRAL",
+          "GUIDO GIL",
+          "HORTALIZA",
+          "LA CAÑADA",
+          "LOYOLA"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA E",
+    "sectores": [
+      {
+        "sector": "BUENOS AIRES",
+        "subsectores": [
+          "AGUTICO *",
+          "ARISLEYDA SANCHEZ",
+          "BELKIS PÉREZ *",
+          "BETHANIA VELOZ RAMIREZ (YENNY VELOZ)",
+          "CATALINA",
+          "DUBLEY *",
+          "ELBA MEJIA",
+          "FIOR",
+          "GABRIEL ROJAS",
+          "ISABELITA BAEZ",
+          "LA NORIA",
+          "MAMATINGO",
+          "MELLO",
+          "PAULA *",
+          "RANDYS ARIAS",
+          "ROSI IRIS *",
+          "RUDDY MENA",
+          "SALOME UREÑA",
+          "VICTOR SOSA",
+          "WENDY MEJIA"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA F",
+    "sectores": [
+      {
+        "sector": "LA VENTA",
+        "subsectores": [
+          "ALAMO",
+          "ANTILLANO",
+          "CLARIN",
+          "CORAZON DE JESUS",
+          "KM 11",
+          "LA PRIMERA",
+          "LIBERTAD",
+          "SAN MARTÍN DE PORRES",
+          "TRANSFORMADOR"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA G",
+    "sectores": [
+      {
+        "sector": "BARRIO DUARTE",
+        "subsectores": [
+          "24 DE SEPTIEMBRE - LA OPCION",
+          "CALLE 2",
+          "CALLE SAN JUAN",
+          "DUARTE 1",
+          "DUARTE 2",
+          "DUARTE 3 (DESDE CALLE 1, 2 HASTA PLAZA LEONALDO)",
+          "LA CAMPANA - FLOR DE LIZ",
+          "LA PLAZOLETA",
+          "LA RENOVACION",
+          "RESPALDO COLON",
+          "TETELO VARGA (CLUB LOS GIGANTES)"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA H",
+    "sectores": [
+      {
+        "sector": "CABALLONA",
+        "subsectores": [
+          "APARTAMENTO",
+          "BATEY CABALLONA",
+          "LOS SUBURBIOS",
+          "MANZ. 1 Y 4",
+          "MANZ. 2 Y 5",
+          "MANZ. 3 Y 6",
+          "VILLA PROGRESO"
+        ]
+      },
+      {
+        "sector": "LECHERIA",
+        "subsectores": [
+          "LECHERIA",
+          "LOS SOLARES"
+        ]
+      },
+      {
+        "sector": "MANGO FRESCO",
+        "subsectores": [
+          "MANGO FRESCO"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA I",
+    "sectores": [
+      {
+        "sector": "EL ENRIQUILLO",
+        "subsectores": [
+          "EL HOLGIN",
+          "EL HOYO (LAS MERCEDES)",
+          "ENRIQUILLO ABAJO",
+          "ENRIQUILLO ARRIBA",
+          "LA FUENTE"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA J",
+    "sectores": [
+      {
+        "sector": "LAS CAOBAS",
+        "subsectores": [
+          "15",
+          "MANZ. [NÚMERO FALTANTE]",
+          "MANZ. 1",
+          "MANZ. 2",
+          "MANZ. 4",
+          "MANZ. 6",
+          "MANZ. 8",
+          "MANZ. 9",
+          "MANZ. 13",
+          "MANZ. 14",
+          "MANZ. 15",
+          "MANZ. 16",
+          "MANZ. 17",
+          "MANZ. 19",
+          "MANZ. 20",
+          "MANZ. 21",
+          "MANZ. 22",
+          "MANZ. 23",
+          "MANZ. 24",
+          "MANZ. 25",
+          "MANZ. 26",
+          "MANZ. 33",
+          "MANZ. 34",
+          "MANZ. 35",
+          "MANZ. 37",
+          "MANZ. 40",
+          "MANZ. LA CANELA"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA K",
+    "sectores": [
+      {
+        "sector": "EL LIBERTADOR",
+        "subsectores": [
+          "CALLE 5",
+          "CALLE PRIMERA",
+          "CALLE PROGRESO",
+          "EL HOYO",
+          "EL JOSUE",
+          "EMETERIO MENDEZ",
+          "GUAJIMIA",
+          "HOGARES CREA",
+          "LA CALLE ESPAÑA",
+          "LA GALLERA",
+          "LA ZONA INDUSTRIAL",
+          "LOS CAMIONEROS",
+          "MAGALIS ESTRELLA",
+          "RESP. LP 8"
+        ]
+      },
+      {
+        "sector": "LAS MALVINAS",
+        "subsectores": [
+          "CORONELES",
+          "LAS MALVINAS",
+          "LOS MOLMONES",
+          "MARIA TRINIDAD SANCHEZ",
+          "RES. LUZ DIVINA",
+          "SECTOR PROYECTO"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA L",
+    "sectores": [
+      {
+        "sector": "SAN MIGUEL",
+        "subsectores": [
+          "CHUMPLUM",
+          "JIGUEY AGUCATE",
+          "PUEBLO CHICO",
+          "SAN MIGUEL"
+        ]
+      },
+      {
+        "sector": "BELLAS COLINA",
+        "subsectores": [
+          "ALAMEDA",
+          "BELLAS COLINAS ABAJO",
+          "BELLAS COLINAS ARRIBA",
+          "ISAMAN"
+        ]
+      },
+      {
+        "sector": "LA CORDILLERA",
+        "subsectores": [
+          "DARIO GOMEZ",
+          "JUAN GUZMAN",
+          "LA CORDILLERA"
+        ]
+      },
+      {
+        "sector": "ARROYO BONITO",
+        "subsectores": [
+          "ARROYO BONITO"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA M",
+    "sectores": [
+      {
+        "sector": "EL KM14",
+        "subsectores": [
+          "ADELAIDA",
+          "ALTO DEL OESTE",
+          "BARRIO INDEPENDENCIA",
+          "BARRIO PARAISO",
+          "EL 14 CENTRO",
+          "LA ANGELITA",
+          "LA ARENERA",
+          "LA CIENEGA",
+          "LA CONCORDIA",
+          "LA GUILETTE",
+          "LA JOYA",
+          "LA PALMERA",
+          "LAS MERCEDES",
+          "LOYOLA",
+          "MANA DEL CIELO",
+          "PEDRO CABRAL",
+          "PROYECTO CRISTAL",
+          "RES. LOS VALOY",
+          "VILLA NACO"
+        ]
+      },
+      {
+        "sector": "VILLA OGANDO",
+        "subsectores": [
+          "ALBERTO SOLANO",
+          "VILLA OGANDO",
+          "VILLA VERDE"
+        ]
+      },
+      {
+        "sector": "NUEVO HORIZONTE",
+        "subsectores": [
+          "DON RAMON",
+          "JOSE GRACIANO",
+          "NUEVO HORIZONTE",
+          "RESPALDO 4"
+        ]
+      }
+    ]
+  },
+  {
     "zona": "ZONA N",
     "sectores": [
       {
-        "sector": "Hato Nuevo",
+        "sector": "HATO NUEVO",
         "subsectores": [
-          "EL BRUGAL",
-          "LOS TRINITARIOS",
-          "YOLENNY",
-          "SANTIAGO APOSTOL",
-          "BRISA DEL SUR",
-          "BRISA DEL NORTE",
           "AMAPOLA",
-          "BUENAS NOCHES",
-          "BUENAS NOCHES ARRIBA",
-          "BUENAS NOCHES 2",
-          "VILLA CAROLINA 2",
-          "SAN JOSE",
+          "BRISA DEL NORTE",
+          "BRISA DEL SUR",
+          "EL BRUGAL",
           "HATO NUEVO CENTRO",
-          "ROALVA",
-          "LOS PINOS",
-          "LA ESPERANZA",
-          "VILLA CAROLINA 1",
-          "NUEVO HORIZONTE",
-          "EL ZUMBOM",
-          "CONTRESA",
-          "ARROLLO PIEDRA",
-          "INESPRE",
-          "TANQUE AZUL",
-          "CEDEE",
-          "MARIA LUISA",
-          "5 CASITA",
-          "LA DELEGACION",
-          "BARRIO LA OMSA",
-          "EDF. BANRESERVAS",
-          "PRIMAVERAL",
-          "SAN LUIS",
-          "LA PRADERA",
-          "QUINTO SUEÑO",
-          "VALERIO JAQUEZ",
-          "VILLA PROGRESO",
-          "JOSE REYES",
+          "LOS TRINITARIOS",
+          "SAN JOSE",
+          "SANTIAGO APOSTOL",
+          "VILLA CAROLINA 2",
+          "YOLENNY"
+        ]
+      },
+      {
+        "sector": "BUENAS NOCHES",
+        "subsectores": [
+          "BUENAS NOCHES",
+          "BUENAS NOCHES 2",
+          "BUENAS NOCHES ARRIBA"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA Ñ",
+    "sectores": [
+      {
+        "sector": "EL KM13",
+        "subsectores": [
+          "BARRIO NUEVO 1",
+          "BARRIO NUEVO 2",
+          "EL BARRIO DE LOS ACOSTADO",
+          "EL MANGO",
+          "HOLLYWOOD",
+          "LA PLACETA",
+          "LA PLAYA",
+          "LOS MENDEZ",
+          "LOS VENAO"
+        ]
+      },
+      {
+        "sector": "EL KM12",
+        "subsectores": []
+      }
+    ]
+  },
+  {
+    "zona": "ZONA O",
+    "sectores": [
+      {
+        "sector": "MANOGUAYABO",
+        "subsectores": [
+          "ANTONIA",
+          "LA CAOBITA",
+          "LA CARCEL",
+          "LA COOPERATIVA",
+          "TOMAS JAIME"
+        ]
+      },
+      {
+        "sector": "EL CALICHE",
+        "subsectores": [
+          "CALLE PEREZ",
+          "CIUDAD AGRARIA",
+          "EL CALICHE",
           "EL CONTROL"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA P",
+    "sectores": [
+      {
+        "sector": "LAS PALMAS",
+        "subsectores": [
+          "BETHANIA",
+          "BONAIRE",
+          "CALLE 1",
+          "CALLE 3RA",
+          "CALLE 4",
+          "CALLE ARABIA",
+          "DIEGO COLON",
+          "FLOR DE LIZ",
+          "GUAJIMIA",
+          "LA ESPAÑOLA",
+          "PENTAGONO",
+          "RAMON GUZMAN",
+          "RAMON SANTANA",
+          "RESPALDO ARABIA",
+          "SAN ANTONIO",
+          "SAN RAFAEL",
+          "SAVICA"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA Q",
+    "sectores": [
+      {
+        "sector": "RESPALDO ROSA",
+        "subsectores": [
+          "BARRIO SAN FRANCISCO",
+          "CALLE L",
+          "GALAXIA",
+          "GUAJIMIA",
+          "PROYECTO",
+          "RESPARTO ROSA"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA R",
+    "sectores": [
+      {
+        "sector": "EL IVÁN",
+        "subsectores": [
+          "GUAJIMIA 3",
+          "IVAN CLAK",
+          "IVANCITO",
+          "ROSA MARIA",
+          "SAN JUANEROS"
+        ]
+      },
+      {
+        "sector": "ENGOMBE",
+        "subsectores": [
+          "ENGOMBE",
+          "JARDINES DE ENGOMBE",
+          "LUZ DIVINA",
+          "PALACIO DE ENGOMBE"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA S",
+    "sectores": [
+      {
+        "sector": "GUAJIMIA",
+        "subsectores": [
+          "GUAJIMIA",
+          "LA 5 CON 8",
+          "LA ARABIA",
+          "LA CENTRAL",
+          "LA MONJA",
+          "LA PROGRESO",
+          "RAMON SANTANA",
+          "SAN ANTONIO"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA T",
+    "sectores": [
+      {
+        "sector": "VILLA AURA",
+        "subsectores": [
+          "MANZ. 28",
+          "MANZ. 29",
+          "MANZ. 31",
+          "MANZ. 36",
+          "MANZ. 37",
+          "VILLA AURA"
+        ]
+      },
+      {
+        "sector": "OLIMPO",
+        "subsectores": [
+          "CAOBITA 2",
+          "MANZ. 43",
+          "MANZ. 44",
+          "MANZ. 45"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA U",
+    "sectores": [
+      {
+        "sector": "LAS MINAS",
+        "subsectores": [
+          "CALLE 23",
+          "CALLE 25",
+          "CAÑADA DE TUFI",
+          "CAROLINA",
+          "LA MINA",
+          "RESPALDO 25",
+          "TABLITA"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA W",
+    "sectores": [
+      {
+        "sector": "LOS PALMARES DE HERRERA",
+        "subsectores": [
+          "BARRIO NUEVO",
+          "EL HOYO DE LA JOSE REYES",
+          "EL KILOMBO ABAJO",
+          "EL KILOMBO ARRIBA",
+          "LA CHINOLA",
+          "RES. SAN NICOLAS"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA X",
+    "sectores": [
+      {
+        "sector": "BARRIO LAS ROSAS",
+        "subsectores": [
+          "CALLE 1ERA",
+          "CAÑADA DEL INDIO",
+          "LA ANACAONA",
+          "MARIA TRINIDAD SANCHEZ",
+          "YOLANDA GUZMAN"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA Y",
+    "sectores": [
+      {
+        "sector": "BIENVENIDO",
+        "subsectores": [
+          "BAJO MUNDO",
+          "BOROJOL",
+          "CALLE EL CONSORCIO",
+          "CALLE PRINCIPAL",
+          "LA SAN JOSE",
+          "LAS MINAS ABAJO",
+          "LAS MINAS ARRIBA",
+          "LOS MANGUITOS",
+          "LOS RIELES",
+          "MANGULAR"
+        ]
+      }
+    ]
+  },
+  {
+    "zona": "ZONA Z",
+    "sectores": [
+      {
+        "sector": "PALAVE",
+        "subsectores": [
+          "BARRIO ABRAHAM",
+          "BRISA DEL RIO",
+          "CUABOSAL",
+          "EL KILOMBO",
+          "EL TAMARINDO 1",
+          "EL TAMARINDO 2",
+          "LA BARAHONA",
+          "LA ESPERANZA",
+          "LA OFICINA",
+          "LAS CAROLINAS",
+          "LAS CAROLINAS ABAJO",
+          "LAS JUANA",
+          "LOS GIRASOLES",
+          "PALAVE CENTRO",
+          "VILLA OESTE"
         ]
       }
     ]

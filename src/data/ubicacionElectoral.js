@@ -33,10 +33,6 @@ export function normalizarUbicacion(str) {
  */
 export const normalizarSubsector = normalizarUbicacion;
 
-/** Zona y sector fijos por ahora (a la espera de poblar el resto). */
-export const ZONA_FIJA = "ZONA N";
-export const SECTOR_FIJO = "Hato Nuevo";
-
 /** Todas las zonas de zonas.json, ordenadas alfabéticamente. */
 export const LISTA_ZONAS = zonas
   .map((z) => z.zona)
@@ -68,6 +64,42 @@ export function getSectores(zona) {
   const z = sectores.find((item) => item.zona === zona);
   if (!z) return [];
   return z.sectores.map((s) => s.sector);
+}
+
+/**
+ * Niveles inferiores cuyo catálogo depende de cada nivel de la cascada. El
+ * Subsector cuelga de Zona+Sector y el Colegio de Zona+Recinto, por eso Zona
+ * arrastra a los cuatro.
+ */
+const DEPENDIENTES_UBICACION = {
+  zona: ["sector", "subsector", "recinto", "colegioElectoral"],
+  sector: ["subsector"],
+  recinto: ["colegioElectoral"],
+};
+
+/**
+ * Aplica el cambio de un campo de la cascada de ubicación sobre el estado
+ * previo, reseteando (valor y flag "Otro") los niveles inferiores que dependen
+ * de él. `campo` puede ser un nivel ("sector") o su flag ("sectorEsOtro").
+ * @param {object} prev estado previo de la ubicación
+ * @param {string} campo campo que cambia
+ * @param {string|boolean} valor nuevo valor del campo
+ * @returns {object} nuevo estado de la ubicación
+ */
+export function aplicarCambioUbicacion(prev, campo, valor) {
+  const next = { ...prev, [campo]: valor };
+  const nivel = campo.replace(/EsOtro$/, "");
+  // Teclear el texto libre de un nivel en "Otro" no cambia ningún catálogo (no
+  // hay match posible), así que no se resetean sus dependientes en cada tecla:
+  // ya se resetearon al activar la opción "Otro".
+  const editandoTextoLibre = campo === nivel && prev[`${nivel}EsOtro`];
+  if (!editandoTextoLibre) {
+    for (const dep of DEPENDIENTES_UBICACION[nivel] || []) {
+      next[dep] = "";
+      next[`${dep}EsOtro`] = false;
+    }
+  }
+  return next;
 }
 
 /** Devuelve los subsectores de un sector dentro de una zona. */
