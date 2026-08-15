@@ -35,7 +35,6 @@ const libraries = ["places"];
 // Estado inicial de la ubicación electoral: cascada vacía, se elige desde Zona.
 const UBICACION_INICIAL = {
   zona: "",
-  zonaEsOtro: false,
   sector: "",
   sectorEsOtro: false,
   subsector: "",
@@ -46,10 +45,10 @@ const UBICACION_INICIAL = {
   colegioElectoralEsOtro: false,
 };
 
-// Campos de ubicación con opción "Otro" (texto libre). El label se usa en la
-// notificación de validación cuando el texto queda vacío.
+// Campos de ubicación con opción "Otro" (texto libre); zona queda fuera porque
+// es un catálogo cerrado. El label se usa en la notificación de validación
+// cuando el texto queda vacío.
 const CAMPOS_UBICACION_OTRO = [
-  { campo: "zona", label: "la zona" },
   { campo: "sector", label: "el sector" },
   { campo: "subsector", label: "el subsector" },
   { campo: "recinto", label: "el recinto" },
@@ -268,15 +267,16 @@ function PublicRegister() {
       return;
     }
     // Campos con opción "Otro": si está activa, el texto libre no puede quedar
-    // vacío (aplica a los cinco niveles de la cascada).
+    // vacío (aplica a sector, subsector, recinto y colegio electoral).
     for (const { campo, label } of CAMPOS_UBICACION_OTRO) {
       if (ubicacion[`${campo}EsOtro`] && !normalizarUbicacion(ubicacion[campo])) {
         setNotification({ message: `Escribe ${label}`, type: "error" });
         return;
       }
     }
-    // Validación de ubicación electoral: los cinco niveles deben tener valor
-    // (de catálogo, texto libre de "Otro" o "No identificado").
+    // Validación de ubicación electoral: los cinco niveles deben tener valor.
+    // Zona solo admite catálogo o "No identificado"; los otros cuatro además
+    // aceptan el texto libre de "Otro".
     if (
       !ubicacion.zona ||
       !ubicacion.sector ||
@@ -339,7 +339,7 @@ function PublicRegister() {
         municipio: selectedMunicipio,
         // Ubicación electoral: cada campo envía su valor final ("No identificado"
         // -> ""; "Otro" -> texto normalizado; en otro caso el valor de catálogo).
-        zona: valorUbicacionFinal(ubicacion, "zona"),
+        zona: limpiarUbicacion(ubicacion.zona),
         sector: valorUbicacionFinal(ubicacion, "sector"),
         subsector: valorUbicacionFinal(ubicacion, "subsector"),
         recinto: valorUbicacionFinal(ubicacion, "recinto"),

@@ -80,7 +80,8 @@ const DEPENDIENTES_UBICACION = {
 /**
  * Aplica el cambio de un campo de la cascada de ubicación sobre el estado
  * previo, reseteando (valor y flag "Otro") los niveles inferiores que dependen
- * de él. `campo` puede ser un nivel ("sector") o su flag ("sectorEsOtro").
+ * de él. `campo` puede ser un nivel ("sector") o su flag ("sectorEsOtro"); zona
+ * no tiene flag porque es un catálogo cerrado, sin opción "Otro".
  * @param {object} prev estado previo de la ubicación
  * @param {string} campo campo que cambia
  * @param {string|boolean} valor nuevo valor del campo
@@ -91,7 +92,8 @@ export function aplicarCambioUbicacion(prev, campo, valor) {
   const nivel = campo.replace(/EsOtro$/, "");
   // Teclear el texto libre de un nivel en "Otro" no cambia ningún catálogo (no
   // hay match posible), así que no se resetean sus dependientes en cada tecla:
-  // ya se resetearon al activar la opción "Otro".
+  // ya se resetearon al activar la opción "Otro". Zona nunca entra aquí (no
+  // admite "Otro"): elegir zona siempre resetea sus cuatro dependientes.
   const editandoTextoLibre = campo === nivel && prev[`${nivel}EsOtro`];
   if (!editandoTextoLibre) {
     for (const dep of DEPENDIENTES_UBICACION[nivel] || []) {

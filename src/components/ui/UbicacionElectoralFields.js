@@ -16,7 +16,7 @@ import {
  * Contrato (estado controlado por el padre):
  *   props:
  *     value = { zona, sector, subsector, recinto, colegioElectoral,
- *               zonaEsOtro, sectorEsOtro, subsectorEsOtro, recintoEsOtro,
+ *               sectorEsOtro, subsectorEsOtro, recintoEsOtro,
  *               colegioElectoralEsOtro }
  *     onChange(campo, valor)   -> el padre actualiza value[campo]
  *     disabled                 -> deshabilita todos los selects
@@ -37,9 +37,13 @@ import {
  * La opción "No identificado" es un valor SELECCIONABLE y válido (distinto del
  * placeholder vacío inicial), presente en los cinco selects.
  *
- * OPCIÓN "Otro" (texto libre) en los CINCO selects: además del catálogo y "No
- * identificado", cada campo ofrece "Otro". El estado vive en el padre mediante
- * DOS campos por cada uno:
+ * OPCIÓN "Otro" (texto libre) en CUATRO de los cinco selects (Sector, Subsector,
+ * Recinto y Colegio): además del catálogo y "No identificado", esos campos
+ * ofrecen "Otro". ZONA NO la ofrece: las zonas electorales son un catálogo
+ * cerrado y oficial (las 27 de zonas.json) y el texto libre corrompería la
+ * analítica por zona (gráficos, filtros, relleno desde el padrón); solo admite
+ * una de las 27 o "No identificado". El estado de "Otro" vive en el padre
+ * mediante DOS campos por cada uno de esos cuatro:
  *   - <campo>EsOtro (bool): si la opción activa es "Otro".
  *   - <campo> (string): cuando esOtro, guarda el texto libre TAL CUAL se
  *     escribe; en otro caso, el valor del catálogo o "No identificado".
@@ -62,16 +66,20 @@ const esValorDeCatalogo = (valor, esOtro) =>
 function UbicacionElectoralFields({ value, onChange, disabled }) {
   const v = value || {};
   const zona = v.zona ?? "";
-  const zonaEsOtro = v.zonaEsOtro ?? false;
   const sector = v.sector ?? "";
   const sectorEsOtro = v.sectorEsOtro ?? false;
   const recinto = v.recinto ?? "";
   const recintoEsOtro = v.recintoEsOtro ?? false;
 
-  // Al elegir en un select con "Otro": "Otro" activa el texto libre (y limpia el
-  // campo para empezar en blanco); cualquier otra opción desactiva "Otro".
-  const handleSelect = (campo) => (e) => {
+  // Al elegir en un select: en los campos con "Otro", esa opción activa el texto
+  // libre (y limpia el campo para empezar en blanco) y cualquier otra la
+  // desactiva. Zona no admite "Otro", así que solo propaga el valor elegido.
+  const handleSelect = (campo, permiteOtro) => (e) => {
     const val = e.target.value;
+    if (!permiteOtro) {
+      onChange(campo, val);
+      return;
+    }
     if (val === OPCION_OTRO) {
       onChange(`${campo}EsOtro`, true);
       onChange(campo, "");
@@ -81,7 +89,9 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
     }
   };
 
-  const hayZona = esValorDeCatalogo(zona, zonaEsOtro);
+  // Zona nunca es texto libre: basta con que no esté vacía ni sea "No
+  // identificado" para poder derivar sus sectores y recintos.
+  const hayZona = esValorDeCatalogo(zona, false);
   const haySector = esValorDeCatalogo(sector, sectorEsOtro);
   const hayRecinto = esValorDeCatalogo(recinto, recintoEsOtro);
 
@@ -101,7 +111,8 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
       id: "ubic-zona",
       opciones: LISTA_ZONAS,
       placeholder: "-- Selecciona Zona --",
-      placeholderOtro: "Escribe la zona",
+      // Catálogo CERRADO: las 27 zonas oficiales o "No identificado", sin "Otro".
+      permiteOtro: false,
       bloqueado: false,
     },
     {
@@ -109,6 +120,7 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
       label: "Sector",
       id: "ubic-sector",
       opciones: sectores,
+      permiteOtro: true,
       placeholderOtro: "Escribe el sector",
       bloqueado: !hayZona,
     },
@@ -117,6 +129,7 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
       label: "Subsector",
       id: "ubic-subsector",
       opciones: subsectores,
+      permiteOtro: true,
       placeholderOtro: "Escribe el subsector",
       bloqueado: !hayZona || !haySector,
     },
@@ -125,6 +138,7 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
       label: "Recinto",
       id: "ubic-recinto",
       opciones: recintos,
+      permiteOtro: true,
       placeholderOtro: "Escribe el recinto",
       bloqueado: !hayZona,
     },
@@ -133,24 +147,26 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
       label: "Colegio Electoral",
       id: "ubic-colegio",
       opciones: colegios,
+      permiteOtro: true,
       placeholderOtro: "Escribe el colegio electoral",
       bloqueado: !hayZona || !hayRecinto,
     },
   ];
 
-  // Renderiza un select del catálogo + "Otro" + "No identificado", y el input de
-  // texto libre cuando la opción activa es "Otro". La normalización y la
-  // validación de vacío viven en el submit del padre (notificación del form).
+  // Renderiza un select del catálogo + "No identificado" (+ "Otro" y su input de
+  // texto libre en los campos que lo admiten). La normalización y la validación
+  // de vacío viven en el submit del padre (notificación del form).
   const renderCampo = ({
     campo,
     label,
     id,
     opciones,
     placeholder,
+    permiteOtro,
     placeholderOtro,
     bloqueado,
   }) => {
-    const esOtro = v[`${campo}EsOtro`] ?? false;
+    const esOtro = permiteOtro && (v[`${campo}EsOtro`] ?? false);
     const valor = v[campo] ?? "";
     return (
       <div className="input-group" key={campo}>
@@ -158,7 +174,7 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
         <select
           id={id}
           value={esOtro ? OPCION_OTRO : valor}
-          onChange={handleSelect(campo)}
+          onChange={handleSelect(campo, permiteOtro)}
           required
           disabled={disabled || bloqueado}
         >
@@ -168,7 +184,7 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
               {opt}
             </option>
           ))}
-          <option value={OPCION_OTRO}>Otro</option>
+          {permiteOtro && <option value={OPCION_OTRO}>Otro</option>}
           <option value={OPCION_NO_IDENTIFICADO}>
             {OPCION_NO_IDENTIFICADO}
           </option>
