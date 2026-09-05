@@ -30,9 +30,13 @@ import {
  *   Sector/Subsector y Recinto/Colegio son ramas hermanas colgando de Zona:
  *   cambiar Recinto no toca Sector ni Subsector.
  *
- * Cada select se deshabilita mientras su dependencia no esté elegida (un
- * catálogo vacío no se puede recorrer): Sector y Recinto necesitan Zona,
- * Subsector necesita Zona+Sector, Colegio necesita Zona+Recinto.
+ * Cada select se deshabilita mientras su dependencia no esté RESUELTA: Sector y
+ * Recinto necesitan Zona, Subsector necesita Zona+Sector, Colegio necesita
+ * Zona+Recinto. Un nivel está resuelto tanto si es un valor del catálogo como si
+ * está en "Otro" (texto libre): en el primer caso el hijo lista su catálogo; en
+ * el segundo el catálogo queda vacío pero el select sigue habilitado con "Otro"
+ * y "No identificado", para poder seguir escribiendo la cascada a mano. Solo el
+ * placeholder vacío y "No identificado" bloquean el nivel siguiente.
  *
  * La opción "No identificado" es un valor SELECCIONABLE y válido (distinto del
  * placeholder vacío inicial), presente en los cinco selects.
@@ -62,6 +66,12 @@ import {
 // vacío, ni "No identificado", ni texto libre ("Otro").
 const esValorDeCatalogo = (valor, esOtro) =>
   !esOtro && !!valor && valor !== OPCION_NO_IDENTIFICADO;
+
+// Un nivel resuelto habilita al siguiente: vale tanto el catálogo como el texto
+// libre de "Otro" (aunque aún esté vacío, para que el select no parpadee entre
+// habilitado y bloqueado mientras se teclea).
+const esNivelResuelto = (valor, esOtro) =>
+  !!esOtro || esValorDeCatalogo(valor, esOtro);
 
 function UbicacionElectoralFields({ value, onChange, disabled }) {
   const v = value || {};
@@ -94,6 +104,10 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
   const hayZona = esValorDeCatalogo(zona, false);
   const haySector = esValorDeCatalogo(sector, sectorEsOtro);
   const hayRecinto = esValorDeCatalogo(recinto, recintoEsOtro);
+  // Para habilitar al hijo basta con que el padre esté resuelto, aunque sea
+  // texto libre y por tanto no aporte catálogo.
+  const sectorResuelto = esNivelResuelto(sector, sectorEsOtro);
+  const recintoResuelto = esNivelResuelto(recinto, recintoEsOtro);
 
   // Catálogos encadenados: sin la dependencia elegida la lista queda vacía y el
   // select se deshabilita (solo quedarían Otro / No identificado).
@@ -131,7 +145,7 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
       opciones: subsectores,
       permiteOtro: true,
       placeholderOtro: "Escribe el subsector",
-      bloqueado: !hayZona || !haySector,
+      bloqueado: !hayZona || !sectorResuelto,
     },
     {
       campo: "recinto",
@@ -149,7 +163,7 @@ function UbicacionElectoralFields({ value, onChange, disabled }) {
       opciones: colegios,
       permiteOtro: true,
       placeholderOtro: "Escribe el colegio electoral",
-      bloqueado: !hayZona || !hayRecinto,
+      bloqueado: !hayZona || !recintoResuelto,
     },
   ];
 
