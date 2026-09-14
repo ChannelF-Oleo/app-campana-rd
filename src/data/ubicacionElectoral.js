@@ -112,3 +112,118 @@ export function getSubsectores(zona, sector) {
   if (!s) return [];
   return s.subsectores;
 }
+
+/**
+ * Reconstruye el ESTADO de la cascada (el que consume UbicacionElectoralFields)
+ * a partir de los campos planos ya guardados de un documento (zona, sector,
+ * subsector, recinto, colegioElectoral).
+ *
+ * Un valor guardado puede no existir en el catálogo: o se escribió con la opción
+ * "Otro", o su nivel padre quedó fuera de catálogo y arrastra al hijo. En esos
+ * casos se marca `<campo>EsOtro` para que el formulario lo muestre como texto
+ * libre editable en vez de perderlo al abrir el modal.
+ * @param {object} datos documento con los campos de ubicación
+ * @returns {object} estado de la cascada
+ */
+export function estadoUbicacionDesdeDatos(datos = {}) {
+  const val = (campo) => String(datos[campo] || "").trim();
+  const zona = val("zona");
+  const sector = val("sector");
+  const subsector = val("subsector");
+  const recinto = val("recinto");
+  const colegioElectoral = val("colegioElectoral");
+
+  // Un valor es "Otro" si tiene contenido, no es "No identificado" y no aparece
+  // en el catálogo de su nivel (lista vacía cuando el padre ya está fuera de él).
+  const esOtro = (valor, catalogo) =>
+    !!valor && valor !== OPCION_NO_IDENTIFICADO && !catalogo.includes(valor);
+
+  const sectorEsOtro = esOtro(sector, getSectores(zona));
+  const recintoEsOtro = esOtro(recinto, getRecintos(zona));
+  return {
+    zona,
+    sector,
+    sectorEsOtro,
+    subsector: subsector,
+    subsectorEsOtro: esOtro(
+      subsector,
+      sectorEsOtro ? [] : getSubsectores(zona, sector)
+    ),
+    recinto,
+    recintoEsOtro,
+    colegioElectoral,
+    colegioElectoralEsOtro: esOtro(
+      colegioElectoral,
+      recintoEsOtro ? [] : getColegios(zona, recinto)
+    ),
+  };
+}
+
+/** Estado inicial de la cascada: vacía, se elige desde Zona. */
+export const UBICACION_INICIAL = {
+  zona: "",
+  sector: "",
+  sectorEsOtro: false,
+  subsector: "",
+  subsectorEsOtro: false,
+  recinto: "",
+  recintoEsOtro: false,
+  colegioElectoral: "",
+  colegioElectoralEsOtro: false,
+};
+
+/**
+ * Campos de ubicación con opción "Otro" (texto libre); zona queda fuera porque
+ * es un catálogo cerrado. El label se usa en la notificación de validación
+ * cuando el texto queda vacío.
+ */
+export const CAMPOS_UBICACION_OTRO = [
+  { campo: "sector", label: "el sector" },
+  { campo: "subsector", label: "el subsector" },
+  { campo: "recinto", label: "el recinto" },
+  { campo: "colegioElectoral", label: "el colegio electoral" },
+];
+
+/** Convierte "No identificado" en cadena vacía para el payload. */
+export const limpiarUbicacion = (valor) =>
+  valor === OPCION_NO_IDENTIFICADO ? "" : valor;
+
+/**
+ * Valor final de un campo de ubicación hacia el payload: texto normalizado si la
+ * opción activa es "Otro"; "" si es "No identificado"; el valor del catálogo en
+ * otro caso.
+ */
+export const valorUbicacionFinal = (ubicacion, campo) =>
+  ubicacion[`${campo}EsOtro`]
+    ? normalizarUbicacion(ubicacion[campo])
+    : limpiarUbicacion(ubicacion[campo]);
+
+/**
+ * Valida la cascada completa antes de enviar. Devuelve el mensaje de error o
+ * null si es válida. Reglas:
+ *   - un campo en "Otro" no puede quedar con el texto libre vacío;
+ *   - los cinco niveles deben tener valor;
+ *   - la ZONA es obligatoria de verdad: debe ser una de las 27 del catálogo,
+ *     "No identificado" no vale (sin zona real no hay analítica ni asignación).
+ * @param {object} ubicacion estado de la cascada
+ * @returns {string|null}
+ */
+export function validarUbicacion(ubicacion) {
+  for (const { campo, label } of CAMPOS_UBICACION_OTRO) {
+    if (ubicacion[`${campo}EsOtro`] && !normalizarUbicacion(ubicacion[campo])) {
+      return `Escribe ${label}`;
+    }
+  }
+  if (!ubicacion.zona || ubicacion.zona === OPCION_NO_IDENTIFICADO) {
+    return "La zona es obligatoria: selecciona una zona electoral.";
+  }
+  if (
+    !ubicacion.sector ||
+    !ubicacion.subsector ||
+    !ubicacion.recinto ||
+    !ubicacion.colegioElectoral
+  ) {
+    return "Por favor, completa la ubicación electoral (zona, sector, subsector, recinto y colegio).";
+  }
+  return null;
+}

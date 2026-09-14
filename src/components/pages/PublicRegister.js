@@ -6,9 +6,11 @@ import { doc, getDoc } from "firebase/firestore";
 import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { useAnalytics } from "../../utils/analytics";
 import {
-  OPCION_NO_IDENTIFICADO,
   aplicarCambioUbicacion,
-  normalizarUbicacion,
+  UBICACION_INICIAL,
+  limpiarUbicacion,
+  valorUbicacionFinal,
+  validarUbicacion,
 } from "../../data/ubicacionElectoral";
 import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
 import logo from "../../Felix/Inscribete.png";
@@ -18,6 +20,7 @@ import {
   MAP_INITIAL_CENTER,
   MAP_DEFAULT_ZOOM,
   CEDULA_REGEX,
+  validarTelefono,
 } from "../../constants";
 
 const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -32,41 +35,6 @@ const initialCenter = MAP_INITIAL_CENTER;
 const defaultZoom = MAP_DEFAULT_ZOOM;
 const libraries = ["places"];
 
-// Estado inicial de la ubicación electoral: cascada vacía, se elige desde Zona.
-const UBICACION_INICIAL = {
-  zona: "",
-  sector: "",
-  sectorEsOtro: false,
-  subsector: "",
-  subsectorEsOtro: false,
-  recinto: "",
-  recintoEsOtro: false,
-  colegioElectoral: "",
-  colegioElectoralEsOtro: false,
-};
-
-// Campos de ubicación con opción "Otro" (texto libre); zona queda fuera porque
-// es un catálogo cerrado. El label se usa en la notificación de validación
-// cuando el texto queda vacío.
-const CAMPOS_UBICACION_OTRO = [
-  { campo: "sector", label: "el sector" },
-  { campo: "subsector", label: "el subsector" },
-  { campo: "recinto", label: "el recinto" },
-  { campo: "colegioElectoral", label: "el colegio electoral" },
-];
-
-// Convierte "No identificado" en cadena vacía para el payload.
-const limpiarUbicacion = (valor) =>
-  valor === OPCION_NO_IDENTIFICADO ? "" : valor;
-
-// Valor final de un campo de ubicación hacia el payload: texto normalizado si la
-// opción activa es "Otro"; "" si es "No identificado"; el valor del catálogo en
-// otro caso.
-const valorUbicacionFinal = (ubicacion, campo) =>
-  ubicacion[`${campo}EsOtro`]
-    ? normalizarUbicacion(ubicacion[campo])
-    : limpiarUbicacion(ubicacion[campo]);
-
 function useQuery() {
   const location = useLocation();
   return React.useMemo(
@@ -76,10 +44,6 @@ function useQuery() {
 }
 
 const validarCedula = (cedula) => CEDULA_REGEX.test(cedula);
-const validarTelefono = (telefono) => {
-  const telefonoRegex = /^[\d\s-]{7,}$/;
-  return telefono === "" || telefonoRegex.test(telefono);
-};
 
 const functions = getFunctions();
 const registerSimpatizanteCallable = httpsCallable(functions, "registerSimpatizante");
@@ -262,33 +226,16 @@ function PublicRegister() {
       setNotification({ message: "Formato de cédula incorrecto (ej: 001-1234567-8).", type: "error" });
       return;
     }
-    if (!validarTelefono(telefono)) {
-      setNotification({ message: "Teléfono inválido (mínimo 7 dígitos).", type: "error" });
+    // Teléfono OBLIGATORIO
+    if (!telefono.trim() || !validarTelefono(telefono)) {
+      setNotification({ message: "El teléfono es obligatorio (mínimo 7 dígitos).", type: "error" });
       return;
     }
-    // Campos con opción "Otro": si está activa, el texto libre no puede quedar
-    // vacío (aplica a sector, subsector, recinto y colegio electoral).
-    for (const { campo, label } of CAMPOS_UBICACION_OTRO) {
-      if (ubicacion[`${campo}EsOtro`] && !normalizarUbicacion(ubicacion[campo])) {
-        setNotification({ message: `Escribe ${label}`, type: "error" });
-        return;
-      }
-    }
-    // Validación de ubicación electoral: los cinco niveles deben tener valor.
-    // Zona solo admite catálogo o "No identificado"; los otros cuatro además
-    // aceptan el texto libre de "Otro".
-    if (
-      !ubicacion.zona ||
-      !ubicacion.sector ||
-      !ubicacion.subsector ||
-      !ubicacion.recinto ||
-      !ubicacion.colegioElectoral
-    ) {
-      setNotification({
-        message:
-          "Por favor, completa la ubicación electoral (zona, sector, subsector, recinto y colegio).",
-        type: "error",
-      });
+    // Ubicación electoral: cinco niveles con valor, textos libres no vacíos y
+    // zona obligatoria del catálogo (ver validarUbicacion).
+    const errorUbicacion = validarUbicacion(ubicacion);
+    if (errorUbicacion) {
+      setNotification({ message: errorUbicacion, type: "error" });
       return;
     }
 
@@ -455,6 +402,7 @@ function PublicRegister() {
             id="telefono"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
+            required
             disabled={isSearching || loading}
           />
         </div>
