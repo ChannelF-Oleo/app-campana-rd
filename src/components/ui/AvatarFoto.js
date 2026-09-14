@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { FaTimes, FaWhatsapp, FaExclamationTriangle } from "react-icons/fa";
 import { resolveFotoUrl } from "../../utils/fotoExport";
 
@@ -131,8 +132,13 @@ const AvatarFoto = ({
         )}
       </div>
 
-      {/* MODAL (LIGHTBOX) */}
-      {isModalOpen && imageUrl && (
+      {/* MODAL (LIGHTBOX)
+          Se monta con un portal en <body>: los contenedores del avatar
+          (.glass-panel, .table-wrapper) usan backdrop-filter, que crea bloque
+          contenedor para los hijos position:fixed. Dentro de ellos el overlay
+          se anclaba al panel (no al viewport) y la foto salía gigante y con
+          scroll en vez de encajar en pantalla. */}
+      {isModalOpen && imageUrl && createPortal(
         <div className="avatar-modal-overlay" onClick={closeModal}>
           <div
             className="avatar-modal-content"
@@ -160,7 +166,8 @@ const AvatarFoto = ({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

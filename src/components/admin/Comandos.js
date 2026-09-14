@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { db } from "../../firebase";
 import {
   collection,
@@ -99,7 +100,9 @@ const ComandoModal = ({
 
   const selectedUser = users.find((u) => u.uid === formData.userId);
 
-  return (
+  // Portal en <body>: .comandos-container es .glass-panel y su backdrop-filter
+  // haría que este modal position:fixed se anclase al panel, no al viewport.
+  return createPortal(
     <div className="modal-backdrop">
       <div className="modal-content glass-panel">
         <div className="modal-header">
@@ -210,7 +213,8 @@ const ComandoModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

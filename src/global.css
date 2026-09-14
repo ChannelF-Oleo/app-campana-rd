@@ -161,7 +161,12 @@ body {
   display: flex;
   min-height: 100vh;
   position: relative;
-  overflow-x: hidden;
+  /* `clip`, NO `hidden`: overflow-x:hidden convierte a este contenedor en área
+     de scroll (overflow-y pasa a auto), y entonces el `position: sticky` del
+     sidebar se ancla a ÉL en vez de al viewport: al hacer scroll en la página
+     el sidebar se "acababa" y desaparecía. `clip` recorta igual el desborde
+     horizontal sin crear área de scroll, así que el sidebar sigue fijo. */
+  overflow-x: clip;
   /* Eliminamos background-color aquí para que herede del body */
 }
 
@@ -277,36 +282,43 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100dvh; /* Alto REAL del viewport móvil (barras del navegador). */
   background-color: rgba(0, 0, 0, 0.85); /* Fondo oscuro */
   backdrop-filter: blur(5px); /* Efecto borroso detrás */
   z-index: 9999; /* Siempre encima de todo */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 48px 16px 16px; /* Hueco arriba para el botón de cerrar. */
+  overflow: hidden; /* La foto se ajusta al marco: nunca hay scroll. */
   animation: fadeIn 0.2s ease-out;
 }
 
 .avatar-modal-content {
   position: relative;
-  /* El contenedor se ajusta al tamaño de la imagen (marco), sin forzar ancho. */
-  max-width: 90vw;
+  /* El contenedor se ajusta al tamaño de la imagen (marco), sin forzar ancho, y
+     nunca excede el hueco que deja el overlay (su padding ya está descontado). */
+  max-width: 100%;
   width: auto;
-  max-height: 90vh;
+  max-height: 100%;
   background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 0; /* Permite que la imagen encoja dentro del flex. */
   animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Imagen Grande: se muestra a su tamaño natural, acotada al viewport, sin scroll.
-   80vh deja espacio para el pie (nombre/cédula) dentro del 90vh del marco. */
+/* Imagen grande: se ve ENTERA de un vistazo. Es el único elemento elástico del
+   marco (el pie no encoge), así que encoge hasta caber en el alto disponible
+   manteniendo su proporción; nunca genera scroll. */
 .avatar-modal-image {
-  max-width: 90vw;
-  max-height: 80vh;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -318,9 +330,9 @@ body {
 
 /* Botón Cerrar */
 .avatar-modal-close {
-  position: absolute;
-  top: -40px;
-  right: -10px;
+  position: fixed; /* Anclado al viewport: nunca queda fuera de pantalla. */
+  top: 12px;
+  right: 12px;
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
@@ -342,7 +354,8 @@ body {
 
 /* Pie de foto en el modal */
 .avatar-modal-footer {
-  margin-top: 15px;
+  margin-top: 12px;
+  flex: 0 0 auto; /* El pie mantiene su alto; lo que encoge es la foto. */
   text-align: center;
   color: white;
 }
@@ -1188,6 +1201,9 @@ body.dark-mode .expandable-overlay {
 .sidebar {
   width: 260px;
   height: 100vh;
+  height: 100dvh; /* Alto real en móvil (barras del navegador). */
+  /* Si el menú no cabe, scrollea él solo en vez de recortarse. */
+  overflow-y: auto;
   background-color: var(--sidebar-bg);
   color: var(--sidebar-text);
   padding: 1rem;
@@ -1365,6 +1381,15 @@ body.dark-mode .expandable-overlay {
 .modal-content select option {
   background-color: var(--color-surface);
   color: var(--color-text-main);
+}
+
+/* Campos bloqueados dentro de un modal (p. ej. la cédula, que no es editable):
+   texto atenuado para que se lean como de solo lectura en ambos temas. */
+.modal-content input:disabled,
+.modal-content select:disabled {
+  color: var(--color-text-muted);
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .modal-content .input-group label {
@@ -3436,6 +3461,8 @@ body.dark-mode .loading-overlay {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
 }
 
 .modal-content {
@@ -3444,6 +3471,11 @@ body.dark-mode .loading-overlay {
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 500px;
+  /* Un modal largo (el de editar usuario lo es) scrollea POR DENTRO y sigue
+     centrado en pantalla; antes crecía sin límite y empujaba el scroll de la
+     página, dejando el inicio del formulario fuera de vista. */
+  max-height: 100%;
+  overflow-y: auto;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
   border: 1px solid var(--color-border);
   animation: modalUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -4912,9 +4944,21 @@ body.dark-mode .progress-bar-container {
   border: 1px solid var(--color-border); /* Borde gris claro */
   border-radius: 5px;
   font-size: 1rem;
-  color: var(--color-text-dark);
-  background-color: var(--color-var(--color-surface)); /* Fondo blanco para selects */
+  /* Tokens del tema: en claro dan superficie blanca sobre texto oscuro y en
+     oscuro se invierten solos. Antes esto fijaba --color-text-dark (#333, que
+     NO se redefine en dark) sobre un background-color escrito mal
+     (`var(--color-var(--color-surface))`, un var() inválido que el navegador
+     descarta y deja el fondo transparente): de ahí el texto gris ilegible de
+     los selects de la cascada de ubicación en modo oscuro. */
+  color: var(--color-text-main);
+  background-color: var(--color-surface);
   transition: border-color 0.3s, box-shadow 0.3s; /* Transición suave */
+}
+
+/* El desplegable nativo no hereda del select en todos los navegadores. */
+.input-group select option {
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
 }
 
 /* Efecto de 'glow' al seleccionar el campo */
@@ -4925,21 +4969,16 @@ body.dark-mode .progress-bar-container {
   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }
 
-/* Deshabilitado para Selectores encadenados */
-.input-group select:disabled {
+/* Deshabilitado (selectores encadenados aún bloqueados y campos de solo
+   lectura): misma superficie, texto atenuado para que se lea como bloqueado en
+   ambos temas. */
+.input-group select:disabled,
+.input-group input:disabled,
+.input-disabled {
   background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  opacity: 0.75;
   cursor: not-allowed;
-}
-
-/* Texto escrito en los inputs de los formularios (modo oscuro).
-   --color-text-dark (#333333) no se redefine en dark mode, así que aquí
-   forzamos el texto claro. No afecta placeholders, bordes ni fondos.
-   Incluye create-user-form (Crear Usuario) además del de activistas. */
-body.dark-mode .create-user-form .input-group input,
-body.dark-mode .create-user-form .input-group select,
-body.dark-mode .register-form--activist .input-group input,
-body.dark-mode .register-form--activist .input-group select {
-  color: var(--color-text-main);
 }
 
 /* Neutraliza el estilo de AUTOFILL del navegador en modo oscuro. Chrome pinta
