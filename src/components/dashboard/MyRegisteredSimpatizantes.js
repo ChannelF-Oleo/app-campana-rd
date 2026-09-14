@@ -56,6 +56,7 @@ function MyRegisteredSimpatizantes({ user }) {
   // --- Filtros combinables (además del activista, que aquí es el propio user) ---
   const [zonaFilter, setZonaFilter] = useState("todas");
   const [sectorFilter, setSectorFilter] = useState("todos");
+  const [subsectorFilter, setSubsectorFilter] = useState("todos");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
 
@@ -111,11 +112,24 @@ function MyRegisteredSimpatizantes({ user }) {
   const sectoresDisponibles = Array.from(
     new Set(simpatizantes.map((s) => s.sector).filter(Boolean))
   ).sort((a, b) => a.localeCompare(b));
+  // Subsectores del sector elegido (todos si no hay sector): la lista sigue la
+  // cascada en vez de mezclar subsectores de sectores distintos.
+  const subsectoresDisponibles = Array.from(
+    new Set(
+      simpatizantes
+        .filter((s) => sectorFilter === "todos" || s.sector === sectorFilter)
+        .map((s) => s.subsector)
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
 
-  // Lista tras aplicar TODOS los filtros activos (zona + sector + rango fechas).
+  // Lista tras aplicar TODOS los filtros activos (zona + sector + subsector +
+  // rango de fechas).
   const simpatizantesFiltrados = simpatizantes.filter((s) => {
     if (zonaFilter !== "todas" && s.zona !== zonaFilter) return false;
     if (sectorFilter !== "todos" && s.sector !== sectorFilter) return false;
+    if (subsectorFilter !== "todos" && s.subsector !== subsectorFilter)
+      return false;
     if (!enRangoFecha(s.fechaRegistro, fechaDesde, fechaHasta)) return false;
     return true;
   });
@@ -123,6 +137,7 @@ function MyRegisteredSimpatizantes({ user }) {
   const hayFiltros =
     zonaFilter !== "todas" ||
     sectorFilter !== "todos" ||
+    subsectorFilter !== "todos" ||
     !!fechaDesde ||
     !!fechaHasta;
 
@@ -131,6 +146,7 @@ function MyRegisteredSimpatizantes({ user }) {
     const p = [];
     if (zonaFilter !== "todas") p.push(zonaFilter);
     if (sectorFilter !== "todos") p.push(sectorFilter);
+    if (subsectorFilter !== "todos") p.push(subsectorFilter);
     if (fechaDesde) p.push(`desde ${fechaDesde}`);
     if (fechaHasta) p.push(`hasta ${fechaHasta}`);
     return p;
@@ -230,12 +246,17 @@ function MyRegisteredSimpatizantes({ user }) {
     <div className="my-registrations-container glass-panel">
       {simpatizantes.length > 0 && (
         <>
-          {/* Filtros combinables (zona + sector + rango de fechas). */}
+          {/* Filtros combinables (zona + sector + subsector + rango de fechas). */}
           <div className="filters-bar-wrapper">
             <select
               className="role-filter-select"
               value={zonaFilter}
-              onChange={(e) => setZonaFilter(e.target.value)}
+              onChange={(e) => {
+                setZonaFilter(e.target.value);
+                // Sector y subsector cuelgan de la zona: se reinician con ella.
+                setSectorFilter("todos");
+                setSubsectorFilter("todos");
+              }}
             >
               <option value="todas">Todas las zonas</option>
               {zonasDisponibles.map((z) => (
@@ -247,12 +268,28 @@ function MyRegisteredSimpatizantes({ user }) {
             <select
               className="role-filter-select"
               value={sectorFilter}
-              onChange={(e) => setSectorFilter(e.target.value)}
+              onChange={(e) => {
+                setSectorFilter(e.target.value);
+                // El subsector elegido puede no existir en el nuevo sector.
+                setSubsectorFilter("todos");
+              }}
             >
               <option value="todos">Todos los sectores</option>
               {sectoresDisponibles.map((sec) => (
                 <option key={sec} value={sec}>
                   {sec}
+                </option>
+              ))}
+            </select>
+            <select
+              className="role-filter-select"
+              value={subsectorFilter}
+              onChange={(e) => setSubsectorFilter(e.target.value)}
+            >
+              <option value="todos">Todos los subsectores</option>
+              {subsectoresDisponibles.map((sub) => (
+                <option key={sub} value={sub}>
+                  {sub}
                 </option>
               ))}
             </select>

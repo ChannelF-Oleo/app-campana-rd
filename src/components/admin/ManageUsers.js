@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../firebase";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
@@ -14,7 +22,17 @@ import {
   ROL_LIDER,
   ROL_MULTIPLICADOR,
   normalizarCedula,
+  validarTelefono,
 } from "../../constants";
+import {
+  aplicarCambioUbicacion,
+  estadoUbicacionDesdeDatos,
+  CAMPOS_UBICACION_OTRO,
+  limpiarUbicacion,
+  valorUbicacionFinal,
+  normalizarUbicacion,
+} from "../../data/ubicacionElectoral";
+import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
 
 // Inicializar Functions
 const functions = getFunctions();
@@ -53,25 +71,68 @@ function LoadingSpinner({ message = "Cargando..." }) {
   );
 }
 
-// --- MODAL DE EDICIÓN (Con Cambio de Foto) ---
+// --- MODAL DE EDICIÓN ---
+// Edita TODOS los campos del perfil guardados en Firestore: identidad (nombre,
+// apodo, cédula, teléfono), la cascada de ubicación electoral completa, el rol y
+// —para un líder— los multiplicadores a su cargo, además de la foto.
+// El email es la ÚNICA excepción: vive en Firebase Auth y cambiarlo exige una
+// Cloud Function con privilegios de admin (no existe), así que se muestra solo
+// lectura.
 function EditUserModal({ user, onClose, onSave }) {
   const [newRole, setNewRole] = useState(user.rol || ROL_MULTIPLICADOR);
-  const [newCedula, setNewCedula] = useState(user.cedula || "");
+  const [newNombre, setNewNombre] = useState(user.nombre || "");
+  const [newApodo, setNewApodo] = useState(user.apodo || "");
   const [newTelefono, setNewTelefono] = useState(user.telefono || "");
+  // La cascada se reconstruye desde los campos planos ya guardados: un valor
+  // fuera del catálogo se reabre como texto libre ("Otro") en vez de perderse.
+  const [ubicacion, setUbicacion] = useState(() =>
+    estadoUbicacionDesdeDatos(user)
+  );
+  const [asignados, setAsignados] = useState(
+    user.multiplicadoresAsignados || []
+  );
+  const [multiplicadores, setMultiplicadores] = useState([]);
+  const [loadingMultis, setLoadingMultis] = useState(false);
   const [loadingSave, setLoadingSave] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
-  // Formateador de Cédula
-  const handleCedulaChange = (e) => {
-    const input = e.target.value.replace(/[^0-9]/g, "");
-    const normalized = input.slice(0, 11);
-    let formatted = normalized;
-    if (normalized.length > 3)
-      formatted = `${normalized.slice(0, 3)}-${normalized.slice(3)}`;
-    if (normalized.length > 10)
-      formatted = `${formatted.slice(0, 11)}-${formatted.slice(11)}`;
-    setNewCedula(formatted);
+  const esLider = newRole === ROL_LIDER;
+  // Cédula del documento: identifica al usuario y nombra su foto en Storage.
+  const cedulaNormalizada = normalizarCedula(user.cedula);
+
+  // Lista de multiplicadores asignables: solo se pide si el rol elegido es
+  // líder, y una sola vez por apertura del modal.
+  useEffect(() => {
+    if (!esLider || multiplicadores.length > 0 || loadingMultis) return;
+    let vivo = true;
+    setLoadingMultis(true);
+    getDocs(
+      query(collection(db, "users"), where("rol", "==", ROL_MULTIPLICADOR))
+    )
+      .then((snap) => {
+        if (!vivo) return;
+        setMultiplicadores(
+          snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""))
+        );
+      })
+      .catch((e) => console.error("Error cargando multiplicadores:", e))
+      .finally(() => vivo && setLoadingMultis(false));
+    return () => {
+      vivo = false;
+    };
+  }, [esLider, multiplicadores.length, loadingMultis]);
+
+  const handleUbicacionChange = (campo, valor) => {
+    setUbicacion((prev) => aplicarCambioUbicacion(prev, campo, valor));
+  };
+
+  const toggleAsignado = (id) => {
+    setAsignados((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
   // SUBIR NUEVA FOTO
@@ -79,12 +140,11 @@ function EditUserModal({ user, onClose, onSave }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validar que tengamos cédula para nombrar el archivo (misma exigencia que
-    // antes: la foto se sube en el acto y la cédula debe existir ya).
-    const cleanCedula = newCedula.replace(/-/g, "");
-    if (cleanCedula.length !== 11) {
+    // La foto se nombra con la cédula del usuario, que aquí es inmutable: si el
+    // documento no tiene una válida, no hay nombre de archivo posible.
+    if (cedulaNormalizada.length !== 11) {
       alert(
-        "❌ Error: El usuario debe tener una cédula válida (11 dígitos) antes de subir la foto."
+        "❌ Error: este usuario no tiene una cédula válida (11 dígitos) registrada, y la foto se guarda con ella. Corrige la cédula en la base de datos antes de subir la foto."
       );
       return;
     }
@@ -92,7 +152,7 @@ function EditUserModal({ user, onClose, onSave }) {
     setUploading(true);
     try {
       // Lógica compartida (comprimir + subir a Storage) extraída a un util.
-      await subirFotoUsuario(file, cleanCedula);
+      await subirFotoUsuario(file, cedulaNormalizada);
       alert(
         "✅ Foto actualizada correctamente.\n\nNota: Puede tardar unos minutos en reflejarse o requerir recargar la página."
       );
@@ -106,20 +166,38 @@ function EditUserModal({ user, onClose, onSave }) {
 
   const handleSave = async () => {
     setError("");
-    const cleanCedula = newCedula.replace(/-/g, "");
 
-    if (cleanCedula.length > 0 && cleanCedula.length !== 11) {
-      setError("La cédula debe tener 11 dígitos.");
+    if (!newNombre.trim()) {
+      setError("El nombre no puede quedar vacío.");
       return;
+    }
+    if (newTelefono.trim() && !validarTelefono(newTelefono)) {
+      setError("Teléfono inválido (mínimo 7 dígitos).");
+      return;
+    }
+    // A diferencia del alta, aquí NO se exige la cascada completa (hay perfiles
+    // antiguos sin ubicación); solo que un campo puesto en "Otro" no quede en
+    // blanco, que guardaría una ubicación vacía sin avisar.
+    for (const { campo, label } of CAMPOS_UBICACION_OTRO) {
+      if (ubicacion[`${campo}EsOtro`] && !normalizarUbicacion(ubicacion[campo])) {
+        setError(`Escribe ${label}`);
+        return;
+      }
     }
 
     setLoadingSave(true);
     try {
       await onSave(user.id, {
+        nombre: newNombre.trim(),
+        apodo: newApodo.trim(),
         rol: newRole,
-        cedula: newCedula,
         telefono: newTelefono,
-        multiplicadoresAsignados: user.multiplicadoresAsignados,
+        zona: limpiarUbicacion(ubicacion.zona),
+        sector: valorUbicacionFinal(ubicacion, "sector"),
+        subsector: valorUbicacionFinal(ubicacion, "subsector"),
+        recinto: valorUbicacionFinal(ubicacion, "recinto"),
+        colegioElectoral: valorUbicacionFinal(ubicacion, "colegioElectoral"),
+        multiplicadoresAsignados: asignados,
       });
     } catch (error) {
       console.error("Error al guardar:", error);
@@ -128,7 +206,13 @@ function EditUserModal({ user, onClose, onSave }) {
     }
   };
 
-  return (
+  const bloqueado = loadingSave || uploading;
+
+  // Portal en <body>: .manage-users-container es .glass-panel y usa
+  // backdrop-filter, que crea bloque contenedor para los hijos position:fixed.
+  // Dentro de él el modal se centraba respecto al panel (larguísimo), y aparecía
+  // muy por debajo del viewport en vez de en el centro de la pantalla.
+  return createPortal(
     <div className="modal-backdrop">
       <div className="modal-content glass-panel">
         <h3>Editar Usuario: {user.nombre}</h3>
@@ -144,8 +228,8 @@ function EditUserModal({ user, onClose, onSave }) {
           }}
         >
           <AvatarFoto
-            cedula={newCedula || user.cedula}
-            nombre={user.nombre}
+            cedula={user.cedula}
+            nombre={newNombre || user.nombre}
             size="100px"
           />
 
@@ -175,37 +259,63 @@ function EditUserModal({ user, onClose, onSave }) {
         </div>
 
         <div className="form-group">
-          <label>Email (No editable):</label>
+          <label htmlFor="edit-nombre">Nombre Completo:</label>
           <input
+            id="edit-nombre"
             type="text"
-            value={user.email}
+            value={newNombre}
+            onChange={(e) => setNewNombre(e.target.value)}
+            className="search-input"
+            disabled={bloqueado}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="edit-apodo">Apodo:</label>
+          <input
+            id="edit-apodo"
+            type="text"
+            value={newApodo}
+            onChange={(e) => setNewApodo(e.target.value)}
+            placeholder="Opcional"
+            className="search-input"
+            disabled={bloqueado}
+          />
+        </div>
+
+        {/* La cédula IDENTIFICA al usuario (es la clave de su foto en Storage y
+            el enlace con su registro de simpatizante): se muestra, nunca se
+            edita. */}
+        <div className="form-group">
+          <label htmlFor="edit-cedula">Cédula de Identidad (no editable):</label>
+          <input
+            id="edit-cedula"
+            type="text"
+            value={user.cedula || "Sin cédula"}
             disabled
             className="input-disabled"
           />
         </div>
 
         <div className="form-group">
-          <label>Cédula de Identidad:</label>
+          <label htmlFor="edit-telefono">Teléfono:</label>
           <input
-            type="text"
-            value={newCedula}
-            onChange={handleCedulaChange}
-            placeholder="001-0000000-0"
-            className="search-input"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Teléfono:</label>
-          <input
+            id="edit-telefono"
             type="tel"
             value={newTelefono}
             onChange={(e) => setNewTelefono(e.target.value)}
             placeholder="809-000-0000"
             className="search-input"
-            disabled={loadingSave}
+            disabled={bloqueado}
           />
         </div>
+
+        {/* Ubicación electoral: Zona → Sector → Subsector → Recinto → Colegio */}
+        <UbicacionElectoralFields
+          value={ubicacion}
+          onChange={handleUbicacionChange}
+          disabled={bloqueado}
+        />
 
         <div className="form-group">
           <label htmlFor="role-select">Rol del Usuario:</label>
@@ -214,7 +324,7 @@ function EditUserModal({ user, onClose, onSave }) {
             value={newRole}
             onChange={(e) => setNewRole(e.target.value)}
             className="role-filter-select"
-            disabled={loadingSave}
+            disabled={bloqueado}
           >
             {ROLES_DISPONIBLES.map((role) => (
               <option key={role} value={role}>
@@ -224,26 +334,56 @@ function EditUserModal({ user, onClose, onSave }) {
           </select>
         </div>
 
+        {/* Multiplicadores a cargo: solo aplica al rol Líder de Zona. */}
+        {esLider && (
+          <div className="assignment-section">
+            <h4>Multiplicadores asignados</h4>
+            {loadingMultis ? (
+              <p>Cargando multiplicadores...</p>
+            ) : multiplicadores.length === 0 ? (
+              <p>No hay multiplicadores disponibles.</p>
+            ) : (
+              <div className="multiplicadores-list">
+                {multiplicadores.map((m) => (
+                  <div key={m.id} className="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id={`multi-${m.id}`}
+                      checked={asignados.includes(m.id)}
+                      onChange={() => toggleAsignado(m.id)}
+                      disabled={bloqueado}
+                    />
+                    <label htmlFor={`multi-${m.id}`}>
+                      {m.nombre} ({m.email})
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {error && <p className="error-message">{error}</p>}
 
         <div className="modal-actions">
           <button
             onClick={handleSave}
             className="save-button"
-            disabled={loadingSave || uploading}
+            disabled={bloqueado}
           >
             {loadingSave ? "Guardando..." : "Guardar Cambios"}
           </button>
           <button
             onClick={onClose}
             className="cancel-button"
-            disabled={loadingSave || uploading}
+            disabled={bloqueado}
           >
             Cancelar
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -259,8 +399,7 @@ function ManageUsers() {
   const [roleFilter, setRoleFilter] = useState("todos");
   const [zonaFilter, setZonaFilter] = useState("todas");
   const [sectorFilter, setSectorFilter] = useState("todos");
-  const [activistaFilter, setActivistaFilter] = useState("todos"); // uid
-  const [activistaInput, setActivistaInput] = useState(""); // texto typeahead
+  const [subsectorFilter, setSubsectorFilter] = useState("todos");
 
   // Zonas presentes en los usuarios cargados (para poblar el filtro por zona).
   const zonasDisponibles = Array.from(
@@ -270,10 +409,16 @@ function ManageUsers() {
   const sectoresDisponibles = Array.from(
     new Set(allUsers.map((u) => u.sector).filter(Boolean))
   ).sort((a, b) => a.localeCompare(b));
-  // Activistas (usuarios) para el filtro "por activista".
-  const activistasDisponibles = [...allUsers]
-    .filter((u) => u.nombre)
-    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  // Subsectores presentes. Si hay un sector elegido, solo los suyos: la lista
+  // acompaña a la cascada en vez de mezclar subsectores de otros sectores.
+  const subsectoresDisponibles = Array.from(
+    new Set(
+      allUsers
+        .filter((u) => sectorFilter === "todos" || u.sector === sectorFilter)
+        .map((u) => u.subsector)
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
 
   // Estado de los exports con foto (PDF/Excel).
   const [exportando, setExportando] = useState(false);
@@ -327,6 +472,7 @@ function ManageUsers() {
             telefono: data.telefono || "",
             zona: data.zona || "",
             sector: data.sector || "",
+            subsector: data.subsector || "",
             direccion: data.direccion || "",
           };
         }
@@ -340,6 +486,7 @@ function ManageUsers() {
           telefono: user.telefono || simp.telefono || "",
           zona: user.zona || simp.zona || "",
           sector: user.sector || simp.sector || "",
+          subsector: user.subsector || simp.subsector || "",
           direccion: user.direccion || simp.direccion || "",
         };
       });
@@ -389,10 +536,7 @@ function ManageUsers() {
     const partes = [];
     if (zonaFilter !== "todas") partes.push(zonaFilter);
     if (sectorFilter !== "todos") partes.push(sectorFilter);
-    if (activistaFilter !== "todos") {
-      const act = allUsers.find((u) => u.uid === activistaFilter);
-      if (act?.nombre) partes.push(act.nombre);
-    }
+    if (subsectorFilter !== "todos") partes.push(subsectorFilter);
 
     const titulo = partes.length
       ? `Padrón de Usuarios - ${partes.join(" · ")}`
@@ -457,9 +601,10 @@ function ManageUsers() {
     if (sectorFilter !== "todos") {
       currentUsers = currentUsers.filter((user) => user.sector === sectorFilter);
     }
-    // Por activista: se filtra a un usuario concreto (el activista seleccionado).
-    if (activistaFilter !== "todos") {
-      currentUsers = currentUsers.filter((user) => user.uid === activistaFilter);
+    if (subsectorFilter !== "todos") {
+      currentUsers = currentUsers.filter(
+        (user) => user.subsector === subsectorFilter
+      );
     }
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -473,7 +618,14 @@ function ManageUsers() {
     }
     setFilteredUsers(currentUsers);
     setCurrentPage(1); // Resetear a página 1 al filtrar
-  }, [searchTerm, roleFilter, zonaFilter, sectorFilter, activistaFilter, allUsers]);
+  }, [
+    searchTerm,
+    roleFilter,
+    zonaFilter,
+    sectorFilter,
+    subsectorFilter,
+    allUsers,
+  ]);
 
   const handleEditClick = (user) => {
     setEditingUser(user);
@@ -489,10 +641,17 @@ function ManageUsers() {
     const userDocRef = doc(db, "users", userId);
     try {
       let dataToUpdate = {
+        nombre: data.nombre || "",
+        apodo: data.apodo || "",
         rol: data.rol,
-        // Estándar: cédula SOLO dígitos en Firestore.
-        cedula: normalizarCedula(data.cedula),
+        // La cédula NO se toca: no es editable desde el modal.
         telefono: data.telefono || "",
+        // Ubicación electoral completa (mismos campos que el alta de usuario).
+        zona: data.zona || "",
+        sector: data.sector || "",
+        subsector: data.subsector || "",
+        recinto: data.recinto || "",
+        colegioElectoral: data.colegioElectoral || "",
         multiplicadoresAsignados:
           data.rol === ROL_LIDER
             ? data.multiplicadoresAsignados || []
@@ -544,7 +703,12 @@ function ManageUsers() {
         </select>
         <select
           value={zonaFilter}
-          onChange={(e) => setZonaFilter(e.target.value)}
+          onChange={(e) => {
+            setZonaFilter(e.target.value);
+            // Sector y subsector cuelgan de la zona: al cambiarla se reinician.
+            setSectorFilter("todos");
+            setSubsectorFilter("todos");
+          }}
           className="role-filter-select"
         >
           <option value="todas">Todas las Zonas</option>
@@ -556,7 +720,11 @@ function ManageUsers() {
         </select>
         <select
           value={sectorFilter}
-          onChange={(e) => setSectorFilter(e.target.value)}
+          onChange={(e) => {
+            setSectorFilter(e.target.value);
+            // El subsector elegido puede no existir en el nuevo sector.
+            setSubsectorFilter("todos");
+          }}
           className="role-filter-select"
         >
           <option value="todos">Todos los Sectores</option>
@@ -566,30 +734,18 @@ function ManageUsers() {
             </option>
           ))}
         </select>
-        {/* Activista: campo con autocompletado (escribe y aparecen coincidencias)
-            en vez de un desplegable largo que crece con el equipo. */}
-        <input
-          type="text"
-          list="activistas-datalist"
-          className="search-input"
-          placeholder="Filtrar por activista..."
-          value={activistaInput}
-          onChange={(e) => {
-            const val = e.target.value;
-            setActivistaInput(val);
-            if (!val.trim()) {
-              setActivistaFilter("todos");
-              return;
-            }
-            const match = activistasDisponibles.find((a) => a.nombre === val);
-            setActivistaFilter(match ? match.uid : "todos");
-          }}
-        />
-        <datalist id="activistas-datalist">
-          {activistasDisponibles.map((act) => (
-            <option key={act.uid} value={act.nombre} />
+        <select
+          value={subsectorFilter}
+          onChange={(e) => setSubsectorFilter(e.target.value)}
+          className="role-filter-select"
+        >
+          <option value="todos">Todos los Subsectores</option>
+          {subsectoresDisponibles.map((sub) => (
+            <option key={sub} value={sub}>
+              {sub}
+            </option>
           ))}
-        </datalist>
+        </select>
       </div>
 
       {/* Acciones de exportación: fila propia con botones compactos (fuera del
