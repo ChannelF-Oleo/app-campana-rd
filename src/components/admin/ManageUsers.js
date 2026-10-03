@@ -33,6 +33,7 @@ import {
   normalizarUbicacion,
 } from "../../data/ubicacionElectoral";
 import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
+import { aFecha, enRangoFecha } from "../../utils/fechas";
 
 // Inicializar Functions
 const functions = getFunctions();
@@ -400,6 +401,9 @@ function ManageUsers() {
   const [zonaFilter, setZonaFilter] = useState("todas");
   const [sectorFilter, setSectorFilter] = useState("todos");
   const [subsectorFilter, setSubsectorFilter] = useState("todos");
+  // Rango de fecha de creación del usuario ("YYYY-MM-DD", vacío = sin límite).
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   // Zonas presentes en los usuarios cargados (para poblar el filtro por zona).
   const zonasDisponibles = Array.from(
@@ -488,6 +492,9 @@ function ManageUsers() {
           sector: user.sector || simp.sector || "",
           subsector: user.subsector || simp.subsector || "",
           direccion: user.direccion || simp.direccion || "",
+          // Fecha de creación: `createdAt` en todos los flujos actuales; los
+          // perfiles Google antiguos solo tienen `fechaRegistro` (texto ISO).
+          fechaCreacion: aFecha(user.createdAt) || aFecha(user.fechaRegistro),
         };
       });
 
@@ -537,6 +544,8 @@ function ManageUsers() {
     if (zonaFilter !== "todas") partes.push(zonaFilter);
     if (sectorFilter !== "todos") partes.push(sectorFilter);
     if (subsectorFilter !== "todos") partes.push(subsectorFilter);
+    if (fechaDesde) partes.push(`desde ${fechaDesde}`);
+    if (fechaHasta) partes.push(`hasta ${fechaHasta}`);
 
     const titulo = partes.length
       ? `Padrón de Usuarios - ${partes.join(" · ")}`
@@ -606,6 +615,11 @@ function ManageUsers() {
         (user) => user.subsector === subsectorFilter
       );
     }
+    if (fechaDesde || fechaHasta) {
+      currentUsers = currentUsers.filter((user) =>
+        enRangoFecha(user.fechaCreacion, fechaDesde, fechaHasta)
+      );
+    }
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       currentUsers = currentUsers.filter(
@@ -624,6 +638,8 @@ function ManageUsers() {
     zonaFilter,
     sectorFilter,
     subsectorFilter,
+    fechaDesde,
+    fechaHasta,
     allUsers,
   ]);
 
@@ -746,6 +762,26 @@ function ManageUsers() {
             </option>
           ))}
         </select>
+        <label className="filtro-fecha">
+          <span>Creado desde</span>
+          <input
+            type="date"
+            className="search-input"
+            value={fechaDesde}
+            max={fechaHasta || undefined}
+            onChange={(e) => setFechaDesde(e.target.value)}
+          />
+        </label>
+        <label className="filtro-fecha">
+          <span>Creado hasta</span>
+          <input
+            type="date"
+            className="search-input"
+            value={fechaHasta}
+            min={fechaDesde || undefined}
+            onChange={(e) => setFechaHasta(e.target.value)}
+          />
+        </label>
       </div>
 
       {/* Acciones de exportación: fila propia con botones compactos (fuera del
@@ -792,6 +828,7 @@ function ManageUsers() {
               <th>Teléfono</th>
               <th>Rol</th>
               <th>Registros</th>
+              <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -830,6 +867,11 @@ function ManageUsers() {
                   <td data-label="Registros">
                     <div className="count-badge">{user.registrationCount}</div>
                   </td>
+                  <td data-label="Creado">
+                    {user.fechaCreacion
+                      ? user.fechaCreacion.toLocaleDateString("es-DO")
+                      : "—"}
+                  </td>
                   <td data-label="Acciones" className="actions-cell">
                     <button
                       onClick={() => handleEditClick(user)}
@@ -856,7 +898,7 @@ function ManageUsers() {
             ) : (
               !loading && (
                 <tr>
-                  <td colSpan="6" className="empty-state">
+                  <td colSpan="7" className="empty-state">
                     No se encontraron usuarios.
                   </td>
                 </tr>

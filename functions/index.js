@@ -29,6 +29,26 @@ admin.initializeApp();
 const normalizarCedula = (cedula) =>
   (cedula === null || cedula === undefined ? "" : String(cedula)).replace(/\D/g, "");
 
+// Una cédula = un usuario. Devuelve el doc de `users` que ya tiene esa cédula
+// (normalizada) o null. Todo flujo que crea usuarios debe consultarlo ANTES de
+// crear la cuenta en Auth: si el email es real (no el sintético
+// <cedula>@cedula.temp), Auth no detecta que la persona ya tiene cuenta.
+const buscarUsuarioPorCedula = async (cedulaNorm) => {
+  const snap = await admin
+    .firestore()
+    .collection("users")
+    .where("cedula", "==", cedulaNorm)
+    .limit(1)
+    .get();
+  return snap.empty ? null : snap.docs[0];
+};
+
+const errorCedulaDuplicada = (existente) =>
+  new HttpsError(
+    "already-exists",
+    `Ya existe un usuario con esa cédula (${existente.data().nombre || existente.id}).`
+  );
+
 // Configuración Global (V2)
 setGlobalOptions({
   region: "us-central1",
@@ -237,6 +257,9 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
   const authEmail = emailReal || `${cedulaNorm}@cedula.temp`;
 
   try {
+    const existente = await buscarUsuarioPorCedula(cedulaNorm);
+    if (existente) throw errorCedulaDuplicada(existente);
+
     const userRecord = await admin.auth().createUser({
       email: authEmail,
       password,
@@ -328,7 +351,117 @@ exports.createUserAdmin = onCall({ secrets: [resendApiKey] }, async (request) =>
         : "Usuario creado (sin email; podrá iniciar sesión con su cédula).",
     };
   } catch (error) {
+    if (error instanceof HttpsError) throw error;
+    if (error.code === "auth/email-already-exists") {
+      throw new HttpsError(
+        "already-exists",
+        emailReal
+          ? "Ese correo ya pertenece a otra cuenta."
+          : "Ya existe una cuenta con esa cédula."
+      );
+    }
     throw new HttpsError("internal", error.message);
+  }
+});
+
+// =========================================================================
+// 5. CALLABLE: AUTO-REGISTRO DE USUARIO DE LA APP (/registro-app)
+// =========================================================================
+// Antes este alta se hacía en el cliente (createUserWithEmailAndPassword +
+// setDoc) y tenía dos fallos:
+//  - Nada impedía crear una segunda cuenta con una cédula ya registrada: el
+//    email es real, así que Auth no lo detecta.
+//  - Carrera con createProfileForProvider: si el trigger creaba el perfil
+//    primero, el setDoc del cliente pasaba a ser un UPDATE que las reglas
+//    rechazan, y el usuario quedaba como "Usuario Sin Nombre" sin cédula.
+// Aquí se valida la cédula antes de tocar Auth y el perfil se escribe con
+// privilegios de admin (pisa al del trigger si este llegó antes).
+exports.registerAppUser = onCall(async (request) => {
+  const { nombre, email, password, cedula, telefono, municipio, provincia } =
+    request.data || {};
+
+  const nombreLimpio = (nombre || "").trim();
+  const emailLimpio = (email || "").trim().toLowerCase();
+  if (!nombreLimpio || !emailLimpio || !password) {
+    throw new HttpsError("invalid-argument", "Faltan datos obligatorios (nombre, cédula, correo, contraseña).");
+  }
+  if (String(password).length < 6) {
+    throw new HttpsError("invalid-argument", "La contraseña debe tener al menos 6 caracteres.");
+  }
+  const cedulaNorm = normalizarCedula(cedula);
+  if (cedulaNorm.length !== 11) {
+    throw new HttpsError("invalid-argument", "La cédula debe tener 11 dígitos.");
+  }
+
+  const db = admin.firestore();
+  try {
+    const existente = await buscarUsuarioPorCedula(cedulaNorm);
+    if (existente) {
+      throw new HttpsError(
+        "already-exists",
+        "Ya existe una cuenta con esta cédula. Inicia sesión o recupera tu contraseña."
+      );
+    }
+
+    const userRecord = await admin.auth().createUser({
+      email: emailLimpio,
+      password,
+      displayName: nombreLimpio,
+    });
+
+    await db.collection("users").doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      nombre: nombreLimpio,
+      email: emailLimpio,
+      cedula: cedulaNorm,
+      telefono: telefono || "",
+      rol: "multiplicador",
+      registrationCount: 0,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastActivity: admin.firestore.FieldValue.serverTimestamp(),
+      metodoRegistro: "email",
+    });
+
+    // Perfil de simpatizante: si la cédula ya existe solo se vincula (sin
+    // pisar su ubicación con vacíos); si no, se crea ya vinculado.
+    const simpRef = db.collection("simpatizantes");
+    const simp = await simpRef.where("cedula", "==", cedulaNorm).limit(1).get();
+    if (simp.empty) {
+      await simpRef.add({
+        nombre: nombreLimpio,
+        cedula: cedulaNorm,
+        email: emailLimpio,
+        telefono: telefono || "",
+        zona: "",
+        sector: "",
+        subsector: "",
+        recinto: "",
+        colegioElectoral: "",
+        municipio: municipio || "N/A",
+        provincia: provincia || "N/A",
+        usuarioId: userRecord.uid,
+        registradoPor: "App Reg Automático",
+        esUsuarioInterno: true,
+        fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
+      await simp.docs[0].ref.set(
+        { usuarioId: userRecord.uid, esUsuarioInterno: true },
+        { merge: true }
+      );
+    }
+
+    return { success: true, uid: userRecord.uid };
+  } catch (error) {
+    if (error instanceof HttpsError) throw error;
+    if (error.code === "auth/email-already-exists") {
+      throw new HttpsError("already-exists", "Este correo ya está registrado.");
+    }
+    if (error.code === "auth/invalid-email") {
+      throw new HttpsError("invalid-argument", "El correo no es válido.");
+    }
+    logger.error("Error en registerAppUser:", error);
+    throw new HttpsError("internal", "No se pudo crear la cuenta.");
   }
 });
 

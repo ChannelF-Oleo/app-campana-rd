@@ -11,6 +11,7 @@ import { FaFilePdf, FaFileImage } from "react-icons/fa";
 import AvatarFoto from "../ui/AvatarFoto";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
+import { enRangoFecha } from "../../utils/fechas";
 
 // Campos/columnas para los exports con foto de simpatizantes. Usa los campos
 // nuevos de ubicación electoral; fallback "N/A" lo aplican los generadores.
@@ -36,17 +37,6 @@ const COLUMNAS_EXCEL_SIMP = [
   { header: "Colegio", key: "colegio", width: 14 },
   { header: "FechaRegistro", key: "fechaRegistro", width: 16 },
 ];
-
-// ¿La fecha (Timestamp Firestore) cae dentro del rango [desde, hasta]? Los
-// límites son cadenas "YYYY-MM-DD" (input date); vacío = sin límite por ese lado.
-const enRangoFecha = (ts, desde, hasta) => {
-  if (!desde && !hasta) return true;
-  if (!ts || !ts.toDate) return false; // filtrando por fecha, sin fecha => fuera
-  const d = ts.toDate();
-  if (desde && d < new Date(`${desde}T00:00:00`)) return false;
-  if (hasta && d > new Date(`${hasta}T23:59:59`)) return false;
-  return true;
-};
 
 function MyRegisteredSimpatizantes({ user }) {
   const [simpatizantes, setSimpatizantes] = useState([]);

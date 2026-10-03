@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth, db, functions } from "../../firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, functions } from "../../firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
-import { ROL_MULTIPLICADOR, normalizarCedula } from "../../constants";
+import { normalizarCedula } from "../../constants";
 
 function RegisterAppUser() {
   const [cedula, setCedula] = useState("");
@@ -20,7 +19,7 @@ function RegisterAppUser() {
   const navigate = useNavigate();
 
   const searchVotanteCallable = httpsCallable(functions, "searchVotanteByCedula");
-  const registerSimpatizanteCallable = httpsCallable(functions, "registerSimpatizante");
+  const registerAppUserCallable = httpsCallable(functions, "registerAppUser");
 
   const validarCedula = (ced) => {
     return /^\d{3}-?\d{7}-?\d{1}$/.test(ced);
@@ -89,54 +88,29 @@ function RegisterAppUser() {
     const cedulaNorm = normalizarCedula(cedula);
 
     try {
-      // 1. Crear el Auth User
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // 2. Guardar el nuevo usuario en la colección 'users' (sobrescribe la creación automática si llega antes)
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        nombre: nombre,
-        email: email,
+      // El alta (Auth + perfil + simpatizante vinculado) la hace el servidor,
+      // que rechaza la cédula si ya pertenece a otro usuario.
+      await registerAppUserCallable({
+        nombre,
         cedula: cedulaNorm,
-        rol: ROL_MULTIPLICADOR,
-        registrationCount: 0,
-        createdAt: serverTimestamp(),
-        lastActivity: serverTimestamp(),
-        metodoRegistro: "email"
+        email,
+        password,
+        telefono: votanteData?.telefono || "",
+        municipio: votanteData?.municipio || "",
+        provincia: votanteData?.provincia || "",
       });
 
-      // 3. Registrar como Simpatizante (si no está registrado aún)
-      try {
-        await registerSimpatizanteCallable({
-          nombre: nombre,
-          cedula: cedulaNorm,
-          email: email,
-          telefono: votanteData?.telefono || "",
-          // Ubicación electoral: este flujo no la captura, se deja vacía
-          // (no se autoasigna zona ni el resto de niveles).
-          zona: "",
-          sector: "",
-          subsector: "",
-          recinto: "",
-          colegioElectoral: "",
-          municipio: votanteData?.municipio || "N/A",
-          provincia: votanteData?.provincia || "N/A",
-          registradoPor: "App Reg Automático",
-          esUsuarioInterno: true
-        });
-      } catch (simpErr) {
-        // Ignoramos si "Ya registrado", eso está bien porque no duplicamos.
-        console.warn("Registrando simpatizante fallback:", simpErr);
-      }
-
-      // 4. Redirigir al inicio
+      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       navigate("/dashboard");
-
     } catch (err) {
       console.error("Error al registrar:", err);
-      if (err.code === "auth/email-already-in-use") {
-        setError("Este correo ya está registrado.");
+      // Los errores del callable ya traen un mensaje legible (cédula o correo
+      // duplicados, datos inválidos).
+      if (
+        err.code === "functions/already-exists" ||
+        err.code === "functions/invalid-argument"
+      ) {
+        setError(err.message);
       } else {
         setError("Ocurrió un error al intentar crear tu cuenta.");
       }
