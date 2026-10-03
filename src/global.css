@@ -3152,6 +3152,166 @@ button:disabled {
   font-weight: 600;
 }
 
+/* El buscador ocupa su propia fila (todas las columnas del grid) para que el
+   placeholder no quede cortado; los selects van en la fila de abajo. `1 / -1`
+   nunca crea columnas implícitas, a diferencia de `span 2` con una columna. */
+.filters-search {
+  grid-column: 1 / -1;
+}
+
+/* --- Filtro de rango de fechas (DateRangeFilter) --- */
+.date-range-filter {
+  position: relative;
+  min-width: 0;
+}
+
+/* Mismo aspecto que .role-filter-select. width/background/color anulan la
+   regla global `button`. */
+.date-range-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border, #e5e7eb);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.date-range-trigger:hover:not(:disabled) {
+  background-color: var(--color-surface);
+  border-color: var(--primary);
+}
+
+.date-range-trigger.is-active {
+  border-color: var(--primary);
+}
+
+.date-range-trigger-titulo {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.date-range-trigger-valor {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-range-trigger-icono {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.date-range-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(480px, calc(100vw - 32px));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border, #e5e7eb);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.date-range-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.date-range-rapidos {
+  border-left: 1px solid var(--color-border, #e5e7eb);
+}
+
+.date-range-heading {
+  margin: 0 0 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.date-range-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.date-range-campo .search-input {
+  padding: 9px 12px;
+}
+
+.date-range-aplicar {
+  margin-top: 4px;
+  padding: 10px;
+  font-size: 0.9rem;
+}
+
+.date-range-rapidos ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-range-rapido {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-text-main);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: left;
+}
+
+.date-range-rapido:hover:not(:disabled) {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.date-range-rapido.is-selected {
+  background-color: rgba(59, 130, 246, 0.16);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .date-range-popover {
+    left: 0;
+    right: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-range-popover {
+    grid-template-columns: 1fr;
+  }
+
+  .date-range-rapidos {
+    border-left: none;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+  }
+}
+
 /* Botón Exportar Excel (compacto) */
 .export-excel-button {
   /* width:auto anula la regla global `button { width: 100% }`, que si no hacía

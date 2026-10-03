@@ -1,4 +1,4 @@
-import { aFecha, enRangoFecha } from "./fechas";
+import { aFecha, enRangoFecha, RANGOS_RAPIDOS, calcularRangoRapido, formatearDia } from "./fechas";
 
 const ts = (iso) => ({ toDate: () => new Date(iso) });
 
@@ -32,4 +32,28 @@ describe("enRangoFecha", () => {
   test("filtrando, un registro sin fecha queda fuera", () => {
     expect(enRangoFecha(null, "2026-01-01", "")).toBe(false);
   });
+});
+
+describe("calcularRangoRapido", () => {
+  const hoy = new Date(2026, 9, 3, 11, 0); // 3 oct 2026
+  const rango = (id) => RANGOS_RAPIDOS.find((r) => r.id === id);
+
+  test("todo el tiempo no tiene límites", () => {
+    expect(calcularRangoRapido(rango("todo"), hoy)).toEqual({ desde: "", hasta: "" });
+  });
+
+  test("cuenta hoy como el primer día", () => {
+    expect(calcularRangoRapido(rango("hoy"), hoy)).toEqual({ desde: "2026-10-03", hasta: "2026-10-03" });
+    expect(calcularRangoRapido(rango("7d"), hoy)).toEqual({ desde: "2026-09-27", hasta: "2026-10-03" });
+  });
+
+  test("los meses retroceden en el calendario", () => {
+    expect(calcularRangoRapido(rango("3m"), hoy).desde).toBe("2026-07-03");
+    expect(calcularRangoRapido(rango("1a"), hoy).desde).toBe("2025-10-03");
+  });
+});
+
+test("formatearDia muestra DD/MM/YYYY", () => {
+  expect(formatearDia("2026-09-01")).toBe("01/09/2026");
+  expect(formatearDia("")).toBe("");
 });

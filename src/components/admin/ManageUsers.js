@@ -34,6 +34,7 @@ import {
 } from "../../data/ubicacionElectoral";
 import UbicacionElectoralFields from "../ui/UbicacionElectoralFields";
 import { aFecha, enRangoFecha } from "../../utils/fechas";
+import DateRangeFilter from "../ui/DateRangeFilter";
 
 // Inicializar Functions
 const functions = getFunctions();
@@ -705,7 +706,7 @@ function ManageUsers() {
           placeholder="Buscar por nombre, email o cédula..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
+          className="search-input filters-search"
         />
         <select
           value={roleFilter}
@@ -762,26 +763,15 @@ function ManageUsers() {
             </option>
           ))}
         </select>
-        <label className="filtro-fecha">
-          <span>Creado desde</span>
-          <input
-            type="date"
-            className="search-input"
-            value={fechaDesde}
-            max={fechaHasta || undefined}
-            onChange={(e) => setFechaDesde(e.target.value)}
-          />
-        </label>
-        <label className="filtro-fecha">
-          <span>Creado hasta</span>
-          <input
-            type="date"
-            className="search-input"
-            value={fechaHasta}
-            min={fechaDesde || undefined}
-            onChange={(e) => setFechaHasta(e.target.value)}
-          />
-        </label>
+        <DateRangeFilter
+          titulo="Creado"
+          desde={fechaDesde}
+          hasta={fechaHasta}
+          onChange={(desde, hasta) => {
+            setFechaDesde(desde);
+            setFechaHasta(hasta);
+          }}
+        />
       </div>
 
       {/* Acciones de exportación: fila propia con botones compactos (fuera del
