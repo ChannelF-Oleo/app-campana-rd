@@ -22,6 +22,7 @@ import {
   FaFileImage,
 } from "react-icons/fa";
 import AvatarFoto from "../ui/AvatarFoto";
+import UserSearchSelect from "../ui/UserSearchSelect";
 import { generarPadronPDF } from "../../utils/pdfPadron";
 import { generarExcelConFoto } from "../../utils/excelConFoto";
 
@@ -146,18 +147,11 @@ const ComandoModal = ({
 
           <div className="form-group">
             <label>Responsable *</label>
-            <select
-              className="role-filter-select"
+            <UserSearchSelect
+              users={users}
               value={formData.userId}
-              onChange={(e) => handleChange("userId", e.target.value)}
-            >
-              <option value="">-- Seleccionar Persona --</option>
-              {users.map((u) => (
-                <option key={u.uid} value={u.uid}>
-                  {u.nombre} ({u.rol})
-                </option>
-              ))}
-            </select>
+              onChange={(uid) => handleChange("userId", uid)}
+            />
           </div>
 
           {nivel !== "Municipal" && (
@@ -248,7 +242,7 @@ function Comandos() {
         const usersSnap = await getDocs(collection(db, "users"));
         const usersList = usersSnap.docs
           .map((d) => ({ uid: d.id, ...d.data() }))
-          .sort((a, b) => a.nombre.localeCompare(b.nombre));
+          .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
         setUsers(usersList);
 
         const unsub = onSnapshot(
