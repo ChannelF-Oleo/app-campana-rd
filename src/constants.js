@@ -23,6 +23,9 @@ export const SIMPATIZANTES_POR_PAGINA = 25;
 export const TOTAL_PADRON_META =
   parseInt(process.env.REACT_APP_PADRON_META, 10) || 244000;
 
+// --- Meta de inscritos (simpatizantes; casi todos los usuarios también lo son) ---
+export const META_INSCRITOS = 8000;
+
 // --- Ubicación Fija (SDO) ---
 export const PROVINCIA_FIJA = "Santo Domingo";
 export const MUNICIPIO_FIJO = "Santo Domingo Oeste";

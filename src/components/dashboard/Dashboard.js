@@ -12,7 +12,12 @@ import MyRegisteredSimpatizantes from "./MyRegisteredSimpatizantes";
 import PadronCoverageChart from "../charts/PadronCoverageChart";
 import DashboardWelcome from "./DashboardWelcome";
 import Loader from "../ui/Loader";
-import { ROL_ADMIN, ROL_LIDER, ROL_MULTIPLICADOR } from "../../constants";
+import {
+  ROL_ADMIN,
+  ROL_LIDER,
+  ROL_MULTIPLICADOR,
+  META_INSCRITOS,
+} from "../../constants";
 
 const Dashboard = ({ user }) => {
   // 1. Lógica de Datos (IDs relevantes para seguridad)
@@ -53,7 +58,16 @@ const Dashboard = ({ user }) => {
           <TotalRegistrations filterUserIds={relevantUserIds} />
 
           {/* CORRECCIÓN: Solo el ADMIN ve la cobertura del Padrón */}
-          {user.rol === ROL_ADMIN && <PadronCoverageChart />}
+          {user.rol === ROL_ADMIN && (
+            <>
+              <PadronCoverageChart />
+              <PadronCoverageChart
+                titulo="Meta de Inscritos"
+                meta={META_INSCRITOS}
+                unidad="inscritos"
+              />
+            </>
+          )}
         </div>
 
         {/* Gráficos con filtro aplicado */}
